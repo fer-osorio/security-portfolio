@@ -30,8 +30,8 @@
     --color-background: #ecf0f1;   /* Light gray: page background */
     --color-surface: #ffffff;      /* White: cards, containers */
     --color-border: #bdc3c7;       /* Gray: borders, dividers */
-    --color-text: #2c3e50;         /* Dark: body text */
-    --color-text-light: #7f8c8d;   /* Light gray: secondary text */
+    --color-text: #1b2d3f;         /* Dark: body text */
+    --color-text-light: #4c595b;   /* Light gray: secondary text */
 
     /* Typography */
     --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
