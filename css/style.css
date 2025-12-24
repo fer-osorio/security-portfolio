@@ -176,13 +176,13 @@ header {
 /* Mobile responsive */
 @media (max-width: 768px) {
     .logo .symbol {
-        font-size: 3.11rem;
+        font-size: 3.06rem;
     }
     .logo .text .main {
         font-size: 1.38rem;
     }
     .logo .text .sub {
-        font-size: 0.7rem;
+        font-size: 0.69rem;
     }
 }
 
