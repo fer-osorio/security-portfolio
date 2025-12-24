@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'">
+    <title>Hash Function Visualizer - Cryptography Portfolio</title>
+
+    <!-- Link to main stylesheet -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <!-- Load CryptoJS from CDN (for MD5 and SHA-3) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+    <style>
+        /* Tool-specific styling */
+        .hash-tool-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--color-border);
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-button {
+            padding: 1rem 2rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--color-text-light);
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .tab-button:hover { color: var(--color-secondary); }
+        .tab-button.active {
+            color: var(--color-secondary);
+            border-bottom-color: var(--color-secondary);
+        }
+
+        .tab-panel {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .tab-panel.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .control-group {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--color-surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .control-group textarea, .control-group input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--color-border);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-family: monospace;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .algorithm-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .algorithm-option {
+            padding: 1rem;
+            background: var(--color-background);
+            border-radius: var(--border-radius);
+            border: 2px solid var(--color-border);
+        }
+
+        .algorithm-option input[type="checkbox"] {
+            margin-right: 0.5rem;
+        }
+
+        .algorithm-option label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .security-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+
+        .security-badge.secure { background: #d4edda; color: #155724; }
+        .security-badge.deprecated { background: #fff3cd; color: #856404; }
+        .security-badge.broken { background: #f8d7da; color: #721c24; }
+
+        .hash-output {
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--color-surface);
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--color-secondary);
+        }
+
+        .hash-value {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .hash-value code {
+            display: block;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .copy-btn {
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--color-secondary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .copy-btn:hover { background: var(--color-accent); }
+        .copy-btn.copied { background: var(--color-success); }
+
+        .bit-diff-display {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .bit-row {
+            margin-bottom: 0.25rem;
+            letter-spacing: 2px;
+        }
+
+        .bit-same { color: #28a745; }
+        .bit-different {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .comparison-section {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 1rem;
+            align-items: center;
+            margin: 2rem 0;
+        }
+
+        .comparison-arrow {
+            font-size: 2rem;
+            color: var(--color-secondary);
+        }
+
+        .comparison-item {
+            background: var(--color-surface);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            border: 2px solid var(--color-border);
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--color-surface);
+            border-radius: var(--border-radius);
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--color-text-light);
+        }
+
+        .probability-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .probability-table th, .probability-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .probability-table th {
+            background: var(--color-background);
+            font-weight: 600;
+        }
+
+        .secure { color: #28a745; }
+        .warning { color: #ffc107; }
+        .insecure { color: #dc3545; }
+
+        #error-message {
+            display: none;
+            padding: 1rem;
+            margin: 1rem 0;
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            border-radius: var(--border-radius);
+            color: #721c24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--color-secondary);
+            font-weight: 600;
+        }
+
+        details {
+            margin: 1rem 0;
+        }
+
+        summary {
+            cursor: pointer;
+            padding: 0.5rem;
+            background: var(--color-background);
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        summary:hover {
+            background: var(--color-border);
+        }
+
+        .binary-display {
+            display: block;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            word-break: break-all;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-section {
+                grid-template-columns: 1fr;
+            }
+            .comparison-arrow {
+                transform: rotate(90deg);
+            }
+            .stat-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <h1 class="logo">Hash Function Visualizer</h1>
+                <ul class="nav-links">
+                    <li><a href="../index.html">← Back to Portfolio</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="hash-tool-container">
+        <!-- Error display -->
+        <div id="error-message"></div>
+
+        <!-- Tabbed interface -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="hash-computation">1. Hash Computation</button>
+            <button class="tab-button" data-tab="avalanche-effect">2. Avalanche Effect</button>
+            <button class="tab-button" data-tab="collision-resistance">3. Collision Resistance</button>
+            <button class="tab-button" data-tab="security-analysis">4. Security Analysis</button>
+        </div>
+
+        <!-- Tab 1: Hash Computation -->
+        <div id="hash-computation" class="tab-panel active">
+            <h2>Hash Computation</h2>
+            <p>Compute cryptographic hashes using different algorithms.</p>
+
+            <div class="control-group">
+                <label for="hash-input">Enter text to hash:</label>
+                <textarea id="hash-input" placeholder="Type your message here...">Hello, World!</textarea>
+            </div>
+
+            <div class="control-group">
+                <label>Select hash algorithms:</label>
+                <div class="algorithm-selector">
+                    <div class="algorithm-option">
+                        <input type="checkbox" id="algo-md5" name="hash-algorithm" value="md5">
+                        <label for="algo-md5">
+                            MD5 <span class="security-badge broken">BROKEN</span>
+                        </label>
+                    </div>
+                    <div class="algorithm-option">
+                        <input type="checkbox" id="algo-sha1" name="hash-algorithm" value="sha1">
+                        <label for="algo-sha1">
+                            SHA-1 <span class="security-badge deprecated">DEPRECATED</span>
+                        </label>
+                    </div>
+                    <div class="algorithm-option">
+                        <input type="checkbox" id="algo-sha256" name="hash-algorithm" value="sha256" checked>
+                        <label for="algo-sha256">
+                            SHA-256 <span class="security-badge secure">SECURE</span>
+                        </label>
+                    </div>
+                    <div class="algorithm-option">
+                        <input type="checkbox" id="algo-sha512" name="hash-algorithm" value="sha512">
+                        <label for="algo-sha512">
+                            SHA-512 <span class="security-badge secure">SECURE</span>
+                        </label>
+                    </div>
+                    <div class="algorithm-option">
+                        <input type="checkbox" id="algo-sha3" name="hash-algorithm" value="sha3-256">
+                        <label for="algo-sha3">
+                            SHA3-256 <span class="security-badge secure">SECURE</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button id="compute-hash-btn" class="btn-primary">Compute Hashes</button>
+
+            <div id="hash-results"></div>
+        </div>
+
+        <!-- Tab 2: Avalanche Effect -->
+        <div id="avalanche-effect" class="tab-panel">
+            <h2>Avalanche Effect Demonstration</h2>
+            <p>See how changing one character affects the entire hash output.</p>
+
+            <div class="control-group">
+                <label for="avalanche-input">Enter base text:</label>
+                <textarea id="avalanche-input" placeholder="Type your message here...">Hello, World!</textarea>
+            </div>
+
+            <div class="control-group">
+                <label for="avalanche-algorithm">Select algorithm:</label>
+                <select id="avalanche-algorithm">
+                    <option value="md5">MD5</option>
+                    <option value="sha1">SHA-1</option>
+                    <option value="sha256" selected>SHA-256</option>
+                    <option value="sha512">SHA-512</option>
+                    <option value="sha3-256">SHA3-256</option>
+                </select>
+            </div>
+
+            <button id="avalanche-btn" class="btn-primary">Test Avalanche Effect</button>
+
+            <div id="avalanche-results"></div>
+
+            <div class="control-group" style="margin-top: 2rem;">
+                <h3>What is the Avalanche Effect?</h3>
+                <p>
+                    A good cryptographic hash function should exhibit the <strong>avalanche effect</strong>:
+                    changing even a single bit of input should change approximately 50% of the output bits.
+                </p>
+                <p>
+                    This property ensures that similar inputs produce completely different hash values,
+                    making it impossible to predict or correlate outputs based on inputs.
+                </p>
+            </div>
+        </div>
+
+        <!-- Tab 3: Collision Resistance -->
+        <div id="collision-resistance" class="tab-panel">
+            <h2>Birthday Attack & Collision Probability</h2>
+            <p>Calculate the probability of finding hash collisions.</p>
+
+            <div class="control-group">
+                <label for="birthday-algorithm">Select algorithm:</label>
+                <select id="birthday-algorithm">
+                    <option value="md5">MD5 (128-bit)</option>
+                    <option value="sha1">SHA-1 (160-bit)</option>
+                    <option value="sha256" selected>SHA-256 (256-bit)</option>
+                    <option value="sha512">SHA-512 (512-bit)</option>
+                    <option value="sha3-256">SHA3-256 (256-bit)</option>
+                </select>
+            </div>
+
+            <button id="birthday-calc-btn" class="btn-primary">Calculate Collision Probability</button>
+
+            <div id="birthday-results"></div>
+        </div>
+
+        <!-- Tab 4: Security Analysis -->
+        <div id="security-analysis" class="tab-panel">
+            <h2>Security Analysis & Best Practices</h2>
+
+            <div class="control-group">
+                <h3>🔐 Hash Function Security Properties</h3>
+                <ul>
+                    <li><strong>Preimage Resistance:</strong> Given hash h, finding message m where H(m) = h is computationally infeasible</li>
+                    <li><strong>Second Preimage Resistance:</strong> Given message m₁, finding different m₂ where H(m₁) = H(m₂) is infeasible</li>
+                    <li><strong>Collision Resistance:</strong> Finding any two different messages with the same hash is infeasible</li>
+                    <li><strong>Avalanche Effect:</strong> Small input changes cause large output changes (~50% bits flip)</li>
+                </ul>
+            </div>
+
+            <div class="control-group">
+                <h3>⛔ Broken Hash Functions</h3>
+                <h4>MD5 (1991-2008)</h4>
+                <p><strong>Status:</strong> Completely broken - practical collision attacks</p>
+                <p><strong>Attack:</strong> Collisions can be found in seconds on a laptop</p>
+                <p><strong>Impact:</strong> Used in Flame malware (2012) to forge certificates</p>
+                <p><strong>Current Use:</strong> Non-cryptographic checksums only</p>
+
+                <h4>SHA-1 (1995-2017)</h4>
+                <p><strong>Status:</strong> Deprecated - practical collision demonstrated</p>
+                <p><strong>Attack:</strong> Google's SHAttered (2017) - $110,000 compute cost</p>
+                <p><strong>Impact:</strong> Browsers now reject SHA-1 certificates</p>
+                <p><strong>Current Use:</strong> Legacy systems transitioning away</p>
+            </div>
+
+            <div class="control-group">
+                <h3>✅ Secure Hash Functions</h3>
+                <h4>SHA-256 (2001-Present)</h4>
+                <p><strong>Status:</strong> Secure - no known practical attacks</p>
+                <p><strong>Usage:</strong> Bitcoin, TLS, digital signatures, Git</p>
+                <p><strong>Security:</strong> 2^256 preimage, 2^128 collision resistance</p>
+
+                <h4>SHA-3 / Keccak (2015-Present)</h4>
+                <p><strong>Status:</strong> Secure - different construction than SHA-2</p>
+                <p><strong>Advantage:</strong> Sponge construction, immune to length extension</p>
+                <p><strong>Usage:</strong> Ethereum, post-quantum signatures</p>
+            </div>
+
+            <div class="control-group">
+                <h3>🎯 Best Practices</h3>
+                <ul>
+                    <li><strong>For general use:</strong> SHA-256 or SHA-3</li>
+                    <li><strong>For passwords:</strong> Use Argon2, bcrypt, or PBKDF2 (NOT plain hashes)</li>
+                    <li><strong>For message authentication:</strong> Use HMAC with SHA-256+</li>
+                    <li><strong>For digital signatures:</strong> SHA-256 or SHA-512</li>
+                    <li><strong>Avoid:</strong> MD5, SHA-1, custom hash functions</li>
+                </ul>
+            </div>
+
+            <div class="control-group">
+                <h3>⚠️ Common Mistakes</h3>
+                <ul>
+                    <li><strong>Password storage:</strong> Never use plain hashes - use password-specific functions</li>
+                    <li><strong>Message authentication:</strong> Don't use H(key || message) - use HMAC</li>
+                    <li><strong>Checksums:</strong> Don't use cryptographic hashes for integrity - use CRC or BLAKE2</li>
+                    <li><strong>Comparison:</strong> Use constant-time comparison to prevent timing attacks</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Cryptography Portfolio. Educational demonstration only.</p>
+    </footer>
+
+    <!-- Load scripts in order -->
+    <script src="../js/crypto-demos/hash-utils.js"></script>
+    <script src="../js/crypto-demos/hash-core.js"></script>
+    <script src="../js/crypto-demos/hash-demo.js"></script>
+</body>
+</html>
