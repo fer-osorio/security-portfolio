@@ -167,7 +167,7 @@ header {
 }
 
 .logo .text .sub {
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 300;
     letter-spacing: 0.1em;
     opacity: 0.9;
@@ -176,13 +176,13 @@ header {
 /* Mobile responsive */
 @media (max-width: 768px) {
     .logo .symbol {
-        font-size: 3.06rem;
+        font-size: 2.8rem;
     }
     .logo .text .main {
-        font-size: 1.38rem;
+        font-size: 1.26rem;
     }
     .logo .text .sub {
-        font-size: 0.69rem;
+        font-size: 0.7rem;
     }
 }
 
