@@ -379,9 +379,8 @@ function handleBirthdayCalculator() {
         { attempts: Math.pow(2, hashBits / 1.5), label: `2^${(hashBits / 1.5).toFixed(1)}` }
     ].map(item => ({
         ...item,
-        probability: (HashUtils.birthdayAttackProbability(hashBits, item.attempts) * 100).toFixed(10)
+        probability: (HashUtils.birthdayAttackProbability(hashBits, item.attempts) * 100)
     }));
-
     displayBirthdayResults(info, attempts50, probabilities);
 }
 
@@ -442,7 +441,11 @@ function displayBirthdayResults(info, attempts50, probabilities) {
         html += `
                 <tr>
                     <td>${prob.label}</td>
-                    <td>${prob.probability}%</td>
+                    <td>${
+                        prob.probability >= 0.01 ? prob.probability.toFixed(2)
+                            : prob.probability >= 0.000001 ? prob.probability.toFixed(6)
+                            : " < 1e-6"
+                    }%</td>
                     <td>${assessment}</td>
                 </tr>
         `;
