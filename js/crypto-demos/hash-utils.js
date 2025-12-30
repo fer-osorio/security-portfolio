@@ -150,8 +150,8 @@ function arrayBufferToBase64(buffer) {
  * EXAMPLE:
  *   String 1: 10101010
  *   String 2: 10111011
- *             ^^  ^  ^
- *   Hamming distance: 3
+ *                ^   ^
+ *   Hamming distance: 2
  *
  * @param {string} binary1 - First binary string
  * @param {string} binary2 - Second binary string
