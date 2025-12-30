@@ -289,8 +289,8 @@ function birthdayAttackProbability(hashBits, attempts) {
         const logN = hashBits * Math.LN2;  // ln(2^hashBits)
         const logProb = -(attempts * attempts) / (2 * Math.exp(logN));
 
-        // If logProb is very negative, probability is essentially 0
-        if (logProb < -100) return 0;
+        // If logProb is very negative, probability of collision essentially 1
+        if (logProb < -50) return 1;
 
         return 1 - Math.exp(logProb);
     } else {
