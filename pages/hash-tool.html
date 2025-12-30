@@ -184,6 +184,10 @@
             font-weight: bold;
         }
 
+        .avalanche-container{
+            margin: 2rem 0;
+        }
+
         .comparison-section {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
@@ -302,12 +306,34 @@
         @media (max-width: 768px) {
             .comparison-section {
                 grid-template-columns: 1fr;
+                gap: 0;
             }
+
+            .comparison-item {
+                margin: 0;
+            }
+
             .comparison-arrow {
                 transform: rotate(90deg);
+                font-size: 2.5rem;
+                text-align: center;
+                padding: 1rem 0;
+                margin: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 60px;  /* Ensure arrow has enough space */
             }
+
             .stat-grid {
                 grid-template-columns: 1fr 1fr;
+            }
+        }
+
+
+        @media (max-width: 376px) {
+            .stat-grid {
+                grid-template-columns: 1fr;  /* Single column */
             }
         }
     </style>
