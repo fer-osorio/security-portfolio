@@ -468,7 +468,7 @@ function displayBirthdayResults(info, attempts50, probabilities) {
                 (500 × 10^18 hashes/second)
             </p>
             <p>
-                <strong>Time to 50% collision for ${info.name}:</strong>
+                <strong>Time to 50% collision for ${info.name}  (assume 1 billion hashes/second):</strong>
                 ${estimateCollisionTime(info.outputBits)} years
             </p>
             <p class="conclusion">
