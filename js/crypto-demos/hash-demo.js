@@ -219,9 +219,14 @@ async function handleAvalanche() {
         // Compute hash of original input
         const originalHash = await HashCore.computeHash(baseInput, algorithm);
 
-        // Create modified input (change last character)
+        // Create modified input (change last bit)
         const modifiedInput = baseInput.slice(0, -1) +
-        String.fromCharCode(baseInput.charCodeAt(baseInput.length - 1) + 1);
+            String.fromCharCode(
+                // The following condition prevents the presence of the non-printable character DEL
+                // Notice: Still one and only one bit flipped
+                baseInput.charAt(baseInput.length - 1) === '~' ? 124       // ASCII for '|'
+                    : baseInput.charCodeAt(baseInput.length - 1) ^ 1
+            );
 
         // Compute hash of modified input
         const modifiedHash = await HashCore.computeHash(modifiedInput, algorithm);
@@ -283,7 +288,7 @@ function displayAvalancheResults(original, modified, hash1, hash2, avalanche, al
                 <div class="comparison-arrow">→</div>
 
                 <div class="comparison-item">
-                    <h4>Modified Input <span class="change-indicator">(1 character changed)</span></h4>
+                    <h4>Modified Input <span class="change-indicator">(last bit flipped)</span></h4>
                     <code class="input-display">"${escapeHtml(modified)}"</code>
                     <p class="hash-label">Hash:</p>
                     <code class="hash-small">${hash2}</code>
