@@ -4,12 +4,10 @@ What are:
     - path traversal
 attacks?
 
-SEMANTIC HTML: Using meaningful tags for accessibility and search engine optimization (SEO)"?
 Cryptographic operations should only run in secure contexts?
 
 What is a server and why Node.js and npm?
 What is the relation between HTML and LaTeX?
-What is a Browser?
 Which are the common ways of saving and transmit keys in the industry?
 What is MVC (Model-View-Controller)?
 What is a Virtual Machine?
