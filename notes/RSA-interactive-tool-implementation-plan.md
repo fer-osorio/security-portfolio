@@ -12,19 +12,12 @@ Demonstrate the **complete RSA cryptosystem workflow** in an interactive, visual
 5. **Security properties** (why RSA works, and what makes it secure)
 
 **Secondary Goal:**
-Expose the **practical limitations and security considerations** when implementing RSA in JavaScript vs. C/C++. You'll learn:
+Expose the **practical limitations and security considerations** when implementing RSA in JavaScript.
 
 - JavaScript's number precision limits (and why BigInt is essential)
 - Browser security boundaries (where keys can/cannot be stored)
-- Performance differences (JavaScript is interpreted, not compiled like C++)
+- Performance differences (JavaScript is interpreted, not compiled like C/C++)
 - Attack vectors specific to web implementations
-
-**For Your Portfolio:**
-This showcases your ability to:
-
-- Translate mathematical cryptographic algorithms to production code
-- Explain complex concepts to non-experts
-- Implement security best practices in an unfamiliar environment
 
 ---
 
@@ -39,40 +32,40 @@ This showcases your ability to:
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│ STEP 1: Key Generation                                   │
-│ • User clicks "Generate RSA Keys"                        │
+│ STEP 1: Key Generation                                  │
+│ • User clicks "Generate RSA Keys"                       │
 │ • Option to choose key size: 512, 1024, 2048 bits       │
-│ • Visual feedback: "Generating primes..." with progress  │
+│ • Visual feedback: "Generating primes..." with progress │
 │ • Display: p, q, n, φ(n), e, d with explanations        │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│ STEP 2: Encryption                                       │
-│ • User enters plaintext message (text input field)       │
-│ • User clicks "Encrypt"                                  │
+│ STEP 2: Encryption                                      │
+│ • User enters plaintext message (text input field)      │
+│ • User clicks "Encrypt"                                 │
 │ • Display: Numeric representation, ciphertext           │
 │ • Show calculation: m^e mod n = c                       │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│ STEP 3: Decryption                                       │
-│ • Ciphertext automatically populated from encryption     │
-│ • User clicks "Decrypt"                                  │
-│ • Display: Recovered plaintext                           │
+│ STEP 3: Decryption                                      │
+│ • Ciphertext automatically populated from encryption    │
+│ • User clicks "Decrypt"                                 │
+│ • Display: Recovered plaintext                          │
 │ • Show calculation: c^d mod n = m                       │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│ EDUCATIONAL FEATURES (Always visible)                    │
-│ • "How RSA Works" collapsible section                    │
-│ • "Security Notes" explaining limitations                │
+│ EDUCATIONAL FEATURES (Always visible)                   │
+│ • "How RSA Works" collapsible section                   │
+│ • "Security Notes" explaining limitations               │
 │ • "Attack Scenarios" demonstrating common pitfalls      │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ### Visual Design Philosophy
 
-**For mathematicians/cryptographers (your audience):**
+**For mathematicians/cryptographers:**
 
 - **Show the math explicitly** - don't hide it behind abstraction
 - **Interactive parameters** - let users experiment with key sizes, see what breaks
@@ -121,9 +114,6 @@ if (!hasBigInt) {
 }
 ```
 
-**For your understanding:**
-Think of BigInt like using `mpz_t` from GMP (GNU Multiple Precision) in C. It's the same concept: arbitrary-precision integers for cryptographic operations.
-
 #### 2. **Crypto-Secure Random Number Generator**
 
 **Why we need it:**
@@ -138,19 +128,15 @@ window.crypto.getRandomValues(new Uint8Array(32));
 
 This is backed by the OS's CSPRNG (cryptographically secure pseudorandom number generator), equivalent to `/dev/urandom` on Linux.
 
-**For your understanding:**
-This is like using `CryptGenRandom` on Windows or `/dev/urandom` on Unix. You've likely used similar in C++ for cryptographic work.
-
-#### 3. **Miller-Rabin Primality Test** (We'll implement this)
+#### 3. **Miller-Rabin Primality Test**
 
 **Why implement ourselves:**
 
-- Educational value (you understand the algorithm)
+- Educational value
 - No external dependency for core cryptographic logic
 - Control over security parameters (number of rounds)
 
-**For your understanding:**
-You know Miller-Rabin from your mathematics background. The probabilistic primality test:
+**The probabilistic primality test:**
 
 - Choose random witnesses `a`
 - Test if `a^(n-1) ≡ 1 (mod n)` with specific structure
@@ -162,7 +148,7 @@ We'll implement this in JavaScript with BigInt, showing performance comparison t
 
 1. **Chart.js** or **D3.js** (if we visualize prime generation)
 2. **Highlight.js** (syntax highlighting for showing code examples)
-3. **Clipboard.js** (easy copy-to-clipboard functionality)
+3.  **Clipboard.js** (easy copy-to-clipboard functionality)
 
 **Decision for Phase 1:** No optional dependencies. Keep it pure JavaScript for maximum learning.
 
@@ -174,7 +160,7 @@ We'll implement this in JavaScript with BigInt, showing performance comparison t
 
 **Problem: All code runs in the user's browser**
 
-Unlike your C/C++ applications where compiled binaries protect implementation details, JavaScript source code is **fully visible** to anyone using your site.
+Unlike C/C++ applications where compiled binaries protect implementation details, JavaScript source code is **fully visible** to anyone using the site.
 
 **Implications:**
 
@@ -186,7 +172,7 @@ Unlike your C/C++ applications where compiled binaries protect implementation de
 
 - Add a prominent **"Educational Use Only"** warning
 - Explain that real-world RSA uses Hardware Security Modules (HSMs)
-- Show what NOT to do (as education for security awareness)
+-  Show what NOT to do (as education for security awareness)
 
 ### 2. **JavaScript Number Precision (BigInt Requirement)**
 
@@ -204,9 +190,6 @@ let p = 1000000007n;
 let q = 1000000009n;
 let n = p * q;       // 1000000016000000063n (CORRECT)
 ```
-
-**For your understanding:**
-This is like the difference between `int` (32-bit) and `mpz_t` (arbitrary precision) in C++. JavaScript's `Number` is like using `double` for integer arithmetic—it works for small numbers but fails catastrophically for cryptography.
 
 ### 3. **Timing Attacks (Side-Channel Vulnerability)**
 
@@ -244,8 +227,7 @@ The number of iterations depends on the bit pattern of the private exponent `d`.
 - Add educational comments explaining the vulnerability
 - Include a "Vulnerable vs. Secure" comparison toggle
 
-**For your understanding:**
-This is the same issue as timing attacks on your C++ implementations. The web makes it worse because:
+This is the same issue as timing attacks on C++ implementations. The web makes it worse because:
 
 - JavaScript is interpreted (more timing variability)
 - Network latency can be measured by attackers
@@ -269,7 +251,6 @@ And we naively display it with `innerHTML`, we execute their code.
 - Use `textContent` instead of `innerHTML`
 - Validate input is numeric/text before processing
 
-**For your understanding:**
 This is like SQL injection or buffer overflows in C++, but for the web. The attack vector is different, but the principle is the same: never trust user input.
 
 ### 5. **Message Padding (Textbook RSA Vulnerability)**
@@ -290,8 +271,7 @@ Without padding:
 - **Phase 2**: Add OAEP padding (with explanation of why it's necessary)
 - Show side-by-side comparison of vulnerabilities
 
-**For your understanding:**
-You know this from your cryptography background. OAEP adds:
+OAEP adds:
 
 - Random padding (makes encryption probabilistic)
 - Hash function (provides integrity)
@@ -395,8 +375,7 @@ Display ciphertext
 - 2048-bit RSA: ~2-10 seconds (requires "Please wait..." message)
 - 4096-bit RSA: ~30-60 seconds (probably too slow for web demo)
 
-**For your understanding:**
-JavaScript is **50-100x slower** than optimized C++ for cryptographic operations because:
+JavaScript is **50-100x slower** than optimized C/C++ for cryptographic operations because:
 
 - Interpreted execution (vs. compiled machine code)
 - No SIMD instructions (unless using WebAssembly)
@@ -439,7 +418,7 @@ Therefore: ciphertext = 855
 Let users:
 
 - Change key sizes and see how it affects security/performance
-- Try encrypting the same message multiple times (show it's deterministic)
+- Try encrypting the same message multiple times with and without OAEP padding (show it's deterministic and why OAEP is necessary)
 - See what happens with messages larger than the key size (error)
 - Experiment with weak keys (e.g., p and q very close together)
 
@@ -462,10 +441,10 @@ Each attack has:
 Quick comparison table:
 
 ```
-| Algorithm | Key Size | Speed    | Use Case                |
-|-----------|----------|----------|-------------------------|
-| RSA       | 2048-bit | Slow     | Key exchange, signatures|
-| AES       | 256-bit  | Fast     | Bulk data encryption    |
+| Algorithm | Key Size | Speed    | Use Case                 |
+|-----------|----------|----------|--------------------------|
+| RSA       | 2048-bit | Slow     | Key exchange, signatures |
+| AES       | 256-bit  | Fast     | Bulk data encryption     |
 | ECC       | 256-bit  | Medium   | Modern alternative to RSA|
 ```
 
@@ -475,33 +454,34 @@ Quick comparison table:
 
 ### Phase 1: Core Functionality (Week 7)
 
-- BigInt arithmetic
-- Prime generation (small primes for testing)
-- Key generation (512-bit only)
-- Basic encryption/decryption
-- Simple UI
+- [x] BigInt arithmetic
+- [x] Prime generation (small primes for testing)
+- [x] Key generation (512-bit only)
+- [x] Basic encryption/decryption
+-   [x] Simple UI
 
 ### Phase 2: Security Hardening (Week 8)
 
-- Miller-Rabin primality testing (full implementation)
-- Constant-time operations
-- Input validation and sanitization
-- Error handling
-- Security warnings
+- [x] Miller-Rabin primality testing (full implementation)
+- [ ] Constant-time operations
+- [ ] Input validation and sanitization
+- [x] Error handling
+-  [x] Security warnings
 
 ### Phase 3: Educational Features (Week 9)
 
-- Step-by-step calculation display
-- Attack demonstrations
-- Performance metrics
-- Interactive parameter tuning
+- [x] Step-by-step calculation display
+- [ ] Attack demonstrations
+- [ ] Performance metrics
+-  [x] Interactive parameter tuning
 
 ### Phase 4: Polish & Optimization (Week 10)
 
-- Web Workers for background computation
-- Progress indicators
-- Responsive design refinement
-- Documentation and code comments
+- [ ] Web Workers for background computation
+- [x] Progress indicators
+- [ ] Responsive design refinement
+- [ ] Documentation and code comments
+- [x] Enhance Step-by-step calculation display
 
 ---
 
@@ -528,24 +508,7 @@ assert(decrypted === plaintext);
 
 ### Security Tests
 
-- XSS injection attempts
-- Timing attack measurement
-- Key validation (reject weak keys)
+- [ ] XSS injection attempts
+- [ ] Timing attack measurement
+-  [ ] Key validation (reject weak keys)
 
----
-
-## Expected Learning Outcomes
-
-By building this tool, you'll learn:
-
-1. **JavaScript BigInt** - arbitrary precision arithmetic
-2. **Web Cryptography API** - browser's native crypto functions
-3. **Async programming** - handling long-running operations without blocking UI
-4. **Web Workers** - parallel computation in the browser
-5. **Timing attacks** - practical side-channel vulnerability
-6. **DOM manipulation** - updating UI based on computation results
-7. **Error handling** - graceful failure in user-facing applications
-
-Most importantly: **How cryptographic theory translates to production constraints**. You'll experience firsthand why implementation details matter for security.
-
----
