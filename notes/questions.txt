@@ -1,10 +1,6 @@
 What are:
-    - XSS (by escaping HTML characters)
     - clickjacking
-    - path traversal
 attacks?
-
-Cryptographic operations should only run in secure contexts?
 
 What is a server and why Node.js and npm?
 What is the relation between HTML and LaTeX?
