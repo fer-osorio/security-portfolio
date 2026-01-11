@@ -1,0 +1,51 @@
+/* ============================================================================
+ *  TAB NAVIGATION COMPONENT
+ *  Used in: RSA Tool, Hash Tool
+ *  ============================================================================ */
+
+.tabs {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+    border-bottom: var(--border-width) solid var(--color-border);
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tab-button {
+    padding: var(--tab-padding-y) var(--tab-padding-x);
+    background: none;
+    border: none;
+    border-bottom: var(--tab-border-width) solid transparent;
+    cursor: pointer;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-light);
+    transition: all var(--transition-base) ease;
+    flex-shrink: 0;
+}
+
+.tab-button:hover {
+    color: var(--color-secondary);
+}
+
+.tab-button.active {
+    color: var(--color-secondary);
+    border-bottom-color: var(--color-secondary);
+}
+
+.tab-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
