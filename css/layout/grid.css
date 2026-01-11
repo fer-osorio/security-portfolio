@@ -1,0 +1,206 @@
+/* ============================================================================
+ *  GRID & LAYOUT UTILITIES
+ *
+ *  PURPOSE: Reusable layout patterns for consistent spacing and alignment
+ *
+ *  CONTAINS:
+ *  - Main content container (max-width constraint)
+ *  - Grid systems for projects and tools
+ *  - Section spacing patterns
+ *
+ *  DESIGN PHILOSOPHY:
+ *  - Mobile-first: Base styles for small screens, enhance for larger
+ *  - Responsive grids: Auto-fit columns based on content and screen size
+ *  - Consistent max-width prevents overly wide text (readability)
+ *  ============================================================================ */
+
+/* ============================================================================
+ *  MAIN CONTENT CONTAINER
+ *
+ *  Constrains content width and centers it on large screens
+ *  Adds horizontal padding to prevent edge-to-edge content on mobile
+ *  ============================================================================ */
+
+main {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: var(--spacing-xl) var(--container-padding);
+}
+
+/* Reduce vertical padding on mobile for space efficiency */
+@media (max-width: 768px) {
+    main {
+        padding: var(--spacing-lg) var(--container-padding);
+    }
+}
+
+/* ============================================================================
+ *  SECTION CONTAINERS
+ *
+ *  Standard spacing for page sections
+ *  ============================================================================ */
+
+.section {
+    margin-bottom: var(--spacing-xxl);
+}
+
+.section:last-child {
+    margin-bottom: 0;
+}
+
+/* Section with background (used for tools, about, contact) */
+.section-contained {
+    background-color: var(--color-surface);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ============================================================================
+ *  GRID LAYOUTS
+ *
+ *  Responsive grid patterns used throughout the site
+ *
+ *  PATTERN: auto-fit + minmax()
+ *  - auto-fit: Creates as many columns as fit
+ *  - minmax(300px, 1fr): Each column is at least 300px, grows to fill space
+ *  - Result: 1 column on mobile, 2-3 on desktop automatically
+ *  ============================================================================ */
+
+/* Project grid (homepage) */
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+/* Tools grid (homepage) */
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+/* Force single column on mobile for better readability */
+@media (max-width: 768px) {
+    .projects-grid,
+    .tools-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================================================
+ *  FLEXIBLE LAYOUTS
+ *
+ *  Alternative to grid for simpler layouts
+ *  ============================================================================ */
+
+/* Horizontal flex container with wrap */
+.flex-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+/* Vertical flex container */
+.flex-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Center content horizontally and vertically */
+.flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Space items evenly with flex */
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+/* ============================================================================
+ *  CONTAINER VARIANTS
+ *
+ *  Different max-width constraints for various content types
+ *  ============================================================================ */
+
+/* Narrow container (ideal for long-form text, 60-80 characters per line) */
+.container-narrow {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 var(--container-padding);
+}
+
+/* Wide container (for data-heavy content) */
+.container-wide {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--container-padding);
+}
+
+/* Full-width container (no max-width constraint) */
+.container-full {
+    width: 100%;
+    padding: 0 var(--container-padding);
+}
+
+/* ============================================================================
+ *  RESPONSIVE UTILITIES
+ *  ============================================================================ */
+
+/* Hide on mobile */
+@media (max-width: 768px) {
+    .hide-mobile {
+        display: none !important;
+    }
+}
+
+/* Hide on desktop */
+@media (min-width: 769px) {
+    .hide-desktop {
+        display: none !important;
+    }
+}
+
+/* ============================================================================
+ *  ASPECT RATIO CONTAINERS
+ *
+ *  Maintain aspect ratios for images, videos, embeds
+ *  ============================================================================ */
+
+.aspect-ratio-16-9 {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 9/16 = 0.5625 */
+}
+
+.aspect-ratio-16-9 > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.aspect-ratio-4-3 {
+    position: relative;
+    width: 100%;
+    padding-bottom: 75%; /* 3/4 = 0.75 */
+}
+
+.aspect-ratio-4-3 > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
