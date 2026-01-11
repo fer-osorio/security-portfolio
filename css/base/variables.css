@@ -1,0 +1,191 @@
+/* ============================================================================
+ *  CSS VARIABLES - Design Token System
+ *
+ *  This file centralizes all design decisions (colors, spacing, typography)
+ *  into reusable CSS custom properties. Changes here cascade throughout
+ *  the entire application.
+ *
+ *  BENEFITS:
+ *  - Single source of truth for design values
+ *  - Easy theme switching (just override :root values)
+ *  - Consistent spacing/sizing across components
+ *  - Self-documenting design system
+ *  ============================================================================ */
+
+:root {
+    /* ========================================================================
+     *  COLOR PALETTE
+     *
+     *  Semantic naming: Use purpose-based names (primary, secondary)
+     *  rather than color names (blue, red) for flexibility
+     *  ======================================================================== */
+
+    /* Brand Colors */
+    --color-primary: #2c3e50;      /* Dark blue-gray: headers, nav, primary text */
+    --color-secondary: #3498db;    /* Bright blue: links, CTAs, accents */
+    --color-accent: #e74c3c;       /* Red: warnings, error states, highlights */
+    --color-success: #27ae60;      /* Green: success messages, completed states */
+
+    /* Neutral Colors */
+    --color-background: #ecf0f1;   /* Light gray: page background */
+    --color-surface: #ffffff;      /* White: cards, containers, elevated surfaces */
+    --color-border: #bdc3c7;       /* Gray: borders, dividers, subtle separation */
+
+    /* Text Colors */
+    --color-text: #1b2d3f;         /* Dark: primary body text (high contrast) */
+    --color-text-light: #4c595b;   /* Medium gray: secondary text, captions */
+
+    /* ========================================================================
+     *  TYPOGRAPHY
+     *
+     *  System font stack: Uses native fonts for performance and familiarity
+     *  Font scale: Based on modular scale for visual hierarchy
+     *  ======================================================================== */
+
+    /* Font Families */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-family-mono: 'Courier New', Consolas, Monaco, monospace;
+
+    /* Font Sizes - Modular scale (1.25 ratio) */
+    --font-size-xs: 0.8rem;        /* 12.8px - Small labels, captions */
+    --font-size-sm: 0.875rem;      /* 14px - Secondary text */
+    --font-size-base: 1rem;        /* 16px - Body text (browser default) */
+    --font-size-md: 1.125rem;      /* 18px - Emphasized text */
+    --font-size-lg: 1.25rem;       /* 20px - h3, large text */
+    --font-size-xl: 1.5rem;        /* 24px - h2, section headings */
+    --font-size-xxl: 2rem;         /* 32px - h1, page titles */
+    --font-size-xxxl: 2.5rem;      /* 40px - Hero text */
+
+    /* Font Weights */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    /* ========================================================================
+     *  SPACING SYSTEM
+     *
+     *  Based on 8px grid: All spacing is a multiple of 8px
+     *  This creates visual rhythm and alignment throughout the design
+     *
+     *  Usage:
+     *  - xs: Tight spacing within components (4px)
+     *  - sm: Related elements (8px)
+     *  - md: Standard component padding (16px)
+     *  - lg: Section spacing (24px)
+     *  - xl: Large gaps between sections (32px)
+     *  - xxl: Page-level spacing (48px)
+     *  ======================================================================== */
+
+    --spacing-xs: 0.25rem;   /* 4px - Tiny gaps, icon spacing */
+    --spacing-sm: 0.5rem;    /* 8px - Compact spacing, inline elements */
+    --spacing-md: 1rem;      /* 16px - Standard padding, button spacing */
+    --spacing-lg: 1.5rem;    /* 24px - Card padding, form groups */
+    --spacing-xl: 2rem;      /* 32px - Section spacing */
+    --spacing-xxl: 3rem;     /* 48px - Major section breaks */
+
+    /* ========================================================================
+     *  COMPONENT-SPECIFIC VARIABLES
+     *
+     *  These are extracted from repeated patterns in tool pages
+     *  Centralizing them here enables consistent component styling
+     *  ======================================================================== */
+
+    /* Border & Radius */
+    --border-radius: 8px;          /* Standard rounded corners */
+    --border-radius-sm: 4px;       /* Small elements (tags, badges) */
+    --border-radius-lg: 12px;      /* Large cards, hero sections */
+    --border-width: 2px;           /* Standard border thickness */
+    --border-width-thick: 4px;     /* Accent borders (card left borders) */
+
+    /* Shadows - Layered elevation system */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);           /* Subtle lift */
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);            /* Standard cards */
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.15);          /* Hover states */
+    --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.2);           /* Modals, popovers */
+
+    /* Legacy support (gradually migrate to shadow-md) */
+    --box-shadow: var(--shadow-md);
+
+    /* Transitions */
+    --transition-fast: 0.15s;      /* Micro-interactions (hover) */
+    --transition-base: 0.3s;       /* Standard animations */
+    --transition-slow: 0.5s;       /* Complex animations */
+
+    /* Legacy support (gradually migrate to transition-base) */
+    --transition-time: var(--transition-base);
+
+    /* Z-index Scale - Prevents stacking conflicts */
+    --z-base: 1;                   /* Default layer */
+    --z-dropdown: 50;              /* Dropdowns, tooltips */
+    --z-sticky: 100;               /* Sticky header */
+    --z-modal: 1000;               /* Modals, overlays */
+    --z-notification: 1100;        /* Toast notifications */
+
+    /* ========================================================================
+     *  TAB COMPONENT TOKENS
+     *  Used in: RSA Tool, Hash Tool
+     *  ======================================================================== */
+
+    --tab-padding-y: 1rem;
+    --tab-padding-x: 2rem;
+    --tab-border-width: 3px;
+
+    /* ========================================================================
+     *  CARD COMPONENT TOKENS
+     *  Used throughout: project cards, tool cards, control groups
+     *  ======================================================================== */
+
+    --card-padding: 1.5rem;
+    --card-border-left-width: 4px;
+
+    /* ========================================================================
+     *  CODE DISPLAY TOKENS
+     *  Used in: Hash outputs, RSA keys, calculation results
+     *  ======================================================================== */
+
+    --code-font: var(--font-family-mono);
+    --code-font-size: 0.85rem;
+    --code-bg: #f8f9fa;            /* Light gray background for code blocks */
+    --code-padding: 0.5rem;
+    --code-max-height: 150px;      /* Scrollable threshold for long outputs */
+
+    /* ========================================================================
+     *  CONTAINER & LAYOUT TOKENS
+     *  ======================================================================== */
+
+    --container-max-width: 1200px; /* Main content width constraint */
+    --container-padding: 1rem;     /* Horizontal padding on mobile */
+}
+
+/* ============================================================================
+ *  RESPONSIVE VARIABLE ADJUSTMENTS
+ *
+ *  On larger screens, we can afford more generous spacing
+ *  ============================================================================ */
+
+@media (min-width: 768px) {
+    :root {
+        --container-padding: 2rem;
+        --font-size-xxxl: 3rem;    /* Larger hero text on desktop */
+    }
+}
+
+/* ============================================================================
+ *  DARK MODE SUPPORT (Future Enhancement)
+ *
+ *  Uncomment and customize when implementing dark mode
+ *  ============================================================================ */
+
+/*
+ @ m*edia (prefers-color-scheme: dark) {
+ :root {
+ --color-background: #1a1a1a;
+ --color-surface: #2d2d2d;
+ --color-text: #e0e0e0;
+ --color-text-light: #a0a0a0;
+ --color-border: #404040;
+ }
+ }
+ */
