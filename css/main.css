@@ -1,0 +1,15 @@
+/* ============================================================================
+ *  MAIN STYLESHEET
+ *
+ *  Master import file - loads all CSS modules in correct order
+ *  ============================================================================ */
+
+/* 1. BASE - Variables, reset, typography */
+@import 'base/variables.css';
+@import 'base/reset.css';
+@import 'base/typography.css';
+
+/* 2. LAYOUT - Structural components */
+@import 'layout/header.css';
+@import 'layout/footer.css';
+@import 'layout/grid.css';
