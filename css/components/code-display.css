@@ -23,6 +23,7 @@ code.code-block {
     display: block;
     font-family: var(--code-font);
     font-size: var(--code-font-size);
+    color: var(--color-text);
     word-break: break-all;
     background: white;
     padding: var(--spacing-sm);
