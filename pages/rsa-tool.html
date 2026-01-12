@@ -309,7 +309,7 @@
         <div id="welcome-message"></div>
 
         <!-- Error display -->
-        <div id="error-message"></div>
+        <div id="error-message" class="alert alert--error" hidden></div>
 
         <!-- Tabbed interface -->
         <div class="tabs">
@@ -323,7 +323,7 @@
         <div id="key-generation" class="tab-panel active">
             <h2>Step 1: Generate RSA Key Pair</h2>
 
-            <div class="control-group">
+            <div class="card card--control form-group">
                 <label for="key-size">Key Size (bits):</label>
                 <select id="key-size">
                     <option value="512">512 bits (Fast, for testing only - INSECURE)</option>
@@ -336,9 +336,9 @@
                 </p>
             </div>
 
-            <button id="generate-keys-btn" class="btn-primary">Generate RSA Keys</button>
+            <button id="generate-keys-btn" class="btn btn-primary">Generate RSA Keys</button>
 
-            <div id="key-gen-progress"></div>
+            <div id="key-gen-progress" class="alert alert--info" hidden></div>
             <div id="key-gen-results"></div>
         </div>
 
@@ -346,7 +346,7 @@
         <div id="encryption" class="tab-panel">
             <h2>Step 2: Encrypt a Message</h2>
 
-            <div class="control-group">
+            <div class="card card--control form-group">
                 <label for="plaintext-input">Enter your message:</label>
                 <textarea
                     id="plaintext-input"
@@ -356,7 +356,7 @@
                 </p>
             </div>
 
-            <button id="encrypt-btn" class="btn-primary" disabled>Encrypt Message</button>
+            <button id="encrypt-btn" class="btn btn-primary" disabled>Encrypt Message</button>
 
             <div id="encryption-results"></div>
         </div>
@@ -365,14 +365,14 @@
         <div id="decryption" class="tab-panel">
             <h2>Step 3: Decrypt the Ciphertext</h2>
 
-            <div class="control-group">
+            <div class="card card--control form-group">
                 <label for="ciphertext-input">Ciphertext (automatically filled from encryption):</label>
                 <textarea
                     id="ciphertext-input"
                     placeholder="Paste ciphertext here or use the value from encryption..."></textarea>
             </div>
 
-            <button id="decrypt-btn" class="btn-primary" disabled>Decrypt Message</button>
+            <button id="decrypt-btn" class="btn btn-primary" disabled>Decrypt Message</button>
 
             <div id="decryption-results"></div>
         </div>
@@ -381,7 +381,7 @@
         <div id="security" class="tab-panel">
             <h2>Security Analysis & Educational Notes</h2>
 
-            <div class="control-group">
+            <div class="card card--control">
                 <h3>🔐 What Makes RSA Secure?</h3>
                 <p>RSA security relies on the <strong>integer factorization problem</strong>:</p>
                 <ul>
@@ -397,11 +397,11 @@
                 </ol>
             </div>
 
-            <div class="control-group">
+            <div class="card card--control">
                 <h3>⚠️ Vulnerabilities in This Implementation</h3>
                 <p>This tool demonstrates <strong>"textbook RSA"</strong> for educational purposes. It has several vulnerabilities:</p>
 
-                <div class="security-warning">
+                <div class="alert alert--warning">
                     <h4>1. No Padding (Critical)</h4>
                     <p>Without padding schemes like OAEP:</p>
                     <ul>
@@ -411,7 +411,7 @@
                     </ul>
                 </div>
 
-                <div class="security-warning">
+                <div class="alert alert--warning">
                     <h4>2. Client-Side Key Storage</h4>
                     <p>Keys are stored in browser memory:</p>
                     <ul>
@@ -422,7 +422,7 @@
                     <p><strong>Production solution:</strong> Use Hardware Security Modules (HSMs) or key management services</p>
                 </div>
 
-                <div class="security-warning">
+                <div class="alert alert--warning">
                     <h4>3. Timing Attacks</h4>
                     <p>Modular exponentiation time depends on private exponent d:</p>
                     <ul>
@@ -432,7 +432,7 @@
                     <p><strong>Mitigation:</strong> Use constant-time algorithms (Montgomery ladder)</p>
                 </div>
 
-                <div class="security-warning">
+                <div class="alert alert--warning">
                     <h4>4. Small Key Sizes</h4>
                     <p>512-bit and 1024-bit RSA are <strong>INSECURE</strong> for real-world use:</p>
                     <ul>
@@ -444,7 +444,7 @@
                 </div>
             </div>
 
-            <div class="control-group">
+            <div class="card card--control">
                 <h3>✅ Real-World RSA Best Practices</h3>
                 <ul>
                     <li><strong>Use OAEP padding</strong> (Optimal Asymmetric Encryption Padding)</li>
@@ -456,7 +456,7 @@
                 </ul>
             </div>
 
-            <div class="control-group">
+            <div class="card card--control">
                 <h3>📚 Further Learning</h3>
                 <p>To understand RSA security deeply, study:</p>
                 <ul>
@@ -472,7 +472,7 @@
 
     <footer>
         <p>&copy; 2025 Cryptography Portfolio. Educational demonstration only.</p>
-        <p class="security-note">
+        <p class="alert alert--security-note">
             <strong>⚠️ Security Notice:</strong> This is a teaching tool. Never use for real cryptographic applications.
             Always use audited, standard cryptographic libraries in production.
         </p>

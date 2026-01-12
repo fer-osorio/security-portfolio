@@ -363,7 +363,7 @@
 
     <main class="hash-tool-container">
         <!-- Error display -->
-        <div id="error-message"></div>
+        <div id="error-message" class="alert alert--error" hidden></div>
 
         <!-- Tabbed interface -->
         <div class="tabs">
@@ -378,39 +378,39 @@
             <h2>Hash Computation</h2>
             <p>Compute cryptographic hashes using different algorithms.</p>
 
-            <div class="control-group">
+            <div class="card card--control form-group">
                 <label for="hash-input">Enter text to hash:</label>
                 <textarea id="hash-input" placeholder="Type your message here...">Hello, World!</textarea>
             </div>
 
-            <div class="control-group">
+            <div class="card card--control form-group">
                 <label>Select hash algorithms:</label>
-                <div class="algorithm-selector">
-                    <div class="algorithm-option">
+                <div class="form-option-grid">
+                    <div class="form-option">
                         <input type="checkbox" id="algo-md5" name="hash-algorithm" value="md5">
                         <label for="algo-md5">
                             MD5 <span class="security-badge broken">BROKEN</span>
                         </label>
                     </div>
-                    <div class="algorithm-option">
+                    <div class="form-option">
                         <input type="checkbox" id="algo-sha1" name="hash-algorithm" value="sha1">
                         <label for="algo-sha1">
                             SHA-1 <span class="security-badge deprecated">DEPRECATED</span>
                         </label>
                     </div>
-                    <div class="algorithm-option">
+                    <div class="form-option">
                         <input type="checkbox" id="algo-sha256" name="hash-algorithm" value="sha256" checked>
                         <label for="algo-sha256">
                             SHA-256 <span class="security-badge secure">SECURE</span>
                         </label>
                     </div>
-                    <div class="algorithm-option">
+                    <div class="form-option">
                         <input type="checkbox" id="algo-sha512" name="hash-algorithm" value="sha512">
                         <label for="algo-sha512">
                             SHA-512 <span class="security-badge secure">SECURE</span>
                         </label>
                     </div>
-                    <div class="algorithm-option">
+                    <div class="form-option">
                         <input type="checkbox" id="algo-sha3" name="hash-algorithm" value="sha3-256">
                         <label for="algo-sha3">
                             SHA3-256 <span class="security-badge secure">SECURE</span>
@@ -419,7 +419,7 @@
                 </div>
             </div>
 
-            <button id="compute-hash-btn" class="btn-primary">Compute Hashes</button>
+            <button id="compute-hash-btn" class="btn btn-primary">Compute Hashes</button>
 
             <div id="hash-results"></div>
         </div>
@@ -429,12 +429,12 @@
             <h2>Avalanche Effect Demonstration</h2>
             <p>See how changing one character affects the entire hash output.</p>
 
-            <div class="control-group">
+            <div class="card card--control form-group">
                 <label for="avalanche-input">Enter base text:</label>
                 <textarea id="avalanche-input" placeholder="Type your message here...">Hello, World!</textarea>
             </div>
 
-            <div class="control-group">
+            <div class="card card--control form-group">
                 <label for="avalanche-algorithm">Select algorithm:</label>
                 <select id="avalanche-algorithm">
                     <option value="md5">MD5</option>
@@ -445,11 +445,11 @@
                 </select>
             </div>
 
-            <button id="avalanche-btn" class="btn-primary">Test Avalanche Effect</button>
+            <button id="avalanche-btn" class="btn btn-primary">Test Avalanche Effect</button>
 
             <div id="avalanche-results"></div>
 
-            <div class="control-group" style="margin-top: 2rem;">
+            <div class="card card--control" style="margin-top: 2rem;">
                 <h3>What is the Avalanche Effect?</h3>
                 <p>
                     A good cryptographic hash function should exhibit the <strong>avalanche effect</strong>:
@@ -467,7 +467,7 @@
             <h2>Birthday Attack & Collision Probability</h2>
             <p>Calculate the probability of finding hash collisions.</p>
 
-            <div class="control-group">
+            <div class="card card--control form-group">
                 <label for="birthday-algorithm">Select algorithm:</label>
                 <select id="birthday-algorithm">
                     <option value="md5">MD5 (128-bit)</option>
@@ -478,7 +478,7 @@
                 </select>
             </div>
 
-            <button id="birthday-calc-btn" class="btn-primary">Calculate Collision Probability</button>
+            <button id="birthday-calc-btn" class="btn btn-primary">Calculate Collision Probability</button>
 
             <div id="birthday-results"></div>
         </div>
@@ -487,7 +487,7 @@
         <div id="security-analysis" class="tab-panel">
             <h2>Security Analysis & Best Practices</h2>
 
-            <div class="control-group">
+            <div class="card card--control">
                 <h3>🔐 Hash Function Security Properties</h3>
                 <ul>
                     <li><strong>Preimage Resistance:</strong> Given hash h, finding message m where H(m) = h is computationally infeasible</li>
@@ -497,7 +497,7 @@
                 </ul>
             </div>
 
-            <div class="control-group">
+            <div class="card card--control">
                 <h3>⛔ Broken Hash Functions</h3>
                 <h4>MD5 (1991-2008)</h4>
                 <p><strong>Status:</strong> Completely broken - practical collision attacks</p>
@@ -512,7 +512,7 @@
                 <p><strong>Current Use:</strong> Legacy systems transitioning away</p>
             </div>
 
-            <div class="control-group">
+            <div class="card card--control">
                 <h3>✅ Secure Hash Functions</h3>
                 <h4>SHA-256 (2001-Present)</h4>
                 <p><strong>Status:</strong> Secure - no known practical attacks</p>
@@ -525,7 +525,7 @@
                 <p><strong>Usage:</strong> Ethereum, post-quantum signatures</p>
             </div>
 
-            <div class="control-group">
+            <div class="card card--control">
                 <h3>🎯 Best Practices</h3>
                 <ul>
                     <li><strong>For general use:</strong> SHA-256 or SHA-3</li>
@@ -536,7 +536,7 @@
                 </ul>
             </div>
 
-            <div class="control-group">
+            <div class="card card--control">
                 <h3>⚠️ Common Mistakes</h3>
                 <ul>
                     <li><strong>Password storage:</strong> Never use plain hashes - use password-specific functions</li>

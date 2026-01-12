@@ -169,10 +169,10 @@ function displayHashResults(input, results, totalTime) {
         const binary = HashUtils.hexToBinary(data.hash);
 
         html += `
-            <div class="hash-output">
+            <div class="card card--result">
                 <h4>${info.status} ${info.name} <span class="security-badge">${info.security}</span></h4>
                 <div class="hash-details">
-                    <div class="hash-value">
+                    <div class="code-value">
                         <label>Hash (Hex):</label>
                         <code id="hash-${algo}">${data.hash}</code>
                         <button class="copy-btn" data-copy="hash-${algo}">Copy</button>
