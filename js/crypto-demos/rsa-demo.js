@@ -85,7 +85,7 @@ async function handleGenerateKeys() {
 
     // Show progress
     const progressDiv = document.getElementById('key-gen-progress');
-    //progressDiv.style.display = 'block';
+
     progressDiv.hidden = false;
     progressDiv.innerHTML = '<p>Initializing key generation...</p>';
 
@@ -176,12 +176,12 @@ function displayKeys(keys, duration) {
 
         <div class="card--key-section">
             <h4>🔓 Public Key (shareable)</h4>
-            <div class="key-value">
+            <div class="code-value">
                 <label>Modulus (n):</label>
                 <code id="display-n">${n.toString()}</code>
                 <button class="copy-btn" data-copy="display-n">Copy</button>
             </div>
-            <div class="key-value">
+            <div class="code-value">
                 <label>Public Exponent (e):</label>
                 <code id="display-e">${e.toString()}</code>
                 <button class="copy-btn" data-copy="display-e">Copy</button>
@@ -191,7 +191,7 @@ function displayKeys(keys, duration) {
 
         <div class="card--key-section private-key">
             <h4>🔐 Private Key (keep secret!)</h4>
-            <div class="key-value">
+            <div class="code-value">
                 <label>Private Exponent (d):</label>
                 <code id="display-d">${d.toString()}</code>
                 <button class="copy-btn" data-copy="display-d">Copy</button>
@@ -203,22 +203,24 @@ function displayKeys(keys, duration) {
 
         <div class="card--key-section educational">
             <h4>📚 Educational Details (not normally shown)</h4>
-            <div class="key-value">
+            <div class="code-value">
                 <label>Prime p:</label>
                 <code id="display-p">${p.toString()}</code>
             </div>
-            <div class="key-value">
+            <div class="code-value">
                 <label>Prime q:</label>
                 <code id="display-q">${q.toString()}</code>
             </div>
-            <div class="key-value">
+            <div class="code-value">
                 <label>φ(n) = (p-1)(q-1):</label>
                 <code id="display-phi">${phi.toString()}</code>
             </div>
             <div class="math-explanation">
                 <p><strong>Key Relationship:</strong></p>
                 <p>e × d ≡ 1 (mod φ(n))</p>
-                <p>Verification: (e × d) mod φ(n) = ${((e * d) % phi).toString()}</p>
+                <p>
+                    Verification: <br>
+                    (e × d) mod φ(n) = ${((e * d) % phi).toString()}</p>
             </div>
         </div>
     </div>
@@ -298,16 +300,20 @@ function displayEncryptionResults(originalMessage, messageInt, ciphertext, durat
         </div>
 
         <div class="card--result">
-            <h4>Numeric Representation</h4>
             <p>Message converted to number (base-256 encoding):</p>
-            <code id="message-int">${messageInt.toString()}</code>
+            <div class="code-value">
+                <label>Numeric Representation</label>
+                <code id="message-int">${messageInt.toString()}</code>
+            </div>
             <button class="copy-btn" data-copy="message-int">Copy</button>
         </div>
 
         <div class="card--result">
-            <h4>Ciphertext</h4>
             <p>Encrypted value: c = m<sup>e</sup> mod n</p>
-            <code id="ciphertext">${ciphertext.toString()}</code>
+            <div class="code-value">
+                <label>Ciphertext</label>
+                <code id="ciphertext">${ciphertext.toString()}</code>
+            </div>
             <button class="copy-btn" data-copy="ciphertext">Copy</button>
         </div>
 
@@ -318,7 +324,7 @@ function displayEncryptionResults(originalMessage, messageInt, ciphertext, durat
                 <p><strong>Values:</strong></p>
                 <ul>
                     <li>m (message) = ${messageInt.toString()}</li>
-                    <li>e (public exponent) = ${e.toString()}</li>
+                    <li>e (public exponent) = <br> ${e.toString()}</li>
                     <li>n (modulus) = ${n.toString().substring(0, 50)}...</li>
                 </ul>
                 <p><strong>Result:</strong> c = ${ciphertext.toString()}</p>
@@ -396,13 +402,19 @@ function displayDecryptionResults(ciphertext, plaintextInt, plaintextStr, durati
         <h3>✓ Decryption Complete (${duration}ms)</h3>
 
         <div class="card--result">
-            <h4>Ciphertext</h4>
-            <code>${ciphertext.toString()}</code>
+            <h4>Original Ciphertext</h4>
+            <div class="code-value">
+                <label>Ciphertext</label>
+                <code>${ciphertext.toString()}</code>
+            </div>
         </div>
 
         <div class="card--result">
             <h4>Decrypted Number</h4>
-            <code>${plaintextInt.toString()}</code>
+            <div class="code-value">
+                <label>Decrypted</label>
+                <code>${plaintextInt.toString()}</code>
+            </div>
         </div>
 
         <div class="card--result success">
