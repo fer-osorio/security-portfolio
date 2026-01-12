@@ -1,0 +1,144 @@
+/* ============================================================================
+ *  RSA TOOL PAGE STYLES
+ *
+ *  Contains only styles unique to RSA tool that cannot be generalized:
+ *  - Math breakdown visualization
+ *  - Welcome content with gradient
+ *  - Educational note styling
+ *  - Progress detail formatting
+ *  - Key information displays
+ *
+ *  All reusable components (tabs, cards, forms, alerts) are in components/
+ *  ============================================================================ */
+
+/* ============================================================================
+ *  TOOL CONTAINER
+ *  ============================================================================ */
+
+.rsa-tool-container {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: var(--spacing-xl);
+}
+
+/* ============================================================================
+ *  WELCOME CONTENT - Unique gradient banner
+ *  ============================================================================ */
+
+.welcome-content {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: white;
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-xl);
+}
+
+.welcome-content h2 {
+    color: white;
+    margin-bottom: var(--spacing-md);
+}
+
+.welcome-content ol {
+    margin-left: 1.5rem;
+}
+
+.educational-note {
+    background: rgba(255, 255, 255, 0.1);
+    padding: var(--spacing-md);
+    border-radius: 4px;
+    margin-top: var(--spacing-md);
+}
+
+/* ============================================================================
+ *  MATH BREAKDOWN - RSA-specific visualization
+ *
+ *  Shows the mathematical operations in encryption/decryption
+ *  ============================================================================ */
+
+.math-breakdown {
+    background: #f3e5f5;
+    padding: var(--card-padding);
+    border-radius: var(--border-radius);
+    margin-top: var(--spacing-md);
+}
+
+.math-breakdown h4 {
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+.calculation {
+    background: #f3f5ff;
+    padding: var(--card-padding);
+    border-radius: 3px;
+    word-break: break-all;
+    display: inline-block;
+    max-width: 100%;
+}
+
+.calculation p {
+    margin-bottom: var(--spacing-sm);
+}
+
+.calculation ul {
+    margin-left: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Math explanation styling */
+.math-explanation {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+}
+
+.math-explanation p {
+    margin-bottom: var(--spacing-xs);
+    font-family: var(--code-font);
+}
+
+/* ============================================================================
+ *  PROGRESS INDICATORS - Unique to key generation
+ *  ============================================================================ */
+
+.progress-detail {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
+    margin: 0.25rem 0;
+}
+
+/* ============================================================================
+ *  KEY INFORMATION - Additional styling for key displays
+ *  ============================================================================ */
+
+.key-info {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
+    font-style: italic;
+    margin-top: var(--spacing-sm);
+}
+
+/* ============================================================================
+ *  RESPONSIVE ADJUSTMENTS
+ *  ============================================================================ */
+
+@media (max-width: 768px) {
+    .rsa-tool-container {
+        padding: var(--spacing-lg) var(--spacing-md);
+    }
+
+    .calculation {
+        font-size: var(--font-size-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    .welcome-content {
+        padding: var(--spacing-lg);
+    }
+
+    .math-breakdown {
+        padding: var(--spacing-md);
+    }
+}
