@@ -21,3 +21,6 @@
 @import 'components/forms.css';
 @import 'components/code-display.css';
 @import 'components/alerts.css';
+
+/* 5. PAGES */
+@import 'pages/home.css';
