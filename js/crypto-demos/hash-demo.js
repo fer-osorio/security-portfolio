@@ -578,10 +578,17 @@ function showError(message) {
     const errorDiv = document.getElementById('error-message');
     if (errorDiv) {
         errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
+        errorDiv.hidden = false;
 
+        // Scroll to error message
+        errorDiv.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'  // Centers the error in viewport
+        });
+
+        // Auto-hide after 5 seconds
         setTimeout(() => {
-            errorDiv.style.display = 'none';
+            errorDiv.hidden = true;
         }, 5000);
     }
 }
