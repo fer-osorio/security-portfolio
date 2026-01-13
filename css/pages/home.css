@@ -45,11 +45,13 @@
 
 .portfolio {
     margin-bottom: var(--spacing-xxl);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius);
 }
 
 .portfolio h2 {
     text-align: center;
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: var(--spacing-md);
 }
 
 /* Project card content styles (extends base .card--project) */
@@ -143,6 +145,14 @@
 
 .contact-links li {
     margin-bottom: var(--spacing-md);
+}
+
+section,
+.portfolio,
+.tools,
+.about,
+.contact {
+    scroll-margin-top: 120px;
 }
 
 /* ============================================================================
