@@ -1,0 +1,57 @@
+/* ============================================================================
+ *  CODE DISPLAY COMPONENT
+ *  Used for: Hash outputs, RSA keys, calculation results
+ *  ============================================================================ */
+
+.code-value {
+    margin: var(--spacing-md) 0;
+    padding: var(--spacing-md);
+    background: var(--code-bg);
+    border-radius: var(--border-radius);
+    word-wrap: break-word;
+}
+
+.code-value label {
+    display: block;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
+    margin-bottom: var(--spacing-sm);
+}
+
+.code-value code,
+code.code-block {
+    display: block;
+    font-family: var(--code-font);
+    font-size: var(--code-font-size);
+    color: var(--color-text);
+    word-break: break-all;
+    background: white;
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    max-height: var(--code-max-height);
+    overflow-y: auto;
+}
+
+/* Message display (decrypted/encrypted output) */
+.message-display {
+    display: block;
+    padding: var(--spacing-md);
+    background: var(--code-bg);
+    border-radius: var(--border-radius);
+    font-family: var(--code-font);
+    font-size: var(--font-size-md);
+    color: var(--color-primary);
+}
+
+/* Binary/hex display variant */
+.binary-display {
+    display: block;
+    font-family: var(--code-font);
+    font-size: 0.8rem;
+    padding: var(--spacing-md);
+    background: white;
+    border-radius: var(--border-radius-sm);
+    max-height: 200px;
+    overflow-y: auto;
+    word-break: break-all;
+}

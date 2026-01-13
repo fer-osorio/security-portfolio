@@ -1,0 +1,205 @@
+/* ============================================================================
+ *  HEADER & NAVIGATION LAYOUT
+ *
+ *  PURPOSE: Site-wide navigation bar with logo and links
+ *
+ *  FEATURES:
+ *  - Sticky positioning (stays visible when scrolling)
+ *  - Responsive logo with symbol and text
+ *  - Horizontal navigation with hover states
+ *  - Mobile-friendly layout
+ *
+ *  DESIGN DECISIONS:
+ *  - position: sticky keeps nav accessible without JavaScript
+ *  - z-index from variable system prevents stacking conflicts
+ *  - Flexbox for alignment and responsive behavior
+ *  ============================================================================ */
+
+/* ============================================================================
+ *  HEADER CONTAINER
+ *  ============================================================================ */
+
+header {
+    background-color: var(--color-primary);
+    color: var(--color-surface);
+    padding: var(--spacing-md) 0;
+
+    /* Sticky positioning: Stays at top when scrolling
+     * position: fixed would work but removes element from document flow
+     * position: sticky is more elegant - stays in flow until scroll
+     */
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+
+    /* Subtle shadow for depth perception */
+    box-shadow: var(--shadow-md);
+}
+
+/* ============================================================================
+ *  NAVBAR - Container with max-width constraint
+ *  ============================================================================ */
+
+.navbar {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: 0 var(--container-padding);
+}
+
+/* ============================================================================
+ *  NAV CONTAINER - Flexbox for logo/links alignment
+ *  ============================================================================ */
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;  /* Logo left, links right */
+    align-items: center;              /* Vertical center */
+    gap: var(--spacing-lg);
+}
+
+/* ============================================================================
+ *  LOGO - Symbol (ΠΦ) + Text (Mathematical Foundations)
+ *
+ *  STRUCTURE:
+ *  <h1 class="logo">
+ *    <span class="symbol">ΠΦ</span>
+ *    <span class="text">
+ *      <span class="main">Mathematical Foundations</span>
+ *      <span class="sub">THEORY · IMPLEMENTATION · SECURITY</span>
+ *    </span>
+ *  </h1>
+ *  ============================================================================ */
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+
+    /* Override h1 default bottom margin (not needed in nav) */
+    margin: 0;
+}
+
+/* Mathematical symbol (ΠΦ) */
+.logo .symbol {
+    font-family: 'Times New Roman', serif;  /* Better math symbols */
+    font-size: 4rem;
+    font-weight: bold;
+    color: white;
+
+    /* Subtle animation on hover */
+    transition: transform var(--transition-base) ease;
+}
+
+.logo:hover .symbol {
+    transform: scale(1.05);
+}
+
+/* Text container - stacks Mathematical Foundations / THEORY · IMPLEMENTATION · SECURITY vertically */
+.logo .text {
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+
+/* Main logo text (Mathematical Foundations) */
+.logo .text .main {
+    font-size: 1.8rem;
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    letter-spacing: 0.02em;
+}
+
+/* Sub logo text (THEORY · IMPLEMENTATION · SECURITY) */
+.logo .text .sub {
+    font-size: 1rem;
+    font-weight: 300;
+    letter-spacing: 0.1em;        /* Spaced out for elegance */
+    opacity: 0.9;                  /* Slightly subdued */
+}
+
+/* ============================================================================
+ *  NAVIGATION LINKS
+ *  ============================================================================ */
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: var(--spacing-lg);
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links a {
+    color: var(--color-surface);
+    font-weight: var(--font-weight-medium);
+    transition: color var(--transition-base) ease,
+    border-color var(--transition-base) ease;
+
+    /* Add invisible bottom border for smooth hover animation */
+    border-bottom: 2px solid transparent;
+    padding-bottom: 4px;
+}
+
+/* Hover and active states */
+.nav-links a:hover,
+.nav-links a.active {
+    color: var(--color-secondary);
+    border-bottom-color: var(--color-secondary);
+}
+
+/* ============================================================================
+ *  RESPONSIVE HEADER
+ *  ============================================================================ */
+
+/* Tablets and smaller screens */
+@media (max-width: 768px) {
+    /* Reduce logo size for space efficiency */
+    .logo .symbol {
+        font-size: 2.8rem;
+    }
+
+    .logo .text .main {
+        font-size: 1.26rem;
+    }
+
+    .logo .text .sub {
+        font-size: 0.7rem;
+    }
+
+    /* Tighten nav link spacing */
+    .nav-links {
+        gap: var(--spacing-md);
+        font-size: var(--font-size-sm);
+    }
+}
+
+/* Very small screens (phones) */
+@media (max-width: 480px) {
+    /* Stack logo and nav vertically */
+    .nav-container {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    /* Center nav links and allow wrapping */
+    .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--spacing-sm) var(--spacing-md);
+    }
+
+    /* Further reduce logo size */
+    .logo .symbol {
+        font-size: 2.4rem;
+    }
+
+    .logo .text .main {
+        font-size: 1.1rem;
+    }
+
+    .logo .text .sub {
+        font-size: 0.6rem;
+    }
+}

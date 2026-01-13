@@ -1,0 +1,176 @@
+/* ============================================================================
+ *  HOME PAGE STYLES
+ *
+ *  Contains styles unique to index.html:
+ *  - Hero section (gradient banner)
+ *  - Portfolio section
+ *  - Tools section
+ *  - About/Contact sections
+ *
+ *  These styles are specific to the homepage layout and can't be generalized
+ *  ============================================================================ */
+
+/* ============================================================================
+ *  HERO SECTION - Eye-catching introduction
+ *  ============================================================================ */
+
+.hero {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: var(--color-surface);
+    padding: var(--spacing-xxl);
+    border-radius: var(--border-radius);
+    text-align: center;
+    margin-bottom: var(--spacing-xxl);
+}
+
+.hero h1 {
+    color: var(--color-surface);
+    font-size: 2.5rem;
+    margin-bottom: var(--spacing-lg);
+}
+
+.hero p {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-md);
+}
+
+.hero .subtitle {
+    color: #ecf0f1;
+    font-style: italic;
+}
+
+/* ============================================================================
+ *  PORTFOLIO SECTION
+ *  ============================================================================ */
+
+.portfolio {
+    margin-bottom: var(--spacing-xxl);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius);
+}
+
+.portfolio h2 {
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+/* Project card content styles (extends base .card--project) */
+.project-date {
+    color: var(--color-text-light);
+    font-size: 0.9rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.project-description {
+    color: var(--color-text-light);
+    margin-bottom: var(--spacing-md);
+    line-height: 1.6;
+}
+
+.project-tags {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-md);
+}
+
+.tag {
+    background-color: var(--color-background);
+    color: var(--color-primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: var(--font-weight-bold);
+}
+
+.project-link {
+    display: inline-block;
+    color: var(--color-secondary);
+    font-weight: var(--font-weight-bold);
+    transition: color var(--transition-base) ease;
+}
+
+.project-link:hover {
+    color: var(--color-accent);
+}
+
+/* ============================================================================
+ *  TOOLS SECTION
+ *  ============================================================================ */
+
+.tools {
+    margin-bottom: var(--spacing-xxl);
+    background-color: var(--color-surface);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius);
+}
+
+.tools h2 {
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+/* Tool card heading color (extends base .card--tool) */
+.card--tool h3 {
+    color: var(--color-primary);
+}
+
+/* ============================================================================
+ *  ABOUT & CONTACT SECTIONS
+ *  ============================================================================ */
+
+.about,
+.contact {
+    background-color: var(--color-surface);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    border-radius: var(--border-radius);
+}
+
+.about h2,
+.contact h2 {
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.about-content,
+.contact-content {
+    line-height: 1.8;
+}
+
+.contact-links {
+    list-style: none;
+    margin-top: var(--spacing-md);
+}
+
+.contact-links li {
+    margin-bottom: var(--spacing-md);
+}
+
+section,
+.portfolio,
+.tools,
+.about,
+.contact {
+    scroll-margin-top: 120px;
+}
+
+/* ============================================================================
+ *  RESPONSIVE ADJUSTMENTS
+ *  ============================================================================ */
+
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero {
+        padding: var(--spacing-xl);
+    }
+
+    .hero h1 {
+        font-size: 1.75rem;
+    }
+}

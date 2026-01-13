@@ -1,0 +1,281 @@
+/* ============================================================================
+ *  RESET & BASELINE STYLES
+ *
+ *  PURPOSE: Normalize browser defaults and establish consistent base styles
+ *
+ *  WHY THIS MATTERS:
+ *  Different browsers have different default styles (margins, padding, etc.)
+ *  This reset ensures a consistent starting point across all browsers.
+ *
+ *  PHILOSOPHY:
+ *  - box-sizing: border-box by default (more intuitive layout calculations)
+ *  - Remove default margins/padding (apply intentionally via spacing system)
+ *  - Smooth scrolling for better UX with anchor links
+ *  ============================================================================ */
+
+/* ============================================================================
+ *  UNIVERSAL RESET
+ *
+ *  Apply to all elements (*) and pseudo-elements (::before, ::after)
+ *  ============================================================================ */
+
+*,
+*::before,
+*::after {
+    /* box-sizing: border-box means width/height include padding and border
+     * Without this, adding padding increases total element size
+     * With this, padding/border stay within specified width/height
+     *
+     * Example: width: 300px; padding: 20px;
+     * - content-box (default): Total width = 340px (300 + 20 + 20)
+     * - border-box: Total width = 300px (content shrinks to fit)
+     */
+    box-sizing: border-box;
+
+    /* Remove browser defaults - apply spacing intentionally */
+    margin: 0;
+    padding: 0;
+}
+
+/* ============================================================================
+ *  HTML ROOT ELEMENT
+ *  ============================================================================ */
+
+html {
+    /* Smooth scrolling for anchor links (e.g., clicking nav to jump to section)
+     * Creates easing animation instead of instant jump
+     */
+    scroll-behavior: smooth;
+
+    /* Set base font size (16px by default in most browsers)
+     * All rem units are relative to this value
+     * 1rem = 16px, 2rem = 32px, etc.
+     */
+    font-size: 16px;
+}
+
+/* ============================================================================
+ *  BODY - Base Styles for Entire Document
+ *  ============================================================================ */
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+
+    /* Line height of 1.6 improves readability
+     * Generally, 1.5-1.7 is optimal for body text
+     * Too tight (1.2) = cramped, Too loose (2.0) = disconnected
+     */
+    line-height: 1.6;
+
+    color: var(--color-text);
+    background-color: var(--color-background);
+
+    /* Prevent horizontal overflow on small screens */
+    overflow-x: hidden;
+
+    /* Improve font rendering on macOS/iOS */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================================
+ *  HEADINGS - Semantic hierarchy
+ *  ============================================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: var(--font-weight-bold);
+
+    /* Tighter line-height for headings (1.2 vs 1.6 for body)
+     * Headings are short and benefit from compact spacing
+     */
+    line-height: 1.2;
+
+    /* Consistent bottom margin creates vertical rhythm */
+    margin-bottom: var(--spacing-md);
+
+    /* Prevent text wrapping mid-word */
+    word-wrap: break-word;
+}
+
+h1 { font-size: var(--font-size-xxl); }
+h2 { font-size: var(--font-size-xl); }
+h3 { font-size: var(--font-size-lg); }
+h4 { font-size: var(--font-size-md); }
+h5 { font-size: var(--font-size-base); }
+h6 { font-size: var(--font-size-sm); }
+
+/* ============================================================================
+ *  PARAGRAPHS & TEXT CONTENT
+ *  ============================================================================ */
+
+p {
+    margin-bottom: var(--spacing-md);
+
+    /* Prevent orphans (single words on last line) */
+    orphans: 2;
+    widows: 2;
+}
+
+/* ============================================================================
+ *  LINKS
+ *  ============================================================================ */
+
+a {
+    color: var(--color-secondary);
+    text-decoration: none;
+
+    /* Smooth color transitions on hover */
+    transition: color var(--transition-base) ease;
+
+    /* Remove tap highlight on mobile (use our hover states instead) */
+    -webkit-tap-highlight-color: transparent;
+}
+
+a:hover,
+a:focus {
+    color: var(--color-accent);
+}
+
+/* Focus styles for accessibility (keyboard navigation) */
+a:focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 2px;
+}
+
+/* ============================================================================
+ *  LISTS
+ *  ============================================================================ */
+
+ul, ol {
+    /* Position bullets/numbers inside the content flow
+     * This prevents bullets from extending into left margin
+     */
+    list-style-position: inside;
+    padding-left: 0;
+    margin-bottom: var(--spacing-md);
+}
+
+li {
+    margin-bottom: var(--spacing-xs);
+}
+
+/* ============================================================================
+ *  IMAGES & MEDIA
+ *  ============================================================================ */
+
+img,
+svg,
+video,
+canvas {
+    /* Images are inline by default, which can cause alignment issues
+     * Block display prevents extra space below images
+     */
+    display: block;
+
+    /* Prevent images from overflowing their containers */
+    max-width: 100%;
+    height: auto;
+}
+
+/* ============================================================================
+ *  BUTTONS & FORM ELEMENTS
+ *
+ *  Reset browser defaults to allow consistent styling
+ *  ============================================================================ */
+
+button,
+input,
+textarea,
+select {
+    /* Inherit font from parent (browsers often use different fonts) */
+    font: inherit;
+    color: inherit;
+}
+
+button {
+    /* Remove default button styles */
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+
+    /* Disable text selection on buttons */
+    user-select: none;
+}
+
+/* ============================================================================
+ *  CODE & PREFORMATTED TEXT
+ *  ============================================================================ */
+
+code,
+pre,
+kbd,
+samp {
+    font-family: var(--code-font);
+    font-size: var(--code-font-size);
+}
+
+/* ============================================================================
+ *  TABLES
+ *  ============================================================================ */
+
+table {
+    /* Remove spacing between table cells */
+    border-collapse: collapse;
+
+    /* Ensure tables don't overflow containers */
+    width: 100%;
+}
+
+/* ============================================================================
+ *  DETAILS/SUMMARY (Disclosure Widget)
+ *  ============================================================================ */
+
+summary {
+    /* Show hand cursor to indicate clickability */
+    cursor: pointer;
+
+    /* Disable text selection (it's a control, not content) */
+    user-select: none;
+}
+
+/* ============================================================================
+ *  HORIZONTAL RULE
+ *  ============================================================================ */
+
+hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: var(--spacing-lg) 0;
+}
+
+/* ============================================================================
+ *  ACCESSIBILITY
+ *  ============================================================================ */
+
+/* Hide visually but keep in DOM for screen readers */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Respect user's motion preferences (accessibility) */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

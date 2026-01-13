@@ -1,0 +1,69 @@
+/* ============================================================================
+ *  FORM COMPONENTS
+ *  Unified form styling across all tools
+ *  ============================================================================ */
+
+.form-group {
+    margin-bottom: var(--spacing-xl);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+}
+
+/* Unified input styling */
+.form-group select,
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-base);
+    font-family: inherit;
+    transition: border-color var(--transition-base) ease;
+}
+
+.form-group select:focus,
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--color-secondary);
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+    font-family: var(--code-font);
+}
+
+/* Algorithm selector grid (hash tool) */
+.form-option-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.form-option {
+    padding: var(--spacing-md);
+    background: var(--color-background);
+    border-radius: var(--border-radius);
+    border: var(--border-width) solid var(--color-border);
+}
+
+.form-option input[type="checkbox"],
+.form-option input[type="radio"] {
+    margin-right: var(--spacing-sm);
+}
+
+.form-option label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-weight: var(--font-weight-normal);
+}

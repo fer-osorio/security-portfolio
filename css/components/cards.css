@@ -1,0 +1,73 @@
+/* ============================================================================
+ *  CARD COMPONENTS
+ *  Base card + variants for different contexts
+ *  ============================================================================ */
+
+/* Base card pattern */
+.card {
+    background-color: var(--color-surface);
+    padding: var(--card-padding);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+}
+
+/* Project card (homepage) - has hover effect */
+.card--project {
+    transition: transform var(--transition-base) ease,
+    box-shadow var(--transition-base) ease;
+    border-left: var(--card-border-left-width) solid var(--color-secondary);
+}
+
+.card--project:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Tool card (homepage) - subtle border hover */
+.card--tool {
+    background-color: var(--color-background);
+    border: var(--border-width) solid var(--color-border);
+    transition: border-color var(--transition-base) ease;
+}
+
+.card--tool:hover {
+    border-color: var(--color-secondary);
+}
+
+/* Control group card (forms in tool pages) */
+.card--control {
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Key display cards (RSA/Hash tools) */
+.card--key-section {
+    background: var(--color-surface);
+    padding: var(--card-padding);
+    margin: var(--spacing-md) 0;
+    border-radius: var(--border-radius);
+    border-left: var(--card-border-left-width) solid var(--color-secondary);
+}
+
+.card--key-section.private-key {
+    border-left-color: var(--color-accent);
+    background: #fff5f5;
+}
+
+.card--key-section.educational {
+    border-left-color: var(--color-success);
+    background: #f0f9ff;
+}
+
+/* Hash/crypto result output */
+.card--result {
+    margin: var(--spacing-lg) 0;
+    padding: var(--card-padding);
+    background: var(--color-surface);
+    border-radius: var(--border-radius);
+    border-left: var(--card-border-left-width) solid var(--color-secondary);
+}
+
+.card--result.success {
+    background: #f1f8f4;
+    border-color: var(--color-success);
+}

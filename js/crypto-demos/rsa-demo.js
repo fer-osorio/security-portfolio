@@ -85,7 +85,8 @@ async function handleGenerateKeys() {
 
     // Show progress
     const progressDiv = document.getElementById('key-gen-progress');
-    progressDiv.style.display = 'block';
+
+    progressDiv.hidden = false;
     progressDiv.innerHTML = '<p>Initializing key generation...</p>';
 
     try {
@@ -117,7 +118,7 @@ async function handleGenerateKeys() {
         // Re-enable button
         generateBtn.disabled = false;
         generateBtn.textContent = 'Generate RSA Keys';
-        progressDiv.style.display = 'none';
+        progressDiv.hidden = true;
     }
 }
 
@@ -126,6 +127,12 @@ async function handleGenerateKeys() {
  */
 function updateProgress(stage, data) {
     const progressDiv = document.getElementById('key-gen-progress');
+
+    // Scroll to key generation progress message
+    progressDiv.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'  // Centers the progress message in viewport
+    });
 
     let message = '';
     switch(stage) {
@@ -169,18 +176,24 @@ function displayKeys(keys, duration) {
     const { e, n } = publicKey;
     const { d } = privateKey;
 
+    // Scroll to key generation progress message
+    resultsDiv.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'  // Locates start of division in viewport
+    });
+
     resultsDiv.innerHTML = `
-    <div class="key-display">
+    <div class="card card--key-section">
         <h3>✓ RSA Keys Generated (${duration}s)</h3>
 
-        <div class="key-section">
+        <div class="card--key-section">
             <h4>🔓 Public Key (shareable)</h4>
-            <div class="key-value">
+            <div class="code-value">
                 <label>Modulus (n):</label>
                 <code id="display-n">${n.toString()}</code>
                 <button class="copy-btn" data-copy="display-n">Copy</button>
             </div>
-            <div class="key-value">
+            <div class="code-value">
                 <label>Public Exponent (e):</label>
                 <code id="display-e">${e.toString()}</code>
                 <button class="copy-btn" data-copy="display-e">Copy</button>
@@ -188,36 +201,38 @@ function displayKeys(keys, duration) {
             <p class="key-info">Bit length: ${MathUtils.bitLength(n)} bits</p>
         </div>
 
-        <div class="key-section private-key">
+        <div class="card--key-section private-key">
             <h4>🔐 Private Key (keep secret!)</h4>
-            <div class="key-value">
+            <div class="code-value">
                 <label>Private Exponent (d):</label>
                 <code id="display-d">${d.toString()}</code>
                 <button class="copy-btn" data-copy="display-d">Copy</button>
             </div>
-            <p class="security-warning">
+            <p class="alert alert--warning">
             ⚠️ Never share your private key! In production systems, this would be stored in a Hardware Security Module (HSM).
             </p>
         </div>
 
-        <div class="key-section educational">
+        <div class="card--key-section educational">
             <h4>📚 Educational Details (not normally shown)</h4>
-            <div class="key-value">
+            <div class="code-value">
                 <label>Prime p:</label>
                 <code id="display-p">${p.toString()}</code>
             </div>
-            <div class="key-value">
+            <div class="code-value">
                 <label>Prime q:</label>
                 <code id="display-q">${q.toString()}</code>
             </div>
-            <div class="key-value">
+            <div class="code-value">
                 <label>φ(n) = (p-1)(q-1):</label>
                 <code id="display-phi">${phi.toString()}</code>
             </div>
             <div class="math-explanation">
                 <p><strong>Key Relationship:</strong></p>
                 <p>e × d ≡ 1 (mod φ(n))</p>
-                <p>Verification: (e × d) mod φ(n) = ${((e * d) % phi).toString()}</p>
+                <p>
+                    Verification: <br>
+                    (e × d) mod φ(n) = ${((e * d) % phi).toString()}</p>
             </div>
         </div>
     </div>
@@ -287,26 +302,35 @@ function displayEncryptionResults(originalMessage, messageInt, ciphertext, durat
 
     const { e, n } = currentKeys.publicKey;
 
+    resultsDiv.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'  // Locates start of division in viewport
+    });
+
     resultsDiv.innerHTML = `
-    <div class="crypto-results">
+    <div class="card card--result">
         <h3>✓ Encryption Complete (${duration}ms)</h3>
 
-        <div class="result-section">
+        <div class="card--result">
             <h4>Original Message</h4>
             <code class="message-display">${escapeHtml(originalMessage)}</code>
         </div>
 
-        <div class="result-section">
-            <h4>Numeric Representation</h4>
+        <div class="card--result">
             <p>Message converted to number (base-256 encoding):</p>
-            <code id="message-int">${messageInt.toString()}</code>
+            <div class="code-value">
+                <label>Numeric Representation</label>
+                <code id="message-int">${messageInt.toString()}</code>
+            </div>
             <button class="copy-btn" data-copy="message-int">Copy</button>
         </div>
 
-        <div class="result-section">
-            <h4>Ciphertext</h4>
+        <div class="card--result">
             <p>Encrypted value: c = m<sup>e</sup> mod n</p>
-            <code id="ciphertext">${ciphertext.toString()}</code>
+            <div class="code-value">
+                <label>Ciphertext</label>
+                <code id="ciphertext">${ciphertext.toString()}</code>
+            </div>
             <button class="copy-btn" data-copy="ciphertext">Copy</button>
         </div>
 
@@ -317,14 +341,14 @@ function displayEncryptionResults(originalMessage, messageInt, ciphertext, durat
                 <p><strong>Values:</strong></p>
                 <ul>
                     <li>m (message) = ${messageInt.toString()}</li>
-                    <li>e (public exponent) = ${e.toString()}</li>
+                    <li>e (public exponent) = <br> ${e.toString()}</li>
                     <li>n (modulus) = ${n.toString().substring(0, 50)}...</li>
                 </ul>
                 <p><strong>Result:</strong> c = ${ciphertext.toString()}</p>
             </div>
         </div>
 
-        <div class="security-note">
+        <div class="alert alert--security-note">
             <p><strong>⚠️ Security Note:</strong> This is "textbook RSA" without padding.</p>
             <p>In production, always use OAEP padding to prevent attacks.</p>
         </div>
@@ -390,21 +414,32 @@ function displayDecryptionResults(ciphertext, plaintextInt, plaintextStr, durati
 
     const { d, n } = currentKeys.privateKey;
 
+    resultsDiv.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'  // Locates start of division in viewport
+    });
+
     resultsDiv.innerHTML = `
-    <div class="crypto-results">
+    <div class="card card--result">
         <h3>✓ Decryption Complete (${duration}ms)</h3>
 
-        <div class="result-section">
-            <h4>Ciphertext</h4>
-            <code>${ciphertext.toString()}</code>
+        <div class="card--result">
+            <h4>Original Ciphertext</h4>
+            <div class="code-value">
+                <label>Ciphertext</label>
+                <code>${ciphertext.toString()}</code>
+            </div>
         </div>
 
-        <div class="result-section">
+        <div class="card--result">
             <h4>Decrypted Number</h4>
-            <code>${plaintextInt.toString()}</code>
+            <div class="code-value">
+                <label>Decrypted</label>
+                <code>${plaintextInt.toString()}</code>
+            </div>
         </div>
 
-        <div class="result-section success">
+        <div class="card--result success">
             <h4>Recovered Message</h4>
             <code class="message-display">${escapeHtml(plaintextStr)}</code>
         </div>
@@ -509,7 +544,7 @@ function displayWelcomeMessage() {
  */
 function showSecurityWarning() {
     const warningDiv = document.createElement('div');
-    warningDiv.className = 'security-warning-banner';
+    warningDiv.className = 'alert alert--banner alert--warning';
     warningDiv.innerHTML = `
     <p><strong>⚠️ Security Warning:</strong> This page is not in a secure context (HTTPS). Cryptographic operations may be limited. For full functionality, please access via HTTPS or localhost.</p>
     `;
@@ -523,11 +558,17 @@ function showError(message) {
     const errorDiv = document.getElementById('error-message');
     if (errorDiv) {
         errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
+        errorDiv.hidden = false;
+
+        // Scroll to error message
+        errorDiv.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'  // Centers the error in viewport
+        });
 
         // Auto-hide after 5 seconds
         setTimeout(() => {
-            errorDiv.style.display = 'none';
+            errorDiv.hidden = true;
         }, 5000);
     } else {
         alert('Error: ' + message);

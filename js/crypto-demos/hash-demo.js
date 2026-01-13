@@ -169,10 +169,10 @@ function displayHashResults(input, results, totalTime) {
         const binary = HashUtils.hexToBinary(data.hash);
 
         html += `
-            <div class="hash-output">
+            <div class="card card--result">
                 <h4>${info.status} ${info.name} <span class="security-badge">${info.security}</span></h4>
                 <div class="hash-details">
-                    <div class="hash-value">
+                    <div class="code-value">
                         <label>Hash (Hex):</label>
                         <code id="hash-${algo}">${data.hash}</code>
                         <button class="copy-btn" data-copy="hash-${algo}">Copy</button>
@@ -197,6 +197,12 @@ function displayHashResults(input, results, totalTime) {
     `;
 
     resultsDiv.innerHTML = html;
+
+    resultsDiv.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'  // Locates start of division in viewport
+    });
+
     setupCopyButtons();
 }
 
@@ -333,6 +339,11 @@ function displayAvalancheResults(original, modified, hash1, hash2, avalanche, al
         </div>
     </div>
     `;
+
+    resultsDiv.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'  // Locates start of division in viewport
+    });
 
     resultsDiv.innerHTML = html;
 }
@@ -480,7 +491,12 @@ function displayBirthdayResults(info, attempts50, probabilities) {
     </div>
     `;
 
-        resultsDiv.innerHTML = html;
+    resultsDiv.innerHTML = html;
+
+    resultsDiv.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'  // Locates start of division in viewport
+    });
 }
 
 /**
@@ -578,10 +594,17 @@ function showError(message) {
     const errorDiv = document.getElementById('error-message');
     if (errorDiv) {
         errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
+        errorDiv.hidden = false;
 
+        // Scroll to error message
+        errorDiv.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'  // Centers the error in viewport
+        });
+
+        // Auto-hide after 5 seconds
         setTimeout(() => {
-            errorDiv.style.display = 'none';
+            errorDiv.hidden = true;
         }, 5000);
     }
 }

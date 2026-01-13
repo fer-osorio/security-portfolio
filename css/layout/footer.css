@@ -1,0 +1,89 @@
+/* ============================================================================
+ *  FOOTER LAYOUT
+ *
+ *  PURPOSE: Site-wide footer with copyright and links
+ *
+ *  DESIGN: Simple centered layout with consistent branding
+ *  - Matches header color scheme (dark blue background)
+ *  - Provides visual closure to pages
+ *  - Contains copyright, contact, and social links
+ *  ============================================================================ */
+
+footer {
+    background-color: var(--color-primary);
+    color: var(--color-surface);
+    text-align: center;
+    padding: var(--spacing-xl) var(--container-padding);
+
+    /* Separate footer from main content */
+    margin-top: var(--spacing-xxl);
+
+    /* Subtle inner shadow for depth */
+    box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================================
+ *  FOOTER CONTENT
+ *  ============================================================================ */
+
+footer p {
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-surface);
+    opacity: 0.9;
+}
+
+footer p:last-child {
+    margin-bottom: 0;
+}
+
+/* Footer links (social, contact) */
+footer a {
+    color: var(--color-secondary);
+    font-weight: var(--font-weight-medium);
+    transition: color var(--transition-base) ease;
+}
+
+footer a:hover {
+    color: var(--color-accent);
+}
+
+/* ============================================================================
+ *  FOOTER SECTIONS (if using multi-column layout)
+ *  ============================================================================ */
+
+.footer-content {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+}
+
+/* Optional: Social links row */
+.footer-social {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-md);
+}
+
+.footer-social a {
+    font-size: var(--font-size-lg);
+    transition: transform var(--transition-base) ease,
+    color var(--transition-base) ease;
+}
+
+.footer-social a:hover {
+    transform: translateY(-2px);
+}
+
+/* ============================================================================
+ *  RESPONSIVE FOOTER
+ *  ============================================================================ */
+
+@media (max-width: 480px) {
+    footer {
+        padding: var(--spacing-lg) var(--container-padding);
+    }
+
+    .footer-social {
+        gap: var(--spacing-md);
+    }
+}

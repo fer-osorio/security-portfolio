@@ -1,0 +1,214 @@
+/* ============================================================================
+ *  TYPOGRAPHY SYSTEM
+ *
+ *  PURPOSE: Establish typographic hierarchy and text utilities
+ *
+ *  This file extends the base reset with additional typography patterns
+ *  used throughout the portfolio (emphasis, code blocks, quotes, etc.)
+ *
+ *  DESIGN PRINCIPLE: Vertical rhythm and consistent spacing
+ *  ============================================================================ */
+
+/* ============================================================================
+ *  TEXT EMPHASIS & SEMANTIC ELEMENTS
+ *  ============================================================================ */
+
+strong,
+b {
+    font-weight: var(--font-weight-bold);
+}
+
+em,
+i {
+    font-style: italic;
+}
+
+small {
+    font-size: var(--font-size-sm);
+}
+
+/* Mark/highlight text (used in search results, emphasis) */
+mark {
+    background-color: #fff3cd;
+    padding: 0.1em 0.2em;
+    border-radius: 2px;
+}
+
+/* ============================================================================
+ *  CODE BLOCKS & INLINE CODE
+ *  ============================================================================ */
+
+/* Inline code (e.g., `variable` in a sentence) */
+code {
+    font-family: var(--code-font);
+    font-size: var(--code-font-size);
+    background-color: var(--code-bg);
+    padding: 0.2em 0.4em;
+    border-radius: var(--border-radius-sm);
+    color: var(--color-accent);
+}
+
+/* Code blocks (multi-line code) */
+pre {
+    background-color: var(--code-bg);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+    margin-bottom: var(--spacing-md);
+    border-left: var(--border-width-thick) solid var(--color-secondary);
+}
+
+/* Reset inline code styles inside pre blocks */
+pre code {
+    background: none;
+    padding: 0;
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+}
+
+/* ============================================================================
+ *  BLOCKQUOTES
+ *  ============================================================================ */
+
+blockquote {
+    margin: var(--spacing-lg) 0;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-left: var(--border-width-thick) solid var(--color-secondary);
+    background-color: var(--color-background);
+    font-style: italic;
+    color: var(--color-text-light);
+}
+
+blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* Citation within blockquote */
+blockquote cite {
+    display: block;
+    margin-top: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    font-style: normal;
+    color: var(--color-text-light);
+}
+
+blockquote cite::before {
+    content: '— ';
+}
+
+/* ============================================================================
+ *  TEXT UTILITY CLASSES
+ *
+ *  Reusable classes for common text modifications
+ *  Use sparingly - semantic HTML is preferred when possible
+ *  ============================================================================ */
+
+/* Text alignment */
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+/* Text colors */
+.text-primary { color: var(--color-primary); }
+.text-secondary { color: var(--color-secondary); }
+.text-light { color: var(--color-text-light); }
+.text-accent { color: var(--color-accent); }
+.text-success { color: var(--color-success); }
+
+/* Text transforms */
+.text-uppercase { text-transform: uppercase; }
+.text-lowercase { text-transform: lowercase; }
+.text-capitalize { text-transform: capitalize; }
+
+/* Font weights */
+.font-normal { font-weight: var(--font-weight-normal); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
+
+/* Font sizes (use sparingly - prefer semantic headings) */
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+
+/* ============================================================================
+ *  SPECIALIZED TEXT PATTERNS
+ *  ============================================================================ */
+
+/* Subtitle text (used in hero sections, under headings) */
+.subtitle {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-light);
+    font-style: italic;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Section introduction text (larger, lighter) */
+.section-intro {
+    font-size: var(--font-size-md);
+    color: var(--color-text-light);
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Lead paragraph (first paragraph with emphasis) */
+.lead {
+    font-size: var(--font-size-md);
+    line-height: 1.7;
+    color: var(--color-text);
+}
+
+/* Monospace text (dates, technical identifiers) */
+.text-mono {
+    font-family: var(--code-font);
+    font-size: var(--code-font-size);
+}
+
+/* ============================================================================
+ *  LINKS WITH CONTEXT
+ *  ============================================================================ */
+
+/* External links indicator (optional) */
+a[target="_blank"]::after {
+    content: ' ↗';
+    font-size: 0.8em;
+    vertical-align: super;
+}
+
+/* Disable external indicator for specific classes */
+a.no-external-icon[target="_blank"]::after {
+    content: none;
+}
+
+/* ============================================================================
+ *  RESPONSIVE TYPOGRAPHY
+ *
+ *  Adjust font sizes for better readability on smaller screens
+ *  ============================================================================ */
+
+@media (max-width: 768px) {
+    h1 { font-size: var(--font-size-xl); }
+    h2 { font-size: var(--font-size-lg); }
+
+    .subtitle {
+        font-size: var(--font-size-base);
+    }
+
+    .section-intro,
+    .lead {
+        font-size: var(--font-size-base);
+    }
+}
+
+@media (max-width: 480px) {
+    h1 { font-size: var(--font-size-lg); }
+
+    /* Reduce code font size on very small screens */
+    code,
+    pre,
+    .text-mono {
+        font-size: 0.75rem;
+    }
+}
