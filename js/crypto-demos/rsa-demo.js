@@ -128,6 +128,12 @@ async function handleGenerateKeys() {
 function updateProgress(stage, data) {
     const progressDiv = document.getElementById('key-gen-progress');
 
+    // Scroll to key generation progress message
+    progressDiv.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'  // Centers the progress message in viewport
+    });
+
     let message = '';
     switch(stage) {
         case 'Generating prime p':
@@ -169,6 +175,12 @@ function displayKeys(keys, duration) {
     const { publicKey, privateKey, p, q, phi } = keys;
     const { e, n } = publicKey;
     const { d } = privateKey;
+
+    // Scroll to key generation progress message
+    resultsDiv.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'  // Locates start of division in viewport
+    });
 
     resultsDiv.innerHTML = `
     <div class="card card--key-section">
@@ -290,6 +302,11 @@ function displayEncryptionResults(originalMessage, messageInt, ciphertext, durat
 
     const { e, n } = currentKeys.publicKey;
 
+    resultsDiv.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'  // Locates start of division in viewport
+    });
+
     resultsDiv.innerHTML = `
     <div class="card card--result">
         <h3>✓ Encryption Complete (${duration}ms)</h3>
@@ -396,6 +413,11 @@ function displayDecryptionResults(ciphertext, plaintextInt, plaintextStr, durati
     resultsDiv.style.display = 'block';
 
     const { d, n } = currentKeys.privateKey;
+
+    resultsDiv.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'  // Locates start of division in viewport
+    });
 
     resultsDiv.innerHTML = `
     <div class="card card--result">

@@ -167,6 +167,13 @@
     word-break: break-all;
 }
 
+.comparison-item code {
+    background: none;
+    padding: 0;
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+}
+
 .comparison-item h4 {
     margin-bottom: var(--spacing-sm);
 }
@@ -339,6 +346,15 @@
     color: var(--color-text-light);
     margin-bottom: var(--spacing-md);
     font-style: italic;
+}
+
+#hash-results,
+#birthday-results {
+    scroll-margin-top: 120px;
+}
+
+#avalanche-results {
+    scroll-margin-top: 90px;
 }
 
 /* ============================================================================
