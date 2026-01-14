@@ -478,6 +478,11 @@ const Config = {
      */
     FEATURES: {
         /**
+         * Enable auto-setup common UI patterns when DOM is ready
+         */
+        ENABLE_AUTO_INIT_UI: true,
+
+        /**
          * Enable real-time hash computation (as user types)
          */
         ENABLE_REALTIME_HASH: true,
