@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Display Components Test</title>
+    <link rel="stylesheet" href="../../css/main.css">
+    <link rel="stylesheet" href="../../css/pages/rsa-tool.css">
+    <link rel="stylesheet" href="../../css/pages/hash-tool.css">
+    <style>
+        body { padding: 20px; max-width: 1000px; margin: 0 auto; }
+        .test-section { margin: 30px 0; padding: 20px; border: 2px solid #eee; }
+        .test-section h2 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <h1>Display Components Module Test</h1>
+
+    <div class="test-section">
+        <h2>Test 1: Result Card</h2>
+        <div id="test-result-card"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Code Value Display</h2>
+        <div id="test-code-value"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Security Alerts</h2>
+        <div id="test-alerts"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Statistics Grid</h2>
+        <div id="test-stats"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 5: Comparison Display</h2>
+        <div id="test-comparison"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 6: Algorithm Badge</h2>
+        <div id="test-badge"></div>
+    </div>
+
+    <script src="../config.js"></script>
+    <script src="../ui-utils.js"></script>
+    <script src="../display-components.js"></script>
+
+    <script>
+        // Test 1: Result Card
+        document.getElementById('test-result-card').innerHTML =
+            DisplayComponents.createResultCard({
+                title: 'Test Result',
+                content: '<p>This is a test result card</p>',
+                icon: '✓'
+            });
+
+        // Test 2: Code Value Display
+        document.getElementById('test-code-value').innerHTML =
+            DisplayComponents.createCodeValueDisplay(
+                'Test Hash',
+                'a1b2c3d4e5f6',
+                'test-hash-value'
+            );
+
+        // Test 3: Security Alerts
+        document.getElementById('test-alerts').innerHTML =
+            DisplayComponents.createSecurityAlert('This is a security warning', 'warning') +
+            DisplayComponents.createEducationalNote('This is an educational note') +
+            DisplayComponents.createWarningAlert('Warning Title', 'Warning message content');
+
+        // Test 4: Statistics Grid
+        document.getElementById('test-stats').innerHTML =
+            DisplayComponents.createStatisticsGrid([
+                { label: 'Bits Flipped', value: '128', color: 'green' },
+                { label: 'Total Bits', value: '256' },
+                { label: 'Percentage', value: '50%', color: 'green' }
+            ]);
+
+        // Test 5: Comparison Display
+        document.getElementById('test-comparison').innerHTML =
+            DisplayComponents.createComparisonDisplay({
+                original: {
+                    title: 'Original Input',
+                    content: '<code>"Hello"</code>'
+                },
+                modified: {
+                    title: 'Modified Input',
+                    content: '<code>"Hallo"</code>'
+                }
+            });
+
+        // Test 6: Algorithm Security Badge
+        document.getElementById('test-badge').innerHTML =
+            DisplayComponents.createAlgorithmSecurityBadge('SHA-256') + ' ' +
+            DisplayComponents.createAlgorithmSecurityBadge('MD5') + ' ' +
+            DisplayComponents.createAlgorithmSecurityBadge('SHA-1');
+
+        // Setup copy buttons after rendering
+        UIUtils.setupCopyButtons();
+
+        console.log('✓ All display component tests rendered');
+    </script>
+</body>
+</html>
