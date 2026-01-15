@@ -420,10 +420,10 @@ const Config = {
      */
     TEMPLATES: {
         // Error messages
-        ERROR_GENERIC: '⚠️ Error: {message}',
+        ERROR_GENERIC: '❌ Error: {message}',
         ERROR_NETWORK: '🌐 Network Error: {message}',
         ERROR_COMPUTATION: '🔢 Computation Error: {message}',
-        ERROR_VALIDATION: '❌ Validation Error: {message}',
+        ERROR_VALIDATION: '🚫 Validation Error: {message}',
 
         // Success messages
         SUCCESS_GENERIC: '✓ {message}',
