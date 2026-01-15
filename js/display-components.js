@@ -84,8 +84,8 @@ const DisplayComponents = {
             </div>
         `;
 
+        const { d } = privateKey;
         if (privateKey) {
-            const { d } = privateKey;
             html += `
             <div class="card--key-section private-key">
                 <h4>🔒 Private Key (keep secret!)</h4>
@@ -150,10 +150,11 @@ const DisplayComponents = {
      * @param {string} options.operation - Mathematical operation (e.g., "c = m^e mod n")
      * @param {Array<Object>} options.values - Array of {label, value} objects
      * @param {string} options.result - Final result description
+     * @param {string} options.decoded - Final result description decoded (from number to string of characters)
      * @returns {string} - HTML string
      */
     createMathBreakdown(options) {
-        const { title, operation, values, result } = options;
+        const { title, operation, values, result, decoded } = options;
 
         let valuesHtml = '';
         if (values && values.length > 0) {
@@ -169,8 +170,9 @@ const DisplayComponents = {
             <h4>${UIUtils.escapeHtml(title)}</h4>
             <div class="calculation">
                 <p><strong>Operation:</strong> ${operation}</p>
-                ${values ? '<p><strong>Values:</strong></p>' + valuesHtml : ''}
-                ${result ? `<p><strong>Result:</strong> ${UIUtils.escapeHtml(result)}</p>` : ''}
+                ${values  ? '<p><strong>Values:</strong></p>' + valuesHtml : ''}
+                ${result  ? `<p><strong>Result:</strong> ${UIUtils.escapeHtml(result)}</p>` : ''}
+                ${decoded ? `<p><strong>Decoded:</strong> ${UIUtils.escapeHtml(decoded)}</p>` : ''}
             </div>
         </div>
         `;
@@ -593,7 +595,7 @@ const DisplayComponents = {
                     { label: 'e (public exponent)', value: e.toString() },
                     { label: 'n (modulus)', value: n.toString().substring(0, 50) + '...' }
                 ],
-            result: `c = ${ciphertext}`
+                result: `c = ${ciphertext}`
         })}
 
         ${this.createSecurityAlert('This is "textbook RSA" without padding. In production, always use OAEP padding to prevent attacks.')}
@@ -643,7 +645,8 @@ const DisplayComponents = {
                     { label: 'd (private exponent)', value: d.toString().substring(0, 50) + '...' },
                     { label: 'n (modulus)', value: n.toString().substring(0, 50) + '...' }
                 ],
-            result: `m = ${plaintextInt}, Decoded: "${plaintextStr}"`
+            result: `m = ${plaintextInt}`,
+            decoded: `${plaintextStr}`
         })}
         </div>
         `;
