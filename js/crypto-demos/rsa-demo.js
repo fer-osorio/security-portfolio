@@ -5,21 +5,25 @@
  * This module handles all user interactions and updates the DOM.
  * It acts as the "controller" in MVC architecture.
  *
- * SEPARATION OF CONCERNS:
- * - rsa-core.js: Pure cryptographic logic (no UI dependencies)
- * - rsa-demo.js: UI logic (DOM manipulation, event handling)
- *
- * This separation allows:
- * - Testing crypto logic independently
- * - Reusing crypto code in other contexts
- * - Changing UI without touching crypto implementation
+ * - Uses shared UIUtils for common DOM operations
+ * - Uses DisplayComponents for consistent HTML generation
+ * - Uses Config for all constants and configuration
+ * - Removed duplicate code (escapeHtml, setupCopyButtons, setupTabs, etc.)
+ * - Kept RSA-specific logic (key generation UI, progress updates)
  *
  * ============================================================================
  */
 
-// Global state (stored in memory, never persisted)
+// ============================================================================
+// GLOBAL STATE (stored in memory, never persisted)
+// ============================================================================
+
 let currentKeys = null;
 let lastCiphertext = null;
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
 
 /**
  * Initialize the RSA demo when page loads
@@ -38,6 +42,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Display initial educational content
     displayWelcomeMessage();
 });
+
+// ============================================================================
+// EVENT HANDLER SETUP
+// ============================================================================
 
 /**
  * Set up all event listeners for user interactions
@@ -61,12 +69,14 @@ function setupEventListeners() {
         decryptBtn.addEventListener('click', handleDecrypt);
     }
 
-    // Copy buttons
-    setupCopyButtons();
-
-    // Tab switching
-    setupTabs();
+    // Use shared utilities for common patterns
+    UIUtils.setupCopyButtons();
+    UIUtils.setupTabs();
 }
+
+// ============================================================================
+// KEY GENERATION HANDLERS
+// ============================================================================
 
 /**
  * Handle key generation button click
@@ -75,19 +85,16 @@ async function handleGenerateKeys() {
     const keySizeSelect = document.getElementById('key-size');
     const keySize = parseInt(keySizeSelect.value);
 
-    // Disable button during generation
+    // Use shared button state management
     const generateBtn = document.getElementById('generate-keys-btn');
-    generateBtn.disabled = true;
-    generateBtn.textContent = 'Generating...';
+    UIUtils.setButtonLoading(generateBtn, 'Generating...');
 
-    // Clear previous results
-    clearResults();
+    // Use shared result clearing
+    UIUtils.clearResults(['key-gen-results', 'encryption-results', 'decryption-results']);
 
-    // Show progress
+    // Show progress using shared utility
     const progressDiv = document.getElementById('key-gen-progress');
-
-    progressDiv.hidden = false;
-    progressDiv.innerHTML = '<p>Initializing key generation...</p>';
+    UIUtils.showLoading(progressDiv, 'Initializing key generation...');
 
     try {
         const startTime = performance.now();
@@ -113,27 +120,26 @@ async function handleGenerateKeys() {
 
     } catch (error) {
         console.error('Key generation failed:', error);
-        showError('Key generation failed: ' + error.message);
+        UIUtils.showError('Key generation failed: ' + error.message);
     } finally {
-        // Re-enable button
-        generateBtn.disabled = false;
-        generateBtn.textContent = 'Generate RSA Keys';
-        progressDiv.hidden = true;
+        // Re-enable button using shared utility
+        UIUtils.resetButton(generateBtn, 'Generate RSA Keys');
+        UIUtils.hideLoading(progressDiv);
     }
 }
 
 /**
  * Update progress display during key generation
+ *
+ * RSA-SPECIFIC
  */
 function updateProgress(stage, data) {
     const progressDiv = document.getElementById('key-gen-progress');
 
-    // Scroll to key generation progress message
-    progressDiv.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'  // Centers the progress message in viewport
-    });
+    // Use shared scroll utility
+    UIUtils.scrollToElement(progressDiv, Config.UI.SCROLL_BLOCK_CENTER);
 
+    // RSA-SPECIFIC progress messages
     let message = '';
     switch(stage) {
         case 'Generating prime p':
@@ -170,84 +176,36 @@ function updateProgress(stage, data) {
  */
 function displayKeys(keys, duration) {
     const resultsDiv = document.getElementById('key-gen-results');
-    resultsDiv.style.display = 'block';
 
-    const { publicKey, privateKey, p, q, phi } = keys;
-    const { e, n } = publicKey;
-    const { d } = privateKey;
-
-    // Scroll to key generation progress message
-    resultsDiv.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'  // Locates start of division in viewport
+    // Use DisplayComponents for consistent HTML generation
+    const keyDisplay = DisplayComponents.createKeyDisplayCard({
+        title: `✓ RSA Keys Generated (${duration}s)`,
+        publicKey: keys.publicKey,
+        privateKey: keys.privateKey,
+        educational: {
+            p: keys.p,
+            q: keys.q,
+            phi: keys.phi
+        }
     });
 
-    resultsDiv.innerHTML = `
-    <div class="card card--key-section">
-        <h3>✓ RSA Keys Generated (${duration}s)</h3>
+    // Use shared display utility
+    UIUtils.displayResults('key-gen-results', keyDisplay, true);
 
-        <div class="card--key-section">
-            <h4>🔓 Public Key (shareable)</h4>
-            <div class="code-value">
-                <label>Modulus (n):</label>
-                <code id="display-n">${n.toString()}</code>
-                <button class="copy-btn" data-copy="display-n">Copy</button>
-            </div>
-            <div class="code-value">
-                <label>Public Exponent (e):</label>
-                <code id="display-e">${e.toString()}</code>
-                <button class="copy-btn" data-copy="display-e">Copy</button>
-            </div>
-            <p class="key-info">Bit length: ${MathUtils.bitLength(n)} bits</p>
-        </div>
-
-        <div class="card--key-section private-key">
-            <h4>🔐 Private Key (keep secret!)</h4>
-            <div class="code-value">
-                <label>Private Exponent (d):</label>
-                <code id="display-d">${d.toString()}</code>
-                <button class="copy-btn" data-copy="display-d">Copy</button>
-            </div>
-            <p class="alert alert--warning">
-            ⚠️ Never share your private key! In production systems, this would be stored in a Hardware Security Module (HSM).
-            </p>
-        </div>
-
-        <div class="card--key-section educational">
-            <h4>📚 Educational Details (not normally shown)</h4>
-            <div class="code-value">
-                <label>Prime p:</label>
-                <code id="display-p">${p.toString()}</code>
-            </div>
-            <div class="code-value">
-                <label>Prime q:</label>
-                <code id="display-q">${q.toString()}</code>
-            </div>
-            <div class="code-value">
-                <label>φ(n) = (p-1)(q-1):</label>
-                <code id="display-phi">${phi.toString()}</code>
-            </div>
-            <div class="math-explanation">
-                <p><strong>Key Relationship:</strong></p>
-                <p>e × d ≡ 1 (mod φ(n))</p>
-                <p>
-                    Verification: <br>
-                    (e × d) mod φ(n) = ${((e * d) % phi).toString()}</p>
-            </div>
-        </div>
-    </div>
-    `;
-
-    // Setup copy buttons
-    setupCopyButtons();
+    // Setup copy buttons for the newly rendered content
+    UIUtils.setupCopyButtons();
 }
+
+// ============================================================================
+// ENCRYPTION HANDLERS
+// ============================================================================
 
 /**
  * Handle encryption button click
  */
 async function handleEncrypt() {
     if (!currentKeys) {
-        showError('Please generate keys first!');
+        UIUtils.showError('Please generate keys first!');
         return;
     }
 
@@ -255,7 +213,7 @@ async function handleEncrypt() {
     const message = messageInput.value.trim();
 
     if (!message) {
-        showError('Please enter a message to encrypt');
+        UIUtils.showError('Please enter a message to encrypt');
         return;
     }
 
@@ -266,7 +224,7 @@ async function handleEncrypt() {
         // Check if message is too large
         if (messageInt >= currentKeys.publicKey.n) {
             const maxBytes = Math.floor(MathUtils.bitLength(currentKeys.publicKey.n) / 8) - 1;
-            showError(`Message too large! Maximum message length: ~${maxBytes} bytes. Your message: ${message.length} bytes.`);
+            UIUtils.showError(`Message too large! Maximum message length: ~${maxBytes} bytes. Your message: ${message.length} bytes.`);
             return;
         }
 
@@ -279,7 +237,7 @@ async function handleEncrypt() {
         // Store ciphertext for decryption
         lastCiphertext = ciphertext;
 
-        // Display results
+        // Display results using shared component
         displayEncryptionResults(message, messageInt, ciphertext, duration);
 
         // Enable decryption
@@ -289,7 +247,7 @@ async function handleEncrypt() {
 
     } catch (error) {
         console.error('Encryption failed:', error);
-        showError('Encryption failed: ' + error.message);
+        UIUtils.showError('Encryption failed: ' + error.message);
     }
 }
 
@@ -297,63 +255,15 @@ async function handleEncrypt() {
  * Display encryption results
  */
 function displayEncryptionResults(originalMessage, messageInt, ciphertext, duration) {
-    const resultsDiv = document.getElementById('encryption-results');
-    resultsDiv.style.display = 'block';
-
-    const { e, n } = currentKeys.publicKey;
-
-    resultsDiv.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'  // Locates start of division in viewport
+    const encryptionDisplay = DisplayComponents.createEncryptionResult({
+        originalMessage,
+        messageInt: messageInt.toString(),
+        ciphertext: ciphertext.toString(),
+        duration,
+        publicKey: currentKeys.publicKey
     });
 
-    resultsDiv.innerHTML = `
-    <div class="card card--result">
-        <h3>✓ Encryption Complete (${duration}ms)</h3>
-
-        <div class="card--result">
-            <h4>Original Message</h4>
-            <code class="message-display">${escapeHtml(originalMessage)}</code>
-        </div>
-
-        <div class="card--result">
-            <p>Message converted to number (base-256 encoding):</p>
-            <div class="code-value">
-                <label>Numeric Representation</label>
-                <code id="message-int">${messageInt.toString()}</code>
-            </div>
-            <button class="copy-btn" data-copy="message-int">Copy</button>
-        </div>
-
-        <div class="card--result">
-            <p>Encrypted value: c = m<sup>e</sup> mod n</p>
-            <div class="code-value">
-                <label>Ciphertext</label>
-                <code id="ciphertext">${ciphertext.toString()}</code>
-            </div>
-            <button class="copy-btn" data-copy="ciphertext">Copy</button>
-        </div>
-
-        <div class="math-breakdown">
-            <h4>Mathematical Breakdown</h4>
-            <div class="calculation">
-                <p><strong>Operation:</strong> c = m<sup>e</sup> mod n</p>
-                <p><strong>Values:</strong></p>
-                <ul>
-                    <li>m (message) = ${messageInt.toString()}</li>
-                    <li>e (public exponent) = <br> ${e.toString()}</li>
-                    <li>n (modulus) = ${n.toString().substring(0, 50)}...</li>
-                </ul>
-                <p><strong>Result:</strong> c = ${ciphertext.toString()}</p>
-            </div>
-        </div>
-
-        <div class="alert alert--security-note">
-            <p><strong>⚠️ Security Note:</strong> This is "textbook RSA" without padding.</p>
-            <p>In production, always use OAEP padding to prevent attacks.</p>
-        </div>
-    </div>
-    `;
+    UIUtils.displayResults('encryption-results', encryptionDisplay, true);
 
     // Populate ciphertext in decryption input
     const decryptInput = document.getElementById('ciphertext-input');
@@ -361,15 +271,20 @@ function displayEncryptionResults(originalMessage, messageInt, ciphertext, durat
         decryptInput.value = ciphertext.toString();
     }
 
-    setupCopyButtons();
+    // Setup copy buttons for the newly rendered content
+    UIUtils.setupCopyButtons();
 }
+
+// ============================================================================
+// DECRYPTION HANDLERS
+// ============================================================================
 
 /**
  * Handle decryption button click
  */
 async function handleDecrypt() {
     if (!currentKeys) {
-        showError('Please generate keys first!');
+        UIUtils.showError('Please generate keys first!');
         return;
     }
 
@@ -377,7 +292,7 @@ async function handleDecrypt() {
     let ciphertextStr = ciphertextInput.value.trim();
 
     if (!ciphertextStr) {
-        showError('Please enter ciphertext to decrypt');
+        UIUtils.showError('Please enter ciphertext to decrypt');
         return;
     }
 
@@ -394,14 +309,14 @@ async function handleDecrypt() {
         // Convert back to string
         const plaintextStr = MathUtils.bigIntToString(plaintextInt);
 
-        // Display results
+        // Display results using shared component
         displayDecryptionResults(ciphertext, plaintextInt, plaintextStr, duration);
 
         console.log('Decryption successful');
 
     } catch (error) {
         console.error('Decryption failed:', error);
-        showError('Decryption failed: ' + error.message);
+        UIUtils.showError('Decryption failed: ' + error.message);
     }
 }
 
@@ -409,115 +324,25 @@ async function handleDecrypt() {
  * Display decryption results
  */
 function displayDecryptionResults(ciphertext, plaintextInt, plaintextStr, duration) {
-    const resultsDiv = document.getElementById('decryption-results');
-    resultsDiv.style.display = 'block';
-
-    const { d, n } = currentKeys.privateKey;
-
-    resultsDiv.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'  // Locates start of division in viewport
+    const decryptionDisplay = DisplayComponents.createDecryptionResult({
+        ciphertext: ciphertext.toString(),
+        plaintextInt: plaintextInt.toString(),
+        plaintextStr,
+        duration,
+        privateKey: currentKeys.privateKey
     });
 
-    resultsDiv.innerHTML = `
-    <div class="card card--result">
-        <h3>✓ Decryption Complete (${duration}ms)</h3>
-
-        <div class="card--result">
-            <h4>Original Ciphertext</h4>
-            <div class="code-value">
-                <label>Ciphertext</label>
-                <code>${ciphertext.toString()}</code>
-            </div>
-        </div>
-
-        <div class="card--result">
-            <h4>Decrypted Number</h4>
-            <div class="code-value">
-                <label>Decrypted</label>
-                <code>${plaintextInt.toString()}</code>
-            </div>
-        </div>
-
-        <div class="card--result success">
-            <h4>Recovered Message</h4>
-            <code class="message-display">${escapeHtml(plaintextStr)}</code>
-        </div>
-
-        <div class="math-breakdown">
-            <h4>Mathematical Breakdown</h4>
-            <div class="calculation">
-                <p><strong>Operation:</strong> m = c<sup>d</sup> mod n</p>
-                <p><strong>Values:</strong></p>
-                <ul>
-                    <li>c (ciphertext) = ${ciphertext.toString()}</li>
-                    <li>d (private exponent) = ${d.toString().substring(0, 50)}...</li>
-                    <li>n (modulus) = ${n.toString().substring(0, 50)}...</li>
-                </ul>
-                <p><strong>Result:</strong> m = ${plaintextInt.toString()}</p>
-                <p><strong>Decoded:</strong> "${escapeHtml(plaintextStr)}"</p>
-            </div>
-        </div>
-    </div>
-    `;
+    UIUtils.displayResults('decryption-results', decryptionDisplay, true);
 }
 
-/**
- * Setup copy-to-clipboard functionality
- */
-function setupCopyButtons() {
-    const copyButtons = document.querySelectorAll('.copy-btn');
-
-    copyButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const targetId = this.getAttribute('data-copy');
-            const targetElement = document.getElementById(targetId);
-
-            if (targetElement) {
-                const text = targetElement.textContent;
-
-                navigator.clipboard.writeText(text).then(() => {
-                    // Visual feedback
-                    const originalText = this.textContent;
-                    this.textContent = '✓ Copied!';
-                    this.classList.add('copied');
-
-                    setTimeout(() => {
-                        this.textContent = originalText;
-                        this.classList.remove('copied');
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Failed to copy:', err);
-                    showError('Failed to copy to clipboard');
-                });
-            }
-        });
-    });
-}
-
-/**
- * Setup tab switching functionality
- */
-function setupTabs() {
-    const tabs = document.querySelectorAll('.tab-button');
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const targetTab = this.getAttribute('data-tab');
-
-            // Remove active class from all tabs and panels
-            tabs.forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-
-            // Add active class to clicked tab and corresponding panel
-            this.classList.add('active');
-            document.getElementById(targetTab).classList.add('active');
-        });
-    });
-}
+// ============================================================================
+// INITIAL DISPLAY
+// ============================================================================
 
 /**
  * Display welcome message with instructions
+ *
+ * RSA-SPECIFIC: Welcome content is tool-specific
  */
 function displayWelcomeMessage() {
     const welcomeDiv = document.getElementById('welcome-message');
@@ -531,9 +356,10 @@ function displayWelcomeMessage() {
                 <li><strong>Encrypt:</strong> Enter a message and encrypt it with the public key</li>
                 <li><strong>Decrypt:</strong> Use the private key to recover the original message</li>
             </ol>
-            <div class="educational-note">
-                <p><strong>📚 Educational Purpose:</strong> This tool is designed for learning. It implements "textbook RSA" without padding schemes. Real-world RSA uses OAEP padding and proper key management in Hardware Security Modules (HSMs).</p>
-            </div>
+        ${DisplayComponents.createEducationalNote(
+            'This tool is designed for learning. It implements "textbook RSA" without padding schemes. ' +
+            'Real-world RSA uses OAEP padding and proper key management in Hardware Security Modules (HSMs).'
+        )}
         </div>
         `;
     }
@@ -545,56 +371,10 @@ function displayWelcomeMessage() {
 function showSecurityWarning() {
     const warningDiv = document.createElement('div');
     warningDiv.className = 'alert alert--banner alert--warning';
-    warningDiv.innerHTML = `
-    <p><strong>⚠️ Security Warning:</strong> This page is not in a secure context (HTTPS). Cryptographic operations may be limited. For full functionality, please access via HTTPS or localhost.</p>
-    `;
+    warningDiv.innerHTML = DisplayComponents.createWarningAlert(
+        'Security Warning',
+        'This page is not in a secure context (HTTPS). Cryptographic operations may be limited. ' +
+        'For full functionality, please access via HTTPS or localhost.'
+    );
     document.body.insertBefore(warningDiv, document.body.firstChild);
-}
-
-/**
- * Show error message to user
- */
-function showError(message) {
-    const errorDiv = document.getElementById('error-message');
-    if (errorDiv) {
-        errorDiv.textContent = message;
-        errorDiv.hidden = false;
-
-        // Scroll to error message
-        errorDiv.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'  // Centers the error in viewport
-        });
-
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            errorDiv.hidden = true;
-        }, 5000);
-    } else {
-        alert('Error: ' + message);
-    }
-}
-
-/**
- * Clear all results
- */
-function clearResults() {
-    const resultsIds = ['key-gen-results', 'encryption-results', 'decryption-results'];
-    resultsIds.forEach(id => {
-        const div = document.getElementById(id);
-        if (div) {
-            div.innerHTML = '';
-            div.style.display = 'none';
-        }
-    });
-}
-
-/**
- * Escape HTML to prevent XSS
- * SECURITY: Always escape user input before displaying
- */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
