@@ -366,7 +366,7 @@ const Config = {
          * - Fast encryption (only 17 multiplications)
          * - Fermat prime F₄ = 2^16 + 1
          */
-        PUBLIC_EXPONENT: 65537n,
+        PUBLIC_EXPONENT: 65537,
 
         /**
          * Miller-Rabin primality test rounds
