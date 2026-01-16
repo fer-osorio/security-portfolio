@@ -467,7 +467,11 @@ const DisplayComponents = {
             html += `
                     <details class="hash-binary">
                         <summary>View as binary (${binary.length} bits)</summary>
-                        <code class="binary-display">${this._formatBinary(binary)}</code>
+                        <div class="code-value">
+                            <code class="binary-display" style="word-break: normal;">
+                                ${this._formatBinary(binary)}
+                            </code>
+                        </div>
                     </details>
             `;
         }
