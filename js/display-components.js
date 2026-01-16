@@ -251,7 +251,10 @@ const DisplayComponents = {
      * @returns {string} - HTML string
      */
     createBitVisualization(bitDiff, bitsPerRow = 64) {
-        let html = '<div class="bit-visualization">';
+        let html = `
+            <div class="bit-visualization">
+                <div class="bit-diff-display">
+        `;
 
         for (let i = 0; i < bitDiff.length; i += bitsPerRow) {
             const row = bitDiff.slice(i, i + bitsPerRow);
@@ -266,9 +269,10 @@ const DisplayComponents = {
         }
 
         html += `
-            <div class="bit-legend">
-                <span class="legend-item"><span class="bit-same">█</span> Same bit</span>
-                <span class="legend-item"><span class="bit-different">█</span> Flipped bit</span>
+                <div class="bit-legend">
+                    <span class="legend-item"><span class="bit-same">█</span> Same bit</span>
+                    <span class="legend-item"><span class="bit-different">█</span> Flipped bit</span>
+                </div>
             </div>
         </div>`;
 
