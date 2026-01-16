@@ -26,6 +26,9 @@
     </header>
 
     <main class="hash-tool-container">
+        <!-- Welcome message -->
+        <div id="welcome-message"></div>
+
         <!-- Error display -->
         <div id="error-message" class="alert alert--error" hidden></div>
 
@@ -216,9 +219,17 @@
         <p>&copy; 2025 Cryptography Portfolio. Educational demonstration only.</p>
     </footer>
 
-    <!-- Load scripts in order -->
+
+    <!-- 1. Configuration (no dependencies) -->
+    <script src="../js/config.js"></script>
+    <!-- 2. Shared utilities (depends on config) -->
+    <script src="../js/ui-utils.js"></script>
+    <script src="../js/display-components.js"></script>
+    <!-- 3. Tool-specific utilities -->
     <script src="../js/crypto-demos/hash-utils.js"></script>
+    <!-- 4. Core implementation -->
     <script src="../js/crypto-demos/hash-core.js"></script>
+    <!-- 5. Demo controller (depends on all above) -->
     <script src="../js/crypto-demos/hash-demo.js"></script>
 </body>
 </html>
