@@ -78,28 +78,16 @@ function setupNavigation() {
  */
 function navigateToTool(toolPath) {
     // Security: Validate that the path is safe
-    // Allows: pages/rsa-tool.html, tools/crypto/hash.html, rsa-tool.html
-    // Rejects: ../../admin.html, pages/../admin.html, pages\tool.html
-    const validPathRegex = /^[a-zA-Z0-9\-\/]+\.html$/;
-
-    // Additional check: Reject attempts to go up directories (..)
-    if (toolPath.includes('..')) {
-        console.error('Invalid tool path - path traversal detected:', toolPath);
-        alert('Invalid tool path. Path traversal not allowed.');
+    if (!Config.SECURITY.ALLOWED_PATH_REGEX.test(toolPath)) {
+        console.error('Invalid tool path:', toolPath);
+        UIUtils.showError('Invalid tool path. Security check failed.');
         return;
     }
 
     // Additional check: Reject backslashes (Windows path separator - potential exploit)
     if (toolPath.includes('\\')) {
         console.error('Invalid tool path - backslash not allowed:', toolPath);
-        alert('Invalid tool path. Invalid path format.');
-        return;
-    }
-
-    // Main validation: Check format
-    if (!validPathRegex.test(toolPath)) {
-        console.error('Invalid tool path:', toolPath);
-        alert('Invalid tool path. Security check failed.');
+        UIUtils.showError('Invalid tool path. Invalid path format.');
         return;
     }
 
@@ -126,72 +114,6 @@ function setupToolButtons() {
             }
         });
     });
-}
-
-// ============================================================================
-// SECURE DOM MANIPULATION UTILITIES
-// ============================================================================
-
-/**
- * sanitizeHTML - Prevent XSS attacks by escaping HTML characters
- *
- * SECURITY CONCEPT: Cross-Site Scripting (XSS)
- *
- * Without sanitization, if user input contains:
- *   <img src=x onerror="alert('hacked')">
- * It could execute arbitrary code in the browser.
- *
- * This function converts dangerous characters to safe HTML entities:
- *   < becomes &lt;
- *   > becomes &gt;
- *   & becomes &amp;
- *   etc.
- *
- * @param {string} text - Raw user input
- * @returns {string} - Sanitized text safe to display
- *
- * EXAMPLE:
- *   Input:  <script>alert('xss')</script>
- *   Output: &lt;script&gt;alert('xss')&lt;/script&gt;
- *   Display: <script>alert('xss')</script> (shown as text, not executed)
- */
-function sanitizeHTML(text) {
-    const div = document.createElement('div');
-    div.textContent = text;  // textContent is safer than innerHTML
-    return div.innerHTML;
-}
-
-/**
- * createSecureElement - Safely create and configure DOM elements
- *
- * Instead of using innerHTML (which can execute code), we use
- * textContent and setAttribute to build elements safely.
- *
- * @param {string} tag - HTML tag name (e.g., 'div', 'p')
- * @param {string} text - Text content (automatically escaped)
- * @param {object} attributes - Object with attributes to set
- * @returns {HTMLElement} - Newly created element
- */
-function createSecureElement(tag, text = '', attributes = {}) {
-    const element = document.createElement(tag);
-
-    // Set text content safely
-    if (text) {
-        element.textContent = text;
-    }
-
-    // Set attributes safely
-    Object.keys(attributes).forEach(key => {
-        // Whitelist of safe attributes to prevent injection
-        const safeAttributes = ['class', 'id', 'data-', 'aria-', 'alt', 'title'];
-        const isSafe = safeAttributes.some(safe => key.startsWith(safe));
-
-        if (isSafe) {
-            element.setAttribute(key, attributes[key]);
-        }
-    });
-
-    return element;
 }
 
 // ============================================================================
@@ -252,6 +174,9 @@ function isSecureContext() {
  * This is crucial when your site has user-generated content
  */
 function checkCSPCompliance() {
+    if (!Config.SECURITY.CSP_ENABLED) {
+        return; // Skip check if disabled in config
+    }
     // The browser enforces CSP - we just verify it's active
     const metaCSP = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
 

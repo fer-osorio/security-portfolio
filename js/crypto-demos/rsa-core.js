@@ -70,7 +70,7 @@
  * @param {Number} rounds - Number of witnesses (default: 40)
  * @returns {Boolean} - true if probably prime, false if definitely composite
  */
-function millerRabin(n, rounds = 40) {
+function millerRabin(n, rounds = Config.RSA.PRIMALITY_TEST_ROUNDS) {
     // Handle small cases
     if (n <= 1n) return false;
     if (n <= 3n) return true;
@@ -160,10 +160,7 @@ function randomWitness(n) {
  */
 async function generatePrime(bits, progressCallback = null) {
     // Small primes for trial division (optimization)
-    const smallPrimes = [
-        2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
-        73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151
-    ];
+    const smallPrimes = Config.RSA.SMALL_PRIMES
 
     let attempts = 0;
 
@@ -279,7 +276,7 @@ async function generateKeyPair(bits = 2048, progressCallback = null) {
     const diff = p > q ? p - q : q - p;
     const minDiff = 1n << BigInt(halfBits - 10);  // At least 2^(halfBits-10) difference
 
-    if (diff < minDiff) {
+    if (diff < Config.RSA.MIN_PQ_DIFFERENCE_BITS) {
         console.warn('p and q are too close, regenerating...');
         return generateKeyPair(bits, progressCallback);  // Retry
     }
@@ -293,9 +290,8 @@ async function generateKeyPair(bits = 2048, progressCallback = null) {
     if (progressCallback) progressCallback('Computing φ(n)', null);
     const phi = MathUtils.eulerTotient(p, q);
 
-    // STEP 5: Choose public exponent e
-    // Standard: e = 65537 = 2^16 + 1 (Fermat prime F4)
-    const e = 65537n;
+    // STEP 5: Public exponent e
+    const e = BigInt(Config.RSA.PUBLIC_EXPONENT);
 
     // Verify gcd(e, φ(n)) = 1
     if (!MathUtils.areCoprime(e, phi)) {
@@ -325,11 +321,11 @@ async function generateKeyPair(bits = 2048, progressCallback = null) {
 
     return {
         publicKey: { e, n },
-            privateKey: { d, n },
-                // Include p, q, phi for educational purposes (NEVER do this in production!)
-                p,
-                q,
-                phi
+        privateKey: { d, n },
+        // Include p, q, phi for educational purposes (NEVER do this in production!)
+        p,
+        q,
+        phi
     };
 }
 
