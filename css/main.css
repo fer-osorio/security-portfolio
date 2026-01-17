@@ -22,3 +22,6 @@
 @import 'components/code-display.css';
 @import 'components/alerts.css';
 @import 'components/welcome.css';
+
+/* 4. Utilities - Optional style*/
+@import 'utilities/dark-mode.css';
