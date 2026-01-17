@@ -21,7 +21,7 @@
      *  ======================================================================== */
 
     /* Brand Colors */
-    --color-primary: #2c3e50;      /* Dark blue-gray: headers, nav, primary text */
+    --color-primary: #314355;      /* Dark blue-gray: headers, nav, primary text */
     --color-secondary: #3498db;    /* Bright blue: links, CTAs, accents */
     --color-accent: #e74c3c;       /* Red: warnings, error states, highlights */
     --color-success: #27ae60;      /* Green: success messages, completed states */
@@ -171,21 +171,3 @@
         --font-size-xxxl: 3rem;    /* Larger hero text on desktop */
     }
 }
-
-/* ============================================================================
- *  DARK MODE SUPPORT (Future Enhancement)
- *
- *  Uncomment and customize when implementing dark mode
- *  ============================================================================ */
-
-/*
- @ m*edia (prefers-color-scheme: dark) {
- :root {
- --color-background: #1a1a1a;
- --color-surface: #2d2d2d;
- --color-text: #e0e0e0;
- --color-text-light: #a0a0a0;
- --color-border: #404040;
- }
- }
- */
