@@ -108,7 +108,8 @@ const DisplayComponents = {
                 <div class="math-explanation">
                     <p><strong>Key Relationship:</strong></p>
                     <p>e × d ≡ 1 (mod φ(n))</p>
-                    <p>Verification: (e × d) mod φ(n) = ${((e * d) % phi).toString()}</p>
+                    <p>Verification:</p>
+                    <p> (e × d) mod φ(n) = ${((e * d) % phi).toString()}</p>
                 </div>
             </div>
             `;
@@ -269,10 +270,10 @@ const DisplayComponents = {
         }
 
         html += `
-                <div class="bit-legend">
-                    <span class="legend-item"><span class="bit-same">█</span> Same bit</span>
-                    <span class="legend-item"><span class="bit-different">█</span> Flipped bit</span>
-                </div>
+            </div>
+            <div class="bit-legend">
+                <span class="legend-item"><span class="bit-same">█</span> Same bit</span>
+                <span class="legend-item"><span class="bit-different">█</span> Flipped bit</span>
             </div>
         </div>`;
 
