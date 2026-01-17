@@ -32,7 +32,7 @@
         // Update toggle button icon if it exists
         const toggleBtn = document.getElementById('theme-toggle');
         if (toggleBtn) {
-            toggleBtn.textContent = theme === 'dark' ? '☀︎' : '⏾';
+            toggleBtn.textContent = theme === 'dark' ? '🌕' : '🌑';
             toggleBtn.setAttribute(
                 'aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
             );
