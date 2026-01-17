@@ -18,6 +18,11 @@
                 <h1 class="logo">RSA Interactive Tool</h1>
                 <ul class="nav-links">
                     <li><a href="../index.html">← Back to Portfolio</a></li>
+                    <li>
+                        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                            ⏾
+                        </button>
+                    </li>
                 </ul>
             </div>
         </nav>
@@ -198,8 +203,18 @@
     </footer>
 
     <!-- Load scripts in order: utilities first, then core crypto, then UI -->
+    <!-- 1. Configuration (no dependencies) -->
+    <script src="../js/config.js"></script>
+    <!-- 2. Shared utilities (depends on config) -->
+    <script src="../js/ui-utils.js"></script>
+    <script src="../js/display-components.js"></script>
+    <!-- 3. Tool-specific utilities -->
     <script src="../js/crypto-demos/math-utils.js"></script>
+    <!-- 4. Core implementation -->
     <script src="../js/crypto-demos/rsa-core.js"></script>
+    <!-- 5. Demo controller (depends on all above) -->
     <script src="../js/crypto-demos/rsa-demo.js"></script>
+    <!-- 6. Toggle for dark mode-->
+    <script src="../js/dark-mode-toggle.js"></script>
 </body>
 </html>

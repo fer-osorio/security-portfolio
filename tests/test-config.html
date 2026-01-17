@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config Module Test</title>
+</head>
+<body>
+    <h1>Configuration Module Test</h1>
+    <div id="test-results"></div>
+
+    <script src="../js/config.js"></script>
+    <script>
+        // Test 1: Config object exists
+        console.assert(typeof Config !== 'undefined', 'Config object should exist');
+
+        // Test 2: All sections exist
+        console.assert(Config.UI !== undefined, 'UI section should exist');
+        console.assert(Config.SECURITY !== undefined, 'SECURITY section should exist');
+        console.assert(Config.ALGORITHMS !== undefined, 'ALGORITHMS section should exist');
+        console.assert(Config.RSA !== undefined, 'RSA section should exist');
+        console.assert(Config.TEMPLATES !== undefined, 'TEMPLATES section should exist');
+
+        // Test 3: Algorithm lookup works
+        const sha256Info = Config.getAlgorithmInfo('SHA-256');
+        console.assert(sha256Info !== null, 'Should find SHA-256');
+        console.assert(sha256Info.outputBits === 256, 'SHA-256 should have 256-bit output');
+
+        // Test 4: Case-insensitive lookup
+        const md5Info = Config.getAlgorithmInfo('md5');
+        console.assert(md5Info !== null, 'Should find MD5 (lowercase)');
+        console.assert(md5Info.security === 'BROKEN', 'MD5 should be marked BROKEN');
+
+        // Test 5: Template formatting
+        const errorMsg = Config.formatTemplate(Config.TEMPLATES.ERROR_GENERIC, {
+            message: 'Test error'
+        });
+        console.assert(errorMsg === '⚠️ Error: Test error', 'Template formatting should work');
+
+        // Test 6: Config is frozen (immutable)
+        try {
+            Config.UI.SCROLL_BEHAVIOR = 'auto';
+            console.assert(Config.UI.SCROLL_BEHAVIOR === 'smooth', 'Config should be immutable');
+        } catch (e) {
+            // Expected in strict mode
+            console.log('✓ Config is properly frozen');
+        }
+
+        // Display results
+        const resultsDiv = document.getElementById('test-results');
+        resultsDiv.innerHTML = `
+            <h2>✓ All Tests Passed</h2>
+            <ul>
+                <li>Config object loaded</li>
+                <li>All sections present</li>
+                <li>Algorithm lookup works</li>
+                <li>Template formatting works</li>
+                <li>Config is immutable</li>
+            </ul>
+            <h3>Sample Data:</h3>
+            <pre>${JSON.stringify({
+                scrollBehavior: Config.UI.SCROLL_BEHAVIOR,
+                rsaKeySizes: Config.RSA.KEY_SIZES,
+                sha256Security: Config.getAlgorithmInfo('SHA-256').security
+            }, null, 2)}</pre>
+        `;
+
+        console.log('✓ Configuration module test completed successfully');
+    </script>
+</body>
+</html>

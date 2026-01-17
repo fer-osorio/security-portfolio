@@ -10,12 +10,24 @@
  * - View: hash-tool.html (DOM structure)
  * - Controller: this file (event handling, UI updates)
  *
+ * - Uses shared UIUtils for common DOM operations
+ * - Uses DisplayComponents for consistent HTML generation
+ * - Uses Config for all constants and configuration
+ * - Hash-specific logic (avalanche visualization, birthday calculations)
+ *
  * ============================================================================
  */
 
-// Global state
+// ============================================================================
+// GLOBAL STATE
+// ============================================================================
+
 let currentHashes = {};
 let lastInput = '';
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
 
 /**
  * Initialize the hash demo when page loads
@@ -33,15 +45,23 @@ document.addEventListener('DOMContentLoaded', function() {
     displayWelcomeMessage();
 });
 
+// ============================================================================
+// DEPENDENCY CHECKING
+// ============================================================================
+
 /**
  * Check if required libraries are loaded
  */
 function checkDependencies() {
     if (!HashCore.isCryptoJSAvailable()) {
         console.warn('⚠️ CryptoJS not loaded. MD5 and SHA-3 will not be available.');
-        showWarning('Some hash functions (MD5, SHA-3) require CryptoJS library.');
+        UIUtils.showWarning('Some hash functions (MD5, SHA-3) require CryptoJS library.');
     }
 }
+
+// ============================================================================
+// EVENT HANDLER SETUP
+// ============================================================================
 
 /**
  * Set up all event listeners
@@ -51,12 +71,6 @@ function setupEventListeners() {
     const computeBtn = document.getElementById('compute-hash-btn');
     if (computeBtn) {
         computeBtn.addEventListener('click', handleComputeHash);
-    }
-
-    // Real-time input (optional)
-    const hashInput = document.getElementById('hash-input');
-    if (hashInput) {
-        hashInput.addEventListener('input', debounce(handleComputeHash, 500));
     }
 
     // Avalanche effect
@@ -71,12 +85,14 @@ function setupEventListeners() {
         birthdayBtn.addEventListener('click', handleBirthdayCalculator);
     }
 
-    // Copy buttons
-    setupCopyButtons();
-
-    // Tab switching
-    setupTabs();
+    // Use shared utilities for common patterns
+    UIUtils.setupCopyButtons();
+    UIUtils.setupTabs();
 }
+
+// ============================================================================
+// HASH COMPUTATION HANDLERS
+// ============================================================================
 
 /**
  * Handle hash computation
@@ -86,20 +102,20 @@ async function handleComputeHash() {
     const selectedAlgos = getSelectedAlgorithms();
 
     if (!input) {
-        showError('Please enter text to hash');
+        UIUtils.showError('Please enter text to hash');
         return;
     }
 
     if (selectedAlgos.length === 0) {
-        showError('Please select at least one hash algorithm');
+        UIUtils.showError('Please select at least one hash algorithm');
         return;
     }
 
     // Clear previous results
-    clearResults('hash-results');
+    UIUtils.clearResults('hash-results');
 
     // Show loading indicator
-    showLoading('hash-results');
+    UIUtils.showLoading('hash-results', 'Computing hashes...');
 
     try {
         const startTime = performance.now();
@@ -129,9 +145,9 @@ async function handleComputeHash() {
 
     } catch (error) {
         console.error('Hash computation failed:', error);
-        showError('Hash computation failed: ' + error.message);
+        UIUtils.showError('Hash computation failed: ' + error.message);
     } finally {
-        hideLoading('hash-results');
+        UIUtils.hideLoading('hash-results');
     }
 }
 
@@ -147,64 +163,38 @@ function getSelectedAlgorithms() {
  * Display hash computation results
  */
 function displayHashResults(input, results, totalTime) {
-    const resultsDiv = document.getElementById('hash-results');
-    resultsDiv.style.display = 'block';
-
     let html = `
     <div class="hash-results-container">
         <h3>✓ Hash Computation Complete (${totalTime}ms)</h3>
 
         <div class="input-display">
             <h4>Input</h4>
-            <p class="input-text">"${escapeHtml(input)}"</p>
+            <p class="input-text">"${UIUtils.escapeHtml(input)}"</p>
             <p class="input-info">Length: ${input.length} characters (${new Blob([input]).size} bytes)</p>
         </div>
 
-        <div class="hash-outputs">
+    <div class="hash-outputs">
     `;
 
-    // Display each algorithm's result
+    // Display each algorithm's result using DisplayComponents
     for (const [algo, data] of Object.entries(results)) {
-        const info = HashCore.getAlgorithmInfo(algo);
-        const binary = HashUtils.hexToBinary(data.hash);
-
-        html += `
-            <div class="card card--result">
-                <h4>${info.status} ${info.name} <span class="security-badge">${info.security}</span></h4>
-                <div class="hash-details">
-                    <div class="code-value">
-                        <label>Hash (Hex):</label>
-                        <code id="hash-${algo}">${data.hash}</code>
-                        <button class="copy-btn" data-copy="hash-${algo}">Copy</button>
-                    </div>
-                <div class="hash-metadata">
-                    <p><strong>Output size:</strong> ${info.outputBits} bits (${info.outputBits / 8} bytes)</p>
-                    <p><strong>Computation time:</strong> ${data.time}ms</p>
-                    <p><strong>Status:</strong> ${info.usage}</p>
-                </div>
-                <details class="hash-binary">
-                    <summary>View as binary (${binary.length} bits)</summary>
-                    <code class="binary-display">${formatBinary(binary)}</code>
-                </details>
-            </div>
-        </div>
-        `;
+        html += DisplayComponents.createHashOutputDisplay({
+            algorithm: algo,
+            hash: data.hash,
+            time: data.time,
+            showBinary: true
+        });
     }
 
-    html += `
-    </div>
-    </div>
-    `;
+    html += '</div></div>';
 
-    resultsDiv.innerHTML = html;
-
-    resultsDiv.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'  // Locates start of division in viewport
-    });
-
-    setupCopyButtons();
+    UIUtils.displayResults('hash-results', html, true);
+    UIUtils.setupCopyButtons();
 }
+
+// ============================================================================
+// AVALANCHE EFFECT HANDLERS
+// ============================================================================
 
 /**
  * Handle avalanche effect demonstration
@@ -214,25 +204,25 @@ async function handleAvalanche() {
     const algorithm = document.getElementById('avalanche-algorithm').value;
 
     if (!baseInput) {
-        showError('Please enter base text for avalanche test');
+        UIUtils.showError('Please enter base text for avalanche test');
         return;
     }
 
-    clearResults('avalanche-results');
-    showLoading('avalanche-results');
+    UIUtils.clearResults('avalanche-results');
+    UIUtils.showLoading('avalanche-results', 'Computing avalanche effect...');
 
     try {
         // Compute hash of original input
         const originalHash = await HashCore.computeHash(baseInput, algorithm);
 
-        // Create modified input (change last bit)
+        // Create modified input (flip last bit)
         const modifiedInput = baseInput.slice(0, -1) +
-            String.fromCharCode(
-                // The following condition prevents the presence of the non-printable character DEL
-                // Notice: Still one and only one bit flipped
-                baseInput.charAt(baseInput.length - 1) === '~' ? 124       // ASCII for '|'
-                    : baseInput.charCodeAt(baseInput.length - 1) ^ 1
-            );
+        String.fromCharCode(
+            // The following condition prevents the presence of the non-printable character DEL
+            // Notice: Still one and only one bit flipped
+            baseInput.charAt(baseInput.length - 1) === '~' ? 124
+            : baseInput.charCodeAt(baseInput.length - 1) ^ 1
+        );
 
         // Compute hash of modified input
         const modifiedHash = await HashCore.computeHash(modifiedInput, algorithm);
@@ -245,24 +235,23 @@ async function handleAvalanche() {
 
     } catch (error) {
         console.error('Avalanche test failed:', error);
-        showError('Avalanche test failed: ' + error.message);
+        UIUtils.showError('Avalanche test failed: ' + error.message);
     } finally {
-        hideLoading('avalanche-results');
+        UIUtils.hideLoading('avalanche-results');
     }
 }
 
 /**
  * Display avalanche effect results
+ *
+ * REFACTORED: Now uses DisplayComponents for consistent HTML generation
  */
 function displayAvalancheResults(original, modified, hash1, hash2, avalanche, algorithm) {
-    const resultsDiv = document.getElementById('avalanche-results');
-    resultsDiv.style.display = 'block';
-
     const binary1 = HashUtils.hexToBinary(hash1);
     const binary2 = HashUtils.hexToBinary(hash2);
     const bitDiff = HashUtils.generateBitDiff(binary1, binary2);
 
-    const info = HashCore.getAlgorithmInfo(algorithm);
+    const info = Config.getAlgorithmInfo(algorithm);
 
     // Evaluate avalanche quality
     const percentage = parseFloat(avalanche.percentage);
@@ -278,107 +267,62 @@ function displayAvalancheResults(original, modified, hash1, hash2, avalanche, al
         color = 'red';
     }
 
+    // Build HTML using DisplayComponents
     let html = `
     <div class="avalanche-container">
         <h3>✓ Avalanche Effect Analysis</h3>
         <p class="algorithm-name">Algorithm: ${info.name}</p>
+    `;
 
-            <div class="comparison-section">
-                <div class="comparison-item">
-                    <h4>Original Input</h4>
-                    <code class="input-display">"${escapeHtml(original)}"</code>
-                    <p class="hash-label">Hash:</p>
-                    <code class="hash-small">${hash1}</code>
-                </div>
+    // Use DisplayComponents for comparison display
+    html += DisplayComponents.createComparisonDisplay({
+        original: {
+            title: 'Original Input',
+            content: `
+            <code class="input-display">"${UIUtils.escapeHtml(original)}"</code>
+            <p class="hash-label">Hash:</p>
+            <code class="hash-small">${hash1}</code>
+            `
+        },
+        modified: {
+            title: 'Modified Input (last bit flipped)',
+            content: `
+                <code class="input-display">"${UIUtils.escapeHtml(modified)}"</code>
+                <p class="hash-label">Hash:</p>
+                <code class="hash-small">${hash2}</code>
+            `
+        }
+    });
 
-                <div class="comparison-arrow">→</div>
+    // Use DisplayComponents for avalanche summary
+    html += DisplayComponents.createAvalancheSummary(avalanche, quality);
 
-                <div class="comparison-item">
-                    <h4>Modified Input <span class="change-indicator">(last bit flipped)</span></h4>
-                    <code class="input-display">"${escapeHtml(modified)}"</code>
-                    <p class="hash-label">Hash:</p>
-                    <code class="hash-small">${hash2}</code>
-                </div>
-            </div>
-
-            <div class="avalanche-stats">
-                <h4>Avalanche Statistics</h4>
-                <div class="stat-grid">
-                    <div class="stat-item">
-                        <span class="stat-value" style="color: ${color}">${avalanche.flipped}</span>
-                        <span class="stat-label">Bits Flipped</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">${avalanche.total}</span>
-                        <span class="stat-label">Total Bits</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value" style="color: ${color}">${avalanche.percentage}%</span>
-                        <span class="stat-label">Percentage</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value" style="color: ${color}">${quality}</span>
-                        <span class="stat-label">Quality</span>
-                    </div>
-                </div>
-                <p class="avalanche-explanation">
-                    <strong>Ideal avalanche:</strong> ~50% of bits flip when input changes by 1 bit.
-                    This indicates good diffusion (no correlation between input and output).
-                </p>
-            </div>
-
-            <div class="bit-visualization">
-                <h4>Bit-Level Comparison</h4>
-                <div class="bit-diff-display">
-                    ${renderBitDiff(bitDiff)}
-                </div>
-            <div class="bit-legend">
-                <span class="legend-item"><span class="bit-same">█</span> Same bit</span>
-                    <span class="legend-item"><span class="bit-different">█</span> Flipped bit</span>
-            </div>
-        </div>
+    // Use DisplayComponents for bit visualization
+    html += `
+    <div class="bit-visualization">
+        <h4>Bit-Level Comparison</h4>
+        ${DisplayComponents.createBitVisualization(bitDiff)}
     </div>
     `;
 
-    resultsDiv.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'  // Locates start of division in viewport
-    });
+    html += '</div>';
 
-    resultsDiv.innerHTML = html;
+    UIUtils.displayResults('avalanche-results', html, true);
 }
 
-/**
- * Render bit difference visualization
- */
-function renderBitDiff(bitDiff) {
-    let html = '';
-    const bitsPerRow = 64;
-
-    for (let i = 0; i < bitDiff.length; i += bitsPerRow) {
-        const row = bitDiff.slice(i, i + bitsPerRow);
-        html += '<div class="bit-row">';
-
-        for (const bitInfo of row) {
-            const className = bitInfo.status === 'same' ? 'bit-same' : 'bit-different';
-            html += `<span class="${className}" title="Bit ${bitInfo.position}: ${bitInfo.bit}">${bitInfo.bit}</span>`;
-        }
-
-        html += '</div>';
-    }
-
-    return html;
-}
+// ============================================================================
+// BIRTHDAY ATTACK HANDLERS
+// ============================================================================
 
 /**
  * Handle birthday attack calculator
  */
 function handleBirthdayCalculator() {
     const algorithm = document.getElementById('birthday-algorithm').value;
-    const info = HashCore.getAlgorithmInfo(algorithm);
+    const info = Config.getAlgorithmInfo(algorithm);
 
     if (!info) {
-        showError('Invalid algorithm selected');
+        UIUtils.showError('Invalid algorithm selected');
         return;
     }
 
@@ -393,10 +337,28 @@ function handleBirthdayCalculator() {
         { attempts: Math.pow(2, hashBits / 3), label: `2^${(hashBits / 3).toFixed(1)}` },
         { attempts: Math.pow(2, hashBits / 2), label: `2^${hashBits / 2}` },
         { attempts: Math.pow(2, hashBits / 1.5), label: `2^${(hashBits / 1.5).toFixed(1)}` }
-    ].map(item => ({
-        ...item,
-        probability: (HashUtils.birthdayAttackProbability(hashBits, item.attempts) * 100)
-    }));
+    ].map(item => {
+        const probability = HashUtils.birthdayAttackProbability(hashBits, item.attempts) * 100;
+
+        // Determine security assessment
+        let assessment;
+        if (probability < 0.000001) {
+            assessment = '<span class="secure">✅ Effectively Impossible</span>';
+        } else if (probability < 0.01) {
+            assessment = '<span class="secure">✅ Highly Secure</span>';
+        } else if (probability < 10) {
+            assessment = '<span class="warning">⚠️ Possible with Resources</span>';
+        } else {
+            assessment = '<span class="insecure">⛔ Practical Attack</span>';
+        }
+
+        return {
+            ...item,
+            probability,
+            assessment
+        };
+    });
+
     displayBirthdayResults(info, attempts50, probabilities);
 }
 
@@ -404,9 +366,6 @@ function handleBirthdayCalculator() {
  * Display birthday attack calculator results
  */
 function displayBirthdayResults(info, attempts50, probabilities) {
-    const resultsDiv = document.getElementById('birthday-results');
-    resultsDiv.style.display = 'block';
-
     let html = `
     <div class="birthday-container">
         <h3>🎂 Birthday Attack Analysis</h3>
@@ -430,46 +389,7 @@ function displayBirthdayResults(info, attempts50, probabilities) {
                 <strong>50% collision probability:</strong> ${attempts50} attempts
             </p>
 
-            <table class="probability-table">
-                <thead>
-                    <tr>
-                        <th>Attempts</th>
-                        <th>Collision Probability</th>
-                        <th>Security Assessment</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    for (const prob of probabilities) {
-        const percentage = parseFloat(prob.probability);
-        let assessment;
-        if (percentage < 0.000001) {
-            assessment = '<span class="secure">✅ Effectively Impossible</span>';
-        } else if (percentage < 0.01) {
-            assessment = '<span class="secure">✅ Highly Secure</span>';
-        } else if (percentage < 10) {
-            assessment = '<span class="warning">⚠️ Possible with Resources</span>';
-        } else {
-            assessment = '<span class="insecure">⛔ Practical Attack</span>';
-        }
-
-        html += `
-                <tr>
-                    <td>${prob.label}</td>
-                    <td>${
-                        prob.probability >= 0.01 ? prob.probability.toFixed(2)
-                            : prob.probability >= 0.000001 ? prob.probability.toFixed(6)
-                            : " < 1e-6"
-                    }%</td>
-                    <td>${assessment}</td>
-                </tr>
-        `;
-    }
-
-    html += `
-                </tbody>
-            </table>
+            ${DisplayComponents.createBirthdayProbabilityTable(probabilities)}
         </div>
 
         <div class="real-world-context">
@@ -479,28 +399,25 @@ function displayBirthdayResults(info, attempts50, probabilities) {
                 (500 × 10^18 hashes/second)
             </p>
             <p>
-                <strong>Time to 50% collision for ${info.name}  (assume 1 billion hashes/second):</strong>
+                <strong>Time to 50% collision for ${info.name} (assume 1 billion hashes/second):</strong>
                 ${estimateCollisionTime(info.outputBits)} years
             </p>
             <p class="conclusion">
                 ${info.outputBits >= 256 ?
-                    '✅ Collision-resistant in practice (more time than age of universe)' :
-                    '⚠️ May be vulnerable with sufficient computational resources'}
+                '✅ Collision-resistant in practice (more time than age of universe)' :
+                '⚠️ May be vulnerable with sufficient computational resources'}
             </p>
         </div>
     </div>
     `;
 
-    resultsDiv.innerHTML = html;
-
-    resultsDiv.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'  // Locates start of division in viewport
-    });
+    UIUtils.displayResults('birthday-results', html, true);
 }
 
 /**
  * Estimate time to find collision
+ *
+ * HASH-SPECIFIC: This calculation is specific to birthday attack analysis
  */
 function estimateCollisionTime(hashBits) {
     // Assume 1 billion hashes/second (aggressive estimate)
@@ -518,154 +435,33 @@ function estimateCollisionTime(hashBits) {
     }
 }
 
-/**
- * Format binary string for display (groups of 8)
- */
-function formatBinary(binary) {
-    let formatted = '';
-    for (let i = 0; i < binary.length; i += 8) {
-        formatted += binary.substring(i, i + 8) + ' ';
-    }
-    return formatted.trim();
-}
-
-/**
- * Setup copy-to-clipboard functionality
- */
-function setupCopyButtons() {
-    const copyButtons = document.querySelectorAll('.copy-btn');
-
-    copyButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const targetId = this.getAttribute('data-copy');
-            const targetElement = document.getElementById(targetId);
-
-            if (targetElement) {
-                const text = targetElement.textContent;
-
-                navigator.clipboard.writeText(text).then(() => {
-                    const originalText = this.textContent;
-                    this.textContent = '✓ Copied!';
-                    this.classList.add('copied');
-
-                    setTimeout(() => {
-                        this.textContent = originalText;
-                        this.classList.remove('copied');
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Failed to copy:', err);
-                    showError('Failed to copy to clipboard');
-                });
-            }
-        });
-    });
-}
-
-/**
- * Setup tab switching
- */
-function setupTabs() {
-    const tabs = document.querySelectorAll('.tab-button');
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const targetTab = this.getAttribute('data-tab');
-
-            tabs.forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-
-            this.classList.add('active');
-            document.getElementById(targetTab).classList.add('active');
-        });
-    });
-}
+// ============================================================================
+// INITIAL DISPLAY
+// ============================================================================
 
 /**
  * Display welcome message
+ *
+ * HASH-SPECIFIC: Welcome content is tool-specific, stays in this file
  */
 function displayWelcomeMessage() {
-    // Welcome message is in HTML
-}
-
-/**
- * Show error message
- */
-function showError(message) {
-    const errorDiv = document.getElementById('error-message');
-    if (errorDiv) {
-        errorDiv.textContent = message;
-        errorDiv.hidden = false;
-
-        // Scroll to error message
-        errorDiv.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'  // Centers the error in viewport
-        });
-
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            errorDiv.hidden = true;
-        }, 5000);
+    const welcomeDiv = document.getElementById('welcome-message');
+    if (welcomeDiv) {
+        welcomeDiv.innerHTML = `
+        <div class="welcome-content">
+            <h2>Welcome to the Hash Function Visualizer</h2>
+            <p>Explore cryptographic hash functions through interactive demonstrations:</p>
+            <ol>
+                <li><strong>Compute:</strong> Calculate hashes using multiple algorithms simultaneously</li>
+                <li><strong>Avalanche Effect:</strong> See how changing one bit affects the output</li>
+                <li><strong>Birthday Attack:</strong> Understand collision probability and security</li>
+                <li><strong>Security Analysis:</strong> Learn about hash function properties and vulnerabilities</li>
+        </ol>
+        ${DisplayComponents.createEducationalNote(
+            'This tool demonstrates both secure (SHA-256, SHA-3) and broken (MD5, SHA-1) hash functions. ' +
+            'The broken algorithms are included for educational comparison only.'
+        )}
+        </div>
+        `;
     }
-}
-
-/**
- * Show warning message
- */
-function showWarning(message) {
-    console.warn(message);
-    // Could display in UI if needed
-}
-
-/**
- * Show loading indicator
- */
-function showLoading(elementId) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.innerHTML = '<div class="loading">Computing hashes...</div>';
-        element.style.display = 'block';
-    }
-}
-
-/**
- * Hide loading indicator
- */
-function hideLoading(elementId) {
-    // Loading will be replaced by results
-}
-
-/**
- * Clear results
- */
-function clearResults(elementId) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.innerHTML = '';
-        element.style.display = 'none';
-    }
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-/**
- * Debounce function (for real-time input)
- */
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
 }

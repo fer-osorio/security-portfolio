@@ -318,6 +318,11 @@ function birthdayAttackProbability(hashBits, attempts) {
  * @returns {string} - Formatted number (e.g., "2^64")
  */
 function attemptsFor50PercentCollision(hashBits) {
+    // Validate against known algorithms
+    const validBits = Object.values(Config.ALGORITHMS).map(a => a.outputBits);
+    if (!validBits.includes(hashBits)) {
+        console.warn(`Unusual hash bit length: ${hashBits}`);
+    }
     // k ≈ √(2n × ln(2)) where n = 2^hashBits
     // k ≈ 1.177 × 2^(hashBits/2)
 

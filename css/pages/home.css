@@ -174,3 +174,9 @@ section,
         font-size: 1.75rem;
     }
 }
+
+@media (max-width: 400px){
+    .contact-links li {
+        word-break: break-all;
+    }
+}

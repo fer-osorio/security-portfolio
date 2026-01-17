@@ -21,6 +21,7 @@
 @import 'components/forms.css';
 @import 'components/code-display.css';
 @import 'components/alerts.css';
+@import 'components/welcome.css';
 
-/* 5. PAGES */
-@import 'pages/home.css';
+/* 4. Utilities - Optional style*/
+@import 'utilities/dark-mode.css';

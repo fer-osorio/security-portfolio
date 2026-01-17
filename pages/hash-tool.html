@@ -20,12 +20,20 @@
                 <h1 class="logo">Hash Function Visualizer</h1>
                 <ul class="nav-links">
                     <li><a href="../index.html">← Back to Portfolio</a></li>
+                    <li>
+                        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                            ⏾
+                        </button>
+                    </li>
                 </ul>
             </div>
         </nav>
     </header>
 
     <main class="hash-tool-container">
+        <!-- Welcome message -->
+        <div id="welcome-message"></div>
+
         <!-- Error display -->
         <div id="error-message" class="alert alert--error" hidden></div>
 
@@ -216,9 +224,19 @@
         <p>&copy; 2025 Cryptography Portfolio. Educational demonstration only.</p>
     </footer>
 
-    <!-- Load scripts in order -->
+
+    <!-- 1. Configuration (no dependencies) -->
+    <script src="../js/config.js"></script>
+    <!-- 2. Shared utilities (depends on config) -->
+    <script src="../js/ui-utils.js"></script>
+    <script src="../js/display-components.js"></script>
+    <!-- 3. Tool-specific utilities -->
     <script src="../js/crypto-demos/hash-utils.js"></script>
+    <!-- 4. Core implementation -->
     <script src="../js/crypto-demos/hash-core.js"></script>
+    <!-- 5. Demo controller (depends on all above) -->
     <script src="../js/crypto-demos/hash-demo.js"></script>
+    <!-- 6. Toggle for dark mode-->
+    <script src="../js/dark-mode-toggle.js"></script>
 </body>
 </html>

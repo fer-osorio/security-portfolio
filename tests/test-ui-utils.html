@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Utils Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .alert { padding: 15px; margin: 10px 0; border-radius: 4px; }
+        .alert--error { background: #fee; border: 1px solid #fcc; color: #c00; }
+        .alert--warning { background: #ffc; border: 1px solid #fc6; color: #630; }
+        .alert--success { background: #efe; border: 1px solid #cfc; color: #060; }
+        .tab-button { padding: 10px 20px; margin: 5px; border: 2px solid #ddd; background: #fff; cursor: pointer; }
+        .tab-button.active { background: #007bff; color: white; border-color: #007bff; }
+        .tab-panel { display: none; padding: 20px; border: 1px solid #ddd; margin-top: 10px; }
+        .tab-panel.active { display: block; }
+        .copy-btn { padding: 5px 10px; margin-left: 10px; cursor: pointer; }
+        .copy-btn.copied { background: #28a745; color: white; }
+        code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+        .test-section { margin: 30px 0; padding: 20px; border: 1px solid #eee; }
+        .loading { text-align: center; padding: 20px; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>UI Utilities Module Test</h1>
+
+    <!-- Test 1: XSS Prevention -->
+    <div class="test-section">
+        <h2>Test 1: XSS Prevention</h2>
+        <button onclick="testXSS()">Test escapeHtml()</button>
+        <div id="xss-result"></div>
+    </div>
+
+    <!-- Test 2: Copy to Clipboard -->
+    <div class="test-section">
+        <h2>Test 2: Copy to Clipboard</h2>
+        <code id="copy-target">Hello, World!</code>
+        <button class="copy-btn" data-copy="copy-target">Copy</button>
+    </div>
+
+    <!-- Test 3: Tabs -->
+    <div class="test-section">
+        <h2>Test 3: Tab Switching</h2>
+        <button class="tab-button active" data-tab="tab1">Tab 1</button>
+        <button class="tab-button" data-tab="tab2">Tab 2</button>
+        <button class="tab-button" data-tab="tab3">Tab 3</button>
+
+        <div id="tab1" class="tab-panel active">Content of Tab 1</div>
+        <div id="tab2" class="tab-panel">Content of Tab 2</div>
+        <div id="tab3" class="tab-panel">Content of Tab 3</div>
+    </div>
+
+    <!-- Test 4: Messages -->
+    <div class="test-section">
+        <h2>Test 4: Error/Warning/Success Messages</h2>
+        <button onclick="UIUtils.showError('This is an error message')">Show Error</button>
+        <button onclick="UIUtils.showWarning('This is a warning message')">Show Warning</button>
+        <button onclick="UIUtils.showSuccess('This is a success message')">Show Success</button>
+        <div id="error-message" class="alert alert--error" hidden></div>
+    </div>
+
+    <!-- Test 5: Loading States -->
+    <div class="test-section">
+        <h2>Test 5: Loading States</h2>
+        <button onclick="testLoading()">Test Loading State</button>
+        <div id="loading-test"></div>
+    </div>
+
+    <!-- Test 6: Button States -->
+    <div class="test-section">
+        <h2>Test 6: Button Loading</h2>
+        <button id="test-btn" onclick="testButtonLoading()">Click Me</button>
+    </div>
+
+    <!-- Test 7: Debounce -->
+    <div class="test-section">
+        <h2>Test 7: Debounce</h2>
+        <input type="text" id="debounce-input" placeholder="Type here...">
+        <div id="debounce-result">Debounced value will appear here</div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/config.js"></script>
+    <script src="../js/ui-utils.js"></script>
+
+    <script>
+        // Test 1: XSS Prevention
+        function testXSS() {
+            const malicious = '<script>alert("XSS")<\/script><img src=x onerror="alert(\'XSS\')">';
+            const safe = UIUtils.escapeHtml(malicious);
+            document.getElementById('xss-result').innerHTML = `
+                <p><strong>Input:</strong> ${safe}</p>
+                <p><strong>Escaped:</strong> ${safe}</p>
+                <p><strong>Result:</strong> ${safe === malicious ? '❌ FAILED' : '✅ PASSED'}</p>
+            `;
+        }
+
+        // Test 5: Loading States
+        function testLoading() {
+            const div = document.getElementById('loading-test');
+            UIUtils.showLoading(div, 'Computing...');
+            setTimeout(() => {
+                UIUtils.displayResults('loading-test', '<p>✅ Loading complete!</p>');
+            }, 2000);
+        }
+
+        // Test 6: Button Loading
+        function testButtonLoading() {
+            const btn = document.getElementById('test-btn');
+            UIUtils.setButtonLoading(btn, 'Processing...');
+
+            setTimeout(() => {
+                UIUtils.resetButton(btn);
+            }, 3000);
+        }
+
+        // Test 7: Debounce
+        const debouncedUpdate = UIUtils.debounce(function() {
+            const value = document.getElementById('debounce-input').value;
+            document.getElementById('debounce-result').textContent =
+                `Debounced value: "${value}" (updated after 500ms pause)`;
+        });
+
+        document.getElementById('debounce-input').addEventListener('input', debouncedUpdate);
+
+        console.log('✓ All UI Utils tests loaded');
+    </script>
+</body>
+</html>

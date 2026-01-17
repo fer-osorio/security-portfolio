@@ -1,0 +1,30 @@
+/* ============================================================================
+ *  WELCOME BANNER COMPONENT
+ *
+ *  Introductory section for tool pages
+ *  ============================================================================ */
+
+.welcome-content {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: white;
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-xl);
+}
+
+.welcome-content h2 {
+    color: white;
+    margin-bottom: var(--spacing-md);
+}
+
+.welcome-content ol,
+.welcome-content ul {
+    margin-left: 1.5rem;
+}
+
+.educational-note {
+    background: rgba(255, 255, 255, 0.1);
+    padding: var(--spacing-md);
+    border-radius: 4px;
+    margin-top: var(--spacing-md);
+}
