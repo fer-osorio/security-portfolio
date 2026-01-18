@@ -409,6 +409,37 @@ const Config = {
         MIN_PQ_DIFFERENCE_BITS: 10,
     },
 
+    /**
+     * ECC key generation, encryption and visualization settings
+     */
+    ECC: {
+        // Standard curves (subset for initial implementation)
+        STANDARD_CURVES: ['secp256k1', 'P-256', 'Curve25519'],
+
+        // Visualization settings
+        DEFAULT_CURVE: 'secp256k1',
+        CANVAS_WIDTH: 800,
+        CANVAS_HEIGHT: 600,
+        POINT_RADIUS: 5,
+
+        // Animation settings
+        ANIMATION_DURATION: 1000,  // ms
+        ANIMATION_STEPS: 60,
+
+        // Security bounds
+        MAX_SCALAR_BITS: 256,
+        MIN_COFACTOR: 1,
+        MAX_COFACTOR: 8,
+
+        // Color scheme
+        COLORS: {
+            POINT: '#3498db',
+            OPERATION_LINE: '#e74c3c',
+            RESULT: '#27ae60',
+            CURVE: '#2c3e50'
+        }
+    },
+
     // ========================================================================
     // DISPLAY TEMPLATES
     // ========================================================================
