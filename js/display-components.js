@@ -662,6 +662,38 @@ const DisplayComponents = {
     },
 
     // ========================================================================
+    // ECC-SPECIFIC COMPONENTS
+    // ========================================================================
+
+    // Security alert for weak parameters
+    createECCSecurityAlert = function(type) {
+        const alerts = {
+            'small-field': {
+                title: 'Small Prime Field',
+                message: 'Prime p < 2^128 is INSECURE. Use for education only.',
+                severity: 'danger'
+            },
+            'weak-generator': {
+                title: 'Weak Generator Point',
+                message: 'Generator order is too small. Private key can be brute-forced.',
+                severity: 'danger'
+            },
+            'no-cofactor-check': {
+                title: 'Missing Cofactor Verification',
+                message: 'Not checking hQ = ∞ allows small subgroup attacks.',
+                severity: 'warning'
+            },
+            'timing-attack': {
+                title: 'Timing Attack Vulnerability',
+                message: 'Non-constant-time scalar multiplication leaks private key bits.',
+                severity: 'warning'
+            }
+        };
+
+        return this.createSecurityAlert(alerts[type].message, alerts[type].severity);
+    },
+
+    // ========================================================================
     // HELPER METHODS (Private)
     // ========================================================================
 
