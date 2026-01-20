@@ -126,49 +126,130 @@ function modPow(base, exp, p) {
 }
 
 /**
- * Modular square root: Find x such that x² ≡ a (mod p)
+ * Legendre symbol: (a|p) = a^((p-1)/2) mod p
+ * Returns: 1 if a is quadratic residue mod p
+ *          -1 if a is non-quadratic residue mod p
+ *          0 if a ≡ 0 (mod p)
+ */
+function legendreSymbol(a, p) {
+    const ls = modPow(a, (p - 1n) / 2n, p);
+    // Convert to standard Legendre symbol values
+    if (ls === 0n) return 0n;
+    if (ls === 1n) return 1n;
+    // If ls = p-1, that's ≡ -1 (mod p)
+    return -1n;
+}
+
+/**
+ * Tonelli-Shanks algorithm for modular square root
+ * Finds x such that x² ≡ a (mod p) for any odd prime p
  *
- * ALGORITHM: Tonelli-Shanks algorithm for p ≡ 3 (mod 4)
- * For primes p ≡ 3 (mod 4), sqrt(a) = a^((p+1)/4) mod p
+ * ALGORITHM OVERVIEW:
+ * 1. Handle special cases (a = 0, p = 2)
+ * 2. Check if a is quadratic residue (Legendre symbol = 1)
+ * 3. Special fast case: p ≡ 3 (mod 4)
+ * 4. General case: Tonelli-Shanks for p ≡ 1 (mod 4)
  *
- * WHY THIS WORKS:
- * If a is a quadratic residue, then:
- *   (a^((p+1)/4))² = a^((p+1)/2) = a × a^((p-1)/2)
- *   By Euler's criterion: a^((p-1)/2) ≡ 1 (mod p) for QR
- *   Therefore: (a^((p+1)/4))² ≡ a (mod p)
+ * TONELLI-SHANKS CORE IDEA:
+ * We factor p-1 = Q * 2^S (Q odd)
+ * We iteratively refine an approximation R until R² ≡ a (mod p)
+ * Uses a non-residue z to generate elements of the 2-Sylow subgroup
  *
- * USED IN: Point decompression (recovering y from x and sign bit)
- *
- * @param {BigInt} a
- * @param {BigInt} p - Prime modulus (must be ≡ 3 mod 4)
- * @returns {BigInt|null} - Square root or null if doesn't exist
+ * @param {BigInt} a - The number to find square root of
+ * @param {BigInt} p - Odd prime modulus
+ * @returns {BigInt|null} - Square root (smaller of the two) or null if doesn't exist
  */
 function modSqrt(a, p) {
     // Quick return for zero
     if (a === 0n) return 0n;
 
-    // Ensure a is in valid range
+    // Ensure a is in valid range [0, p-1]
     a = a % p;
     if (a < 0n) a += p;
 
-    // Check if a is a quadratic residue using Euler's criterion
-    // a^((p-1)/2) should equal 1 for quadratic residues
-    const exponent = (p - 1n) / 2n;
-    const eulerCriterion = modPow(a, exponent, p);
-
-    if (eulerCriterion !== 1n) {
+    // Check if a is quadratic residue
+    if (legendreSymbol(a, p) !== 1n) {
         return null;  // Not a quadratic residue
     }
 
-    // For p ≡ 3 (mod 4), use simple formula
+    // Special case: p = 2
+    if (p === 2n) return a;
+
+    // Special case: p ≡ 3 (mod 4) - Simple formula
     if (p % 4n === 3n) {
-        const sqrt = modPow(a, (p + 1n) / 4n, p);
-        return sqrt;
+        // x = a^((p+1)/4) mod p
+        return modPow(a, (p + 1n) / 4n, p);
     }
 
-    // For p ≡ 1 (mod 4), need full Tonelli-Shanks
-    // Not implemented here as standard curves use p ≡ 3 (mod 4)
-    throw new Error('modSqrt for p ≡ 1 (mod 4) not implemented');
+    // --- GENERAL CASE: Tonelli-Shanks for p ≡ 1 (mod 4) ---
+
+    // STEP 1: Factor p-1 = Q * 2^S (Q odd)
+    let Q = p - 1n;
+    let S = 0n;
+    while ((Q & 1n) === 0n) {  // While Q is even
+        Q >>= 1n;  // Q = Q / 2
+        S++;
+    }
+
+    // STEP 2: Find a quadratic non-residue z
+    // A non-residue satisfies: z^((p-1)/2) ≡ -1 (mod p)
+    let z = 2n;
+    while (legendreSymbol(z, p) !== -1n) {
+        z++;
+    }
+
+    // STEP 3: Initialize variables
+    let c = modPow(z, Q, p);  // c = z^Q mod p (order = 2^S)
+    let t = modPow(a, Q, p);  // t = a^Q mod p
+    let R = modPow(a, (Q + 1n) / 2n, p);  // R = a^((Q+1)/2) mod p
+
+    // INVARIANT: R² ≡ a * t (mod p)
+    // We'll adjust R and t until t ≡ 1 (mod p), then R is our answer
+
+    // STEP 4: Main loop - refine until t becomes 1
+    while (t !== 1n) {
+        // Find the smallest 0 < m < S such that t^(2^m) ≡ 1 (mod p)
+        let m = 0n;
+        let t2m = t;
+
+        // t2m will be t^(2^m) at each step
+        // Find m by repeated squaring of t
+        while (t2m !== 1n && m < S) {
+            t2m = (t2m * t2m) % p;
+            m++;
+        }
+
+        if (m === 0n) break;  // t is already 1
+
+        // Safety check: if m == S, something's wrong
+        if (m === S) {
+            console.error("Error: m == S, t should be 1 by now");
+            break;
+        }
+
+        // STEP 5: Calculate b = c^(2^(S-m-1)) mod p
+        // We need 2^(S-m-1) as exponent
+        let exponent = 1n;
+        for (let i = 0; i < Number(S - m - 1n); i++) {
+            exponent <<= 1n;  // Multiply by 2
+        }
+        let b = modPow(c, exponent, p);
+
+        // STEP 6: Update variables
+        // R_new = R * b (mod p)
+        R = (R * b) % p;
+
+        // t_new = t * b² (mod p)
+        c = (b * b) % p;
+        t = (t * c) % p;
+
+        // S = m (for next iteration)
+        S = m;
+    }
+
+    // At this point: t ≡ 1, so R² ≡ a (mod p)
+    // Return the smaller root (the other is p - R)
+    return R <= p - R ? R : p - R;
 }
 
 // ============================================================================
