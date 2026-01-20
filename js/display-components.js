@@ -666,7 +666,7 @@ const DisplayComponents = {
     // ========================================================================
 
     // Security alert for weak parameters
-    createECCSecurityAlert = function(type) {
+    createECCSecurityAlert (type) {
         const alerts = {
             'small-field': {
                 title: 'Small Prime Field',
