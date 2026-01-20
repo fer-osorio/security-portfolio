@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+    <title>Elliptic Curve Explorer - Cryptography Portfolio</title>
+
+    <!-- Link to main stylesheets -->
+    <link rel="stylesheet" href="../css/main.css">
+
+    <!-- Favicon settup -->
+    <link rel="icon" type="image/png" href="../assets/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="../assets/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="../assets/favicon/site.webmanifest" />
+    <style>
+        /* ECC Tool Specific Styles */
+        .ec-tool-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+        }
+
+        .canvas-container {
+            width: 100%;
+            max-width: 800px;
+            margin: var(--spacing-xl) auto;
+            background: white;
+            border: 2px solid var(--color-border);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+        }
+
+        #ec-canvas {
+            width: 100%;
+            height: 600px;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+            margin: var(--spacing-xl) 0;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: center;
+            margin: var(--spacing-md) 0;
+        }
+
+        .mode-selector label {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            cursor: pointer;
+        }
+
+        .operation-display {
+            background: var(--color-background);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            margin: var(--spacing-md) 0;
+            font-family: var(--code-font);
+        }
+
+        .operation-display p {
+            margin: var(--spacing-xs) 0;
+        }
+
+        #mode-hint {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-light);
+            font-style: italic;
+            margin-top: var(--spacing-xs);
+        }
+
+        @media (max-width: 768px) {
+            .ec-tool-container {
+                padding: var(--spacing-lg) var(--spacing-md);
+            }
+
+            #ec-canvas {
+                height: 400px;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with navigation -->
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <h1 class="logo">Elliptic Curve Explorer</h1>
+                <ul class="nav-links">
+                    <li><a href="../index.html">← Back to Portfolio</a></li>
+                    <li>
+                        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                            🌑
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="ec-tool-container">
+        <!-- Welcome message -->
+        <div id="welcome-message"></div>
+
+        <!-- Error display -->
+        <div id="error-message" class="alert alert--error" hidden></div>
+
+        <!-- Tabbed interface -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="visualization">1. Curve Visualization</button>
+            <button class="tab-button" data-tab="operations">2. Point Operations</button>
+            <button class="tab-button" data-tab="protocols">3. Protocols (Coming Soon)</button>
+            <button class="tab-button" data-tab="security">4. Security Analysis (Coming Soon)</button>
+        </div>
+
+        <!-- Tab 1: Curve Visualization -->
+        <div id="visualization" class="tab-panel active">
+            <h2>Elliptic Curve Visualization</h2>
+
+            <!-- Curve Selection -->
+            <div class="card card--control">
+                <h3>Select Curve</h3>
+
+                <div class="mode-selector">
+                    <strong>Visualization Mode:</strong>
+                    <label>
+                        <input type="radio" name="viz-mode" value="real">
+                        Real Numbers (ℝ)
+                    </label>
+                    <label>
+                        <input type="radio" name="viz-mode" value="finite" checked>
+                        Finite Field (F_p)
+                    </label>
+                </div>
+                <p id="mode-hint">Viewing curve over finite field (discrete points)</p>
+
+                <div class="form-group">
+                    <label for="curve-select">Curve:</label>
+                    <select id="curve-select">
+                        <option value="test-small" selected>Test Curve (p = 23) - Visualization</option>
+                        <option value="test-medium">Test Curve (p = 97) - Visualization</option>
+                        <option value="secp256k1">secp256k1 (Bitcoin) - Parameters Only</option>
+                        <option value="P-256">P-256 (NIST) - Parameters Only</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label>
+                        <input type="checkbox" id="custom-curve-toggle">
+                        Define custom curve parameters
+                    </label>
+                </div>
+
+                <div id="custom-curve-params" style="display: none; margin-top: 1rem;">
+                    <div class="form-group">
+                        <label for="custom-a">Coefficient a:</label>
+                        <input type="number" id="custom-a" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="custom-b">Coefficient b:</label>
+                        <input type="number" id="custom-b" value="7">
+                    </div>
+                    <div class="form-group">
+                        <label for="custom-p">Prime p (must be small for visualization):</label>
+                        <input type="number" id="custom-p" value="23">
+                    </div>
+                    <button class="btn btn-secondary" id="apply-custom-btn">Apply Custom Curve</button>
+                </div>
+            </div>
+
+            <!-- Curve Information -->
+            <div id="curve-info"></div>
+
+            <!-- Canvas Visualization -->
+            <div class="canvas-container">
+                <canvas id="ec-canvas"></canvas>
+            </div>
+
+            <div class="alert alert--info">
+                <p><strong>💡 Interactive Instructions:</strong></p>
+                <ul>
+                    <li>In <strong>Finite Field mode</strong>: Click on points to select them for operations</li>
+                    <li>In <strong>Real mode</strong>: View the smooth curve geometry (click shows coordinates)</li>
+                    <li>Selected points appear in red with labels (A, B, ...)</li>
+                    <li>Switch to the "Point Operations" tab to perform calculations</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab 2: Point Operations -->
+        <div id="operations" class="tab-panel">
+            <h2>Point Operations</h2>
+
+            <div class="alert alert--info">
+                <p><strong>Instructions:</strong> Select points by clicking on the curve in the Visualization tab, then return here to perform operations.</p>
+            </div>
+
+            <div class="controls-grid">
+                <!-- Point Addition -->
+                <div class="card card--control">
+                    <h3>Point Addition</h3>
+                    <p>Compute P + Q (requires 2 selected points)</p>
+                    <button id="point-add-btn" class="btn btn-primary">Compute P + Q</button>
+                </div>
+
+                <!-- Point Doubling -->
+                <div class="card card--control">
+                    <h3>Point Doubling</h3>
+                    <p>Compute 2P (requires 1 selected point)</p>
+                    <button id="point-double-btn" class="btn btn-primary">Compute 2P</button>
+                </div>
+
+                <!-- Scalar Multiplication -->
+                <div class="card card--control">
+                    <h3>Scalar Multiplication</h3>
+                    <p>Compute kP (requires 1 selected point)</p>
+                    <div class="form-group">
+                        <label for="scalar-input">Scalar k:</label>
+                        <input type="number" id="scalar-input" min="1" max="100" value="3" placeholder="Enter scalar k">
+                    </div>
+                    <button id="scalar-multiply-btn" class="btn btn-primary">Compute kP</button>
+                </div>
+
+                <!-- Clear Selection -->
+                <div class="card card--control">
+                    <h3>Clear Selection</h3>
+                    <p>Reset selected points and results</p>
+                    <button id="clear-selection-btn" class="btn btn-secondary">Clear Selection</button>
+                </div>
+            </div>
+
+            <!-- Operation Results -->
+            <div id="operation-results"></div>
+
+            <div class="card card--control">
+                <h3>📚 Understanding Point Operations</h3>
+
+                <h4>Point Addition (P + Q)</h4>
+                <p><strong>Geometric Method (Chord):</strong></p>
+                <ol>
+                    <li>Draw a line through points P and Q</li>
+                    <li>Find where this line intersects the curve (third point R)</li>
+                    <li>Reflect R across the x-axis to get P + Q</li>
+                </ol>
+
+                <p><strong>Algebraic Formula:</strong></p>
+                <p>For P = (x₁, y₁) and Q = (x₂, y₂) with P ≠ Q:</p>
+                <ul>
+                    <li>λ = (y₂ - y₁) / (x₂ - x₁) mod p</li>
+                    <li>x₃ = λ² - x₁ - x₂ mod p</li>
+                    <li>y₃ = λ(x₁ - x₃) - y₁ mod p</li>
+                </ul>
+
+                <h4>Point Doubling (2P)</h4>
+                <p><strong>Geometric Method (Tangent):</strong></p>
+                <ol>
+                    <li>Draw the tangent line to the curve at point P</li>
+                    <li>Find where this tangent intersects the curve (second point R)</li>
+                    <li>Reflect R across the x-axis to get 2P</li>
+                </ol>
+
+                <p><strong>Algebraic Formula:</strong></p>
+                <p>For P = (x₁, y₁):</p>
+                <ul>
+                    <li>λ = (3x₁² + a) / (2y₁) mod p</li>
+                    <li>x₃ = λ² - 2x₁ mod p</li>
+                    <li>y₃ = λ(x₁ - x₃) - y₁ mod p</li>
+                </ul>
+
+                <h4>Scalar Multiplication (kP)</h4>
+                <p><strong>Double-and-Add Algorithm:</strong></p>
+                <ol>
+                    <li>Express k in binary: k = k₀ + k₁·2 + k₂·4 + ...</li>
+                    <li>Start with result = ∞ (point at infinity)</li>
+                    <li>For each bit of k (from right to left):
+                        <ul>
+                            <li>If bit is 1: result = result + current</li>
+                            <li>current = 2·current (double)</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <p><strong>Example:</strong> 13P where 13 = 1101₂ = 8 + 4 + 1</p>
+                <p>13P = 8P + 4P + P (requires 3 doublings + 2 additions)</p>
+
+                <p><strong>Complexity:</strong> O(log k) operations (very efficient!)</p>
+            </div>
+        </div>
+
+        <!-- Tab 3: Protocols (Placeholder) -->
+        <div id="protocols" class="tab-panel">
+            <h2>Cryptographic Protocols</h2>
+            <div class="alert alert--info">
+                <p><strong>Coming in Phase 3:</strong></p>
+                <ul>
+                    <li>ECDH (Elliptic Curve Diffie-Hellman) key exchange simulation</li>
+                    <li>ECDSA (Elliptic Curve Digital Signature Algorithm) signing and verification</li>
+                    <li>Interactive demonstrations with step-by-step explanations</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab 4: Security Analysis (Placeholder) -->
+        <div id="security" class="tab-panel">
+            <h2>Security Analysis</h2>
+            <div class="alert alert--info">
+                <p><strong>Coming in Phase 4:</strong></p>
+                <ul>
+                    <li>ECDLP (Elliptic Curve Discrete Logarithm Problem) hardness explanation</li>
+                    <li>Parameter validation and attack scenarios</li>
+                    <li>Comparison: ECC vs RSA security levels</li>
+                    <li>Side-channel attack demonstrations</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Cryptography Portfolio. Educational demonstration only.</p>
+        <p class="alert alert--security-note">
+            <strong>⚠️ Educational Tool:</strong> Small curves shown here are for learning only.
+            Real cryptographic applications require 256+ bit curves.
+        </p>
+    </footer>
+
+    <!-- Load scripts in order -->
+    <!-- 1. Configuration -->
+    <script src="../js/config.js"></script>
+    <!-- 2. Shared utilities -->
+    <script src="../js/ui-utils.js"></script>
+    <script src="../js/display-components.js"></script>
+    <!-- 3. Math utilities (dependency for ec-*) -->
+    <script src="../js/crypto-demos/math-utils.js"></script>
+    <!-- 4. ECC utilities -->
+    <script src="../js/crypto-demos/ec-math-utils.js"></script>
+    <!-- 5. ECC core -->
+    <script src="../js/crypto-demos/ec-core.js"></script>
+    <!-- 6. Visualization -->
+    <script src="../js/crypto-demos/ec-visualization.js"></script>
+    <!-- 7. Demo controller -->
+    <script src="../js/crypto-demos/ec-demo.js"></script>
+    <!-- 8. Dark mode toggle -->
+    <script src="../js/dark-mode-toggle.js"></script>
+</body>
+</html>
