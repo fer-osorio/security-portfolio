@@ -9,12 +9,6 @@
     <!-- Link to main stylesheets -->
     <link rel="stylesheet" href="../css/main.css">
 
-    <!-- Favicon settup -->
-    <link rel="icon" type="image/png" href="../assets/favicon/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="../assets/favicon/favicon.svg" />
-    <link rel="shortcut icon" href="../assets/favicon/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="../assets/favicon/apple-touch-icon.png" />
-    <link rel="manifest" href="../assets/favicon/site.webmanifest" />
     <style>
         /* ECC Tool Specific Styles */
         .ec-tool-container {
@@ -23,6 +17,7 @@
             padding: var(--spacing-xl);
         }
 
+        /* REFACTORED: Styles for both canvases */
         .canvas-container {
             width: 100%;
             max-width: 800px;
@@ -31,13 +26,18 @@
             border: 2px solid var(--color-border);
             border-radius: var(--border-radius);
             box-shadow: var(--shadow-md);
+            /* FIX: Ensure container has dimensions even when parent is hidden */
+            min-height: 600px;
         }
 
-        #ec-canvas {
+        .canvas-container canvas {
             width: 100%;
             height: 600px;
             display: block;
             cursor: crosshair;
+            /* FIX: Ensure canvas itself has minimum dimensions */
+            min-width: 300px;
+            min-height: 600px;
         }
 
         .controls-grid {
@@ -47,19 +47,7 @@
             margin: var(--spacing-xl) 0;
         }
 
-        .mode-selector {
-            display: flex;
-            gap: var(--spacing-md);
-            align-items: center;
-            margin: var(--spacing-md) 0;
-        }
-
-        .mode-selector label {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            cursor: pointer;
-        }
+        /* REMOVED: mode-selector styles (no longer needed) */
 
         .operation-display {
             background: var(--color-background);
@@ -73,11 +61,23 @@
             margin: var(--spacing-xs) 0;
         }
 
-        #mode-hint {
-            font-size: var(--font-size-sm);
-            color: var(--color-text-light);
-            font-style: italic;
-            margin-top: var(--spacing-xs);
+        /* NEW: Slider controls for real curve parameters */
+        .slider-control {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin: var(--spacing-md) 0;
+        }
+
+        .slider-control input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-control .value-display {
+            min-width: 3rem;
+            text-align: right;
+            font-weight: bold;
+            color: var(--color-primary);
         }
 
         @media (max-width: 768px) {
@@ -85,7 +85,7 @@
                 padding: var(--spacing-lg) var(--spacing-md);
             }
 
-            #ec-canvas {
+            .canvas-container canvas {
                 height: 400px;
             }
 
@@ -120,96 +120,153 @@
         <!-- Error display -->
         <div id="error-message" class="alert alert--error" hidden></div>
 
-        <!-- Tabbed interface -->
+        <!-- REFACTORED: Updated tab labels -->
         <div class="tabs">
-            <button class="tab-button active" data-tab="visualization">1. Curve Visualization</button>
-            <button class="tab-button" data-tab="operations">2. Point Operations</button>
+            <button class="tab-button active" data-tab="visualization">1. Curve Visualization (ℝ)</button>
+            <button class="tab-button" data-tab="operations">2. Point Operations (F_p)</button>
             <button class="tab-button" data-tab="protocols">3. Protocols (Coming Soon)</button>
             <button class="tab-button" data-tab="security">4. Security Analysis (Coming Soon)</button>
         </div>
 
-        <!-- Tab 1: Curve Visualization -->
+        <!-- ====================================================================
+             TAB 1: CURVE VISUALIZATION (REAL NUMBERS ONLY)
+             REFACTORED: Dedicated to geometric visualization
+             ==================================================================== -->
         <div id="visualization" class="tab-panel active">
-            <h2>Elliptic Curve Visualization</h2>
+            <h2>Elliptic Curve Geometry (Real Numbers)</h2>
 
-            <!-- Curve Selection -->
+            <div class="alert alert--info">
+                <p><strong>📐 Purpose:</strong> Understand the geometric foundation of elliptic curves over the real numbers (ℝ).</p>
+                <p>This visualization shows the smooth, continuous curve where the chord-and-tangent method is most intuitive.</p>
+            </div>
+
+            <!-- REFACTORED: New curve selector for real curves only -->
             <div class="card card--control">
-                <h3>Select Curve</h3>
-
-                <div class="mode-selector">
-                    <strong>Visualization Mode:</strong>
-                    <label>
-                        <input type="radio" name="viz-mode" value="real">
-                        Real Numbers (ℝ)
-                    </label>
-                    <label>
-                        <input type="radio" name="viz-mode" value="finite" checked>
-                        Finite Field (F_p)
-                    </label>
-                </div>
-                <p id="mode-hint">Viewing curve over finite field (discrete points)</p>
+                <h3>Select Curve Equation</h3>
 
                 <div class="form-group">
-                    <label for="curve-select">Curve:</label>
-                    <select id="curve-select">
-                        <option value="test-small" selected>Test Curve (p = 23) - Visualization</option>
-                        <option value="test-medium">Test Curve (p = 97) - Visualization</option>
-                        <option value="secp256k1">secp256k1 (Bitcoin) - Parameters Only</option>
-                        <option value="P-256">P-256 (NIST) - Parameters Only</option>
+                    <label for="real-curve-select">Curve:</label>
+                    <select id="real-curve-select">
+                        <option value="koblitz" selected>y² = x³ + 7 (Koblitz-like, similar to secp256k1)</option>
+                        <option value="nist-like">y² = x³ - 3x + 3 (NIST-like, similar to P-256)</option>
+                        <option value="generic">y² = x³ + x + 1 (Generic curve)</option>
+                        <option value="custom">Custom parameters...</option>
                     </select>
                 </div>
 
-                <div class="form-group" style="margin-top: 1rem;">
-                    <label>
-                        <input type="checkbox" id="custom-curve-toggle">
-                        Define custom curve parameters
-                    </label>
-                </div>
+                <!-- REFACTORED: New custom parameter controls with sliders -->
+                <div id="custom-real-params" style="display: none;">
+                    <h4>Custom Curve: y² = x³ + ax + b</h4>
 
-                <div id="custom-curve-params" style="display: none; margin-top: 1rem;">
-                    <div class="form-group">
-                        <label for="custom-a">Coefficient a:</label>
-                        <input type="number" id="custom-a" value="0">
+                    <div class="slider-control">
+                        <label for="real-a">Coefficient a:</label>
+                        <input type="range" id="real-a" min="-10" max="10" value="0" step="0.5">
+                        <span class="value-display" id="real-a-value">0</span>
                     </div>
-                    <div class="form-group">
-                        <label for="custom-b">Coefficient b:</label>
-                        <input type="number" id="custom-b" value="7">
+
+                    <div class="slider-control">
+                        <label for="real-b">Coefficient b:</label>
+                        <input type="range" id="real-b" min="-10" max="10" value="7" step="0.5">
+                        <span class="value-display" id="real-b-value">7</span>
                     </div>
-                    <div class="form-group">
-                        <label for="custom-p">Prime p (must be small for visualization):</label>
-                        <input type="number" id="custom-p" value="23">
-                    </div>
-                    <button class="btn btn-secondary" id="apply-custom-btn">Apply Custom Curve</button>
+
+                    <p class="info" style="margin-top: 1rem;">
+                        <em>Adjust sliders to see how curve shape changes.
+                        Non-singular condition: 4a³ + 27b² ≠ 0</em>
+                    </p>
                 </div>
             </div>
 
-            <!-- Curve Information -->
-            <div id="curve-info"></div>
+            <!-- REFACTORED: New display div for real curve info -->
+            <div id="real-curve-info"></div>
 
-            <!-- Canvas Visualization -->
+            <!-- REFACTORED: Dedicated canvas for real curves -->
             <div class="canvas-container">
-                <canvas id="ec-canvas"></canvas>
+                <canvas id="real-curve-canvas"></canvas>
             </div>
 
-            <div class="alert alert--info">
-                <p><strong>💡 Interactive Instructions:</strong></p>
+            <div class="card card--control">
+                <h3>📚 Understanding the Visualization</h3>
+
+                <h4>Curve Equation: y² = x³ + ax + b</h4>
+                <p>This is the <strong>Weierstrass normal form</strong> of an elliptic curve.</p>
+
+                <h4>Key Properties:</h4>
                 <ul>
-                    <li>In <strong>Finite Field mode</strong>: Click on points to select them for operations</li>
-                    <li>In <strong>Real mode</strong>: View the smooth curve geometry (click shows coordinates)</li>
-                    <li>Selected points appear in red with labels (A, B, ...)</li>
-                    <li>Switch to the "Point Operations" tab to perform calculations</li>
+                    <li><strong>Symmetry:</strong> The curve is symmetric about the x-axis (if (x, y) is on the curve, so is (x, -y))</li>
+                    <li><strong>Components:</strong> Depending on the discriminant Δ = -16(4a³ + 27b²), the curve may have:
+                        <ul>
+                            <li>One connected component (Δ < 0) - typical for cryptographic curves</li>
+                            <li>Two separate components (Δ > 0) - one oval and one unbounded</li>
+                        </ul>
+                    </li>
+                    <li><strong>Non-singularity:</strong> The curve must satisfy Δ ≠ 0 to be valid for cryptography</li>
                 </ul>
+
+                <h4>Geometric Interpretation:</h4>
+                <p>The smooth curve you see here is the foundation for the group law. When we move to finite fields
+                (next tab), we'll use the same algebraic formulas, but work with discrete points instead of
+                continuous curves.</p>
             </div>
         </div>
 
-        <!-- Tab 2: Point Operations -->
+        <!-- ====================================================================
+             TAB 2: POINT OPERATIONS (FINITE FIELD ONLY)
+             REFACTORED: Co-locates visualization with operations
+             ==================================================================== -->
         <div id="operations" class="tab-panel">
-            <h2>Point Operations</h2>
+            <h2>Point Operations (Finite Field F_p)</h2>
 
             <div class="alert alert--info">
-                <p><strong>Instructions:</strong> Select points by clicking on the curve in the Visualization tab, then return here to perform operations.</p>
+                <p><strong>🔢 Purpose:</strong> Perform cryptographic operations on elliptic curves over finite fields.</p>
+                <p><strong>Instructions:</strong> Click on points in the visualization to select them (up to 2), then use the operation buttons below.</p>
             </div>
 
+            <!-- REFACTORED: New curve selector for finite field curves -->
+            <div class="card card--control">
+                <h3>Select Curve (Finite Field)</h3>
+
+                <div class="form-group">
+                    <label for="finite-curve-select">Curve:</label>
+                    <select id="finite-curve-select">
+                        <option value="test-23" selected>E(F₂₃): y² = x³ + 7 (Small, easy to visualize)</option>
+                        <option value="test-97">E(F₉₇): y² = x³ + 2x + 3 (Medium size)</option>
+                        <option value="custom">Custom parameters...</option>
+                    </select>
+                </div>
+
+                <!-- REFACTORED: Custom finite field parameters -->
+                <div id="custom-finite-params" style="display: none;">
+                    <h4>Custom Curve: y² ≡ x³ + ax + b (mod p)</h4>
+
+                    <div class="form-group">
+                        <label for="finite-a">Coefficient a:</label>
+                        <input type="number" id="finite-a" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="finite-b">Coefficient b:</label>
+                        <input type="number" id="finite-b" value="7">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="finite-p">Prime p (keep small for visualization, p < 200):</label>
+                        <input type="number" id="finite-p" value="23" min="2" max="1000">
+                    </div>
+
+                    <button class="btn btn-secondary" id="apply-finite-custom-btn">Apply Custom Curve</button>
+                </div>
+            </div>
+
+            <!-- REFACTORED: New display div for finite curve info -->
+            <div id="finite-curve-info"></div>
+
+            <!-- REFACTORED: Dedicated canvas for finite field curves -->
+            <div class="canvas-container">
+                <canvas id="finite-curve-canvas"></canvas>
+            </div>
+
+            <!-- Point operation controls (UNCHANGED structure, updated IDs) -->
             <div class="controls-grid">
                 <!-- Point Addition -->
                 <div class="card card--control">
@@ -247,6 +304,7 @@
             <!-- Operation Results -->
             <div id="operation-results"></div>
 
+            <!-- Educational content (UNCHANGED) -->
             <div class="card card--control">
                 <h3>📚 Understanding Point Operations</h3>
 
@@ -302,7 +360,9 @@
             </div>
         </div>
 
-        <!-- Tab 3: Protocols (Placeholder) -->
+        <!-- ====================================================================
+             TAB 3: PROTOCOLS (PLACEHOLDER - No changes from before)
+             ==================================================================== -->
         <div id="protocols" class="tab-panel">
             <h2>Cryptographic Protocols</h2>
             <div class="alert alert--info">
@@ -311,11 +371,14 @@
                     <li>ECDH (Elliptic Curve Diffie-Hellman) key exchange simulation</li>
                     <li>ECDSA (Elliptic Curve Digital Signature Algorithm) signing and verification</li>
                     <li>Interactive demonstrations with step-by-step explanations</li>
+                    <li><strong>Standard curves (secp256k1, P-256) will be shown here</strong></li>
                 </ul>
             </div>
         </div>
 
-        <!-- Tab 4: Security Analysis (Placeholder) -->
+        <!-- ====================================================================
+             TAB 4: SECURITY ANALYSIS (PLACEHOLDER - No changes from before)
+             ==================================================================== -->
         <div id="security" class="tab-panel">
             <h2>Security Analysis</h2>
             <div class="alert alert--info">
@@ -338,23 +401,15 @@
         </p>
     </footer>
 
-    <!-- Load scripts in order -->
-    <!-- 1. Configuration -->
+    <!-- Load scripts in order (UNCHANGED) -->
     <script src="../js/config.js"></script>
-    <!-- 2. Shared utilities -->
     <script src="../js/ui-utils.js"></script>
     <script src="../js/display-components.js"></script>
-    <!-- 3. Math utilities (dependency for ec-*) -->
     <script src="../js/crypto-demos/math-utils.js"></script>
-    <!-- 4. ECC utilities -->
     <script src="../js/crypto-demos/ec-math-utils.js"></script>
-    <!-- 5. ECC core -->
     <script src="../js/crypto-demos/ec-core.js"></script>
-    <!-- 6. Visualization -->
     <script src="../js/crypto-demos/ec-visualization.js"></script>
-    <!-- 7. Demo controller -->
     <script src="../js/crypto-demos/ec-demo.js"></script>
-    <!-- 8. Dark mode toggle -->
     <script src="../js/dark-mode-toggle.js"></script>
 </body>
 </html>

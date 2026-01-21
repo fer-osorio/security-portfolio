@@ -21,6 +21,7 @@
  * - Reflection across x-axis
  * - Identity element (point at infinity)
  *
+ * FOR YOUR BACKGROUND:
  * This bridges the gap between:
  * - Abstract algebra (group operations)
  * - Analytic geometry (curves, lines, intersections)
@@ -83,25 +84,43 @@ class ECVisualizer {
 
     /**
      * Resize canvas to match display size (for high DPI displays)
+     *
+     * FIX: Handle case where canvas is in hidden tab (getBoundingClientRect returns 0x0)
+     * If dimensions are zero, fall back to CSS-defined dimensions or sensible defaults
      */
     resizeCanvas() {
         const rect = this.canvas.getBoundingClientRect();
 
+        // FIX: If canvas is hidden (0x0), use fallback dimensions
+        let width = rect.width;
+        let height = rect.height;
+
+        if (width === 0 || height === 0) {
+            // Try to get dimensions from CSS
+            const style = window.getComputedStyle(this.canvas);
+            width = parseInt(style.width) || 800;   // Fallback to 800px
+            height = parseInt(style.height) || 600; // Fallback to 600px
+
+            console.log(`Canvas ${this.canvas.id} dimensions from computed style: ${width}x${height}`);
+        }
+
         // Set actual size in memory (scaled for high DPI)
         const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = rect.width * dpr;
-        this.canvas.height = rect.height * dpr;
+        this.canvas.width = width * dpr;
+        this.canvas.height = height * dpr;
 
         // Scale context to match
         this.ctx.scale(dpr, dpr);
 
         // Set display size (CSS pixels)
-        this.canvas.style.width = rect.width + 'px';
-        this.canvas.style.height = rect.height + 'px';
+        this.canvas.style.width = width + 'px';
+        this.canvas.style.height = height + 'px';
 
         // Store dimensions for coordinate conversion
-        this.width = rect.width;
-        this.height = rect.height;
+        this.width = width;
+        this.height = height;
+
+        console.log(`Canvas ${this.canvas.id} resized to ${width}x${height} (display) / ${this.canvas.width}x${this.canvas.height} (internal)`);
     }
 
     /**
@@ -116,6 +135,13 @@ class ECVisualizer {
             this.resizeCanvas();
             this.render();
         });
+
+        // FIX: Re-resize when tab becomes visible (fixes hidden canvas 0x0 issue)
+        this.canvas.addEventListener('tab-visible', () => {
+            console.log(`Canvas ${this.canvas.id} tab became visible - resizing`);
+            this.resizeCanvas();
+            this.render();
+        });
     }
 
     /**
@@ -126,7 +152,7 @@ class ECVisualizer {
     setCurve(curve) {
         this.curve = curve;
 
-        // Auto-adjust viewport for finite field mode
+        // Auto-adjust viewport based on mode
         if (this.mode === 'finite' && curve.p) {
             const p = Number(curve.p);
             if (p < 100) {
@@ -138,7 +164,7 @@ class ECVisualizer {
                     maxY: p + 1
                 };
             }
-        } else if(this.mode == 'real'){
+        } else if (this.mode === 'real') {
             // Auto-adjust viewport for real curves
             this.viewport = this.calculateOptimalViewport(curve);
         }
@@ -237,6 +263,7 @@ class ECVisualizer {
      */
     setMode(mode) {
         this.mode = mode;
+
         // Recalculate viewport when switching modes
         if (this.curve) {
             if (mode === 'finite' && this.curve.p) {
@@ -253,6 +280,7 @@ class ECVisualizer {
                 this.viewport = this.calculateOptimalViewport(this.curve);
             }
         }
+
         this.render();
     }
 

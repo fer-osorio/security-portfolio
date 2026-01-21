@@ -1,15 +1,16 @@
 /**
  * ============================================================================
- * ELLIPTIC CURVE EXPLORER - UI CONTROLLER
+ * ELLIPTIC CURVE EXPLORER - UI CONTROLLER (REFACTORED)
+ *
+ * REFACTORING CHANGES:
+ * 1. Separated real curve visualization (Tab 1) from finite field (Tab 2)
+ * 2. Created two separate canvas visualizers (one per tab)
+ * 3. Removed mode toggle - each tab has dedicated mode
+ * 4. Simplified curve selectors - only appropriate curves per tab
+ * 5. Co-located finite field visualization with point operations
  *
  * This module handles all user interactions and updates the DOM.
  * Acts as the "controller" in MVC architecture.
- *
- * ARCHITECTURE:
- * - Uses shared UIUtils for common DOM operations
- * - Uses DisplayComponents for consistent HTML generation
- * - Uses Config for all constants and configuration
- * - ECC-specific logic (curve selection, point operations, visualization)
  *
  * ============================================================================
  */
@@ -18,9 +19,10 @@
 // GLOBAL STATE
 // ============================================================================
 
-let currentCurve = null;
-let visualizer = null;
-let currentMode = 'finite';
+// REFACTORED: Two separate visualizers instead of one with mode toggle
+let realCurveVisualizer = null;      // Tab 1: Real number curves
+let finiteCurveVisualizer = null;    // Tab 2: Finite field curves
+let currentFiniteCurve = null;       // Currently selected finite field curve
 
 // ============================================================================
 // INITIALIZATION
@@ -30,16 +32,16 @@ let currentMode = 'finite';
  * Initialize the ECC demo when page loads
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('ECC Explorer initialized');
+    console.log('ECC Explorer initialized (REFACTORED)');
 
     // Set up event listeners
     setupEventListeners();
 
-    // Initialize visualizer
-    initializeVisualizer();
+    // Initialize both visualizers
+    initializeVisualizers();
 
-    // Load default curve
-    loadDefaultCurve();
+    // Load default curves
+    loadDefaultCurves();
 
     // Display welcome message
     displayWelcomeMessage();
@@ -53,25 +55,38 @@ document.addEventListener('DOMContentLoaded', function() {
  * Set up all event listeners for user interactions
  */
 function setupEventListeners() {
-    // Curve selection
-    const curveSelect = document.getElementById('curve-select');
-    if (curveSelect) {
-        curveSelect.addEventListener('change', handleCurveChange);
+    // REFACTORED: Separate curve selectors for each tab
+
+    // Tab 1: Real curve selection
+    const realCurveSelect = document.getElementById('real-curve-select');
+    if (realCurveSelect) {
+        realCurveSelect.addEventListener('change', handleRealCurveChange);
     }
 
-    // Visualization mode toggle
-    const modeButtons = document.querySelectorAll('input[name="viz-mode"]');
-    modeButtons.forEach(button => {
-        button.addEventListener('change', handleModeChange);
+    // Tab 2: Finite field curve selection
+    const finiteCurveSelect = document.getElementById('finite-curve-select');
+    if (finiteCurveSelect) {
+        finiteCurveSelect.addEventListener('change', handleFiniteCurveChange);
+    }
+
+    // REMOVED: Mode toggle (no longer needed)
+
+    // Custom curve parameters (Tab 1 - Real)
+    const realCustomInputs = ['real-a', 'real-b'];
+    realCustomInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('input', handleRealCustomCurve);
+        }
     });
 
-    // Custom curve toggle
-    const customToggle = document.getElementById('custom-curve-toggle');
-    if (customToggle) {
-        customToggle.addEventListener('change', handleCustomCurveToggle);
+    // Custom curve parameters (Tab 2 - Finite)
+    const applyFiniteBtn = document.getElementById('apply-finite-custom-btn');
+    if (applyFiniteBtn) {
+        applyFiniteBtn.addEventListener('click', handleFiniteCustomCurve);
     }
 
-    // Point operation buttons
+    // Point operation buttons (Tab 2 only)
     const addBtn = document.getElementById('point-add-btn');
     if (addBtn) {
         addBtn.addEventListener('click', handlePointAddition);
@@ -102,125 +117,263 @@ function setupEventListeners() {
 // ============================================================================
 
 /**
- * Initialize canvas visualizer
+ * Initialize both canvas visualizers
+ *
+ * REFACTORED: Create two separate visualizers instead of one
+ *
+ * NOTE: The finite curve visualizer starts in a hidden tab, so its canvas
+ * will have 0x0 dimensions initially. This is fixed by the 'tab-visible'
+ * event handler in ec-visualization.js that triggers a resize when the
+ * tab becomes visible.
  */
-function initializeVisualizer() {
+function initializeVisualizers() {
+    // Tab 1: Real curve visualizer
     try {
-        visualizer = new ECVisualizer('ec-canvas', {
-            mode: currentMode,
+        realCurveVisualizer = new ECVisualizer('real-curve-canvas', {
+            mode: 'real',  // Fixed mode
+            minX: -5,
+            maxX: 5,
+            minY: -5,
+            maxY: 5
+        });
+        console.log('Real curve visualizer initialized');
+    } catch (error) {
+        console.error('Failed to initialize real curve visualizer:', error);
+    }
+
+    // Tab 2: Finite field visualizer (in hidden tab initially)
+    try {
+        finiteCurveVisualizer = new ECVisualizer('finite-curve-canvas', {
+            mode: 'finite',  // Fixed mode
             minX: -1,
             maxX: 30,
             minY: -1,
             maxY: 30
         });
-        console.log('Visualizer initialized');
+        console.log('Finite curve visualizer initialized (will resize when tab becomes visible)');
     } catch (error) {
-        console.error('Failed to initialize visualizer:', error);
-        UIUtils.showError('Failed to initialize visualization canvas');
+        console.error('Failed to initialize finite curve visualizer:', error);
     }
 }
 
 /**
- * Load default curve on startup
+ * Load default curves on startup
+ *
+ * REFACTORED: Load appropriate default for each tab
  */
-function loadDefaultCurve() {
-    const defaultCurveName = Config.ECC.DEFAULT_CURVE;
-    const curve = ECCore.getCurve(defaultCurveName);
+function loadDefaultCurves() {
+    // Tab 1: Default real curve (y² = x³ + 7, like secp256k1)
+    const defaultRealCurve = {
+        name: 'y² = x³ + 7',
+        a: 0,
+        b: 7
+    };
 
-    if (curve) {
-        // For visualization, use small test curve
-        currentCurve = {
-            name: 'Test Curve (p=23)',
-            a: 0n,
-            b: 7n,
-            p: 23n
-        };
+    if (realCurveVisualizer) {
+        realCurveVisualizer.setCurve(defaultRealCurve);
+        displayRealCurveInfo(defaultRealCurve);
+    }
 
-        if (visualizer) {
-            visualizer.setCurve(currentCurve);
-        }
+    // Tab 2: Default finite field curve (small for visualization)
+    const defaultFiniteCurve = {
+        name: 'E(F₂₃): y² = x³ + 7',
+        a: 0n,
+        b: 7n,
+        p: 23n
+    };
 
-        displayCurveInfo(currentCurve);
+    currentFiniteCurve = defaultFiniteCurve;
+
+    if (finiteCurveVisualizer) {
+        finiteCurveVisualizer.setCurve(defaultFiniteCurve);
+        displayFiniteCurveInfo(defaultFiniteCurve);
     }
 }
 
 // ============================================================================
-// CURVE MANAGEMENT HANDLERS
+// TAB 1: REAL CURVE HANDLERS
 // ============================================================================
 
 /**
- * Handle curve selection change
+ * Handle real curve selection change
+ *
+ * REFACTORED: New handler for Tab 1 only
  */
-function handleCurveChange() {
-    const curveSelect = document.getElementById('curve-select');
-    const curveName = curveSelect.value;
+function handleRealCurveChange() {
+    const select = document.getElementById('real-curve-select');
+    const value = select.value;
 
-    if (curveName === 'custom') {
-        handleCustomCurveToggle();
+    let curve;
+
+    switch(value) {
+        case 'koblitz':
+            curve = { name: 'y² = x³ + 7', a: 0, b: 7 };
+            hideCustomRealParams();
+            break;
+        case 'nist-like':
+            curve = { name: 'y² = x³ - 3x + 3', a: -3, b: 3 };
+            hideCustomRealParams();
+            break;
+        case 'generic':
+            curve = { name: 'y² = x³ + x + 1', a: 1, b: 1 };
+            hideCustomRealParams();
+            break;
+        case 'custom':
+            showCustomRealParams();
+            handleRealCustomCurve();
+            return;
+    }
+
+    if (realCurveVisualizer) {
+        realCurveVisualizer.setCurve(curve);
+        displayRealCurveInfo(curve);
+    }
+}
+
+/**
+ * Handle custom real curve parameter changes
+ *
+ * REFACTORED: New handler for Tab 1 custom curves
+ */
+function handleRealCustomCurve() {
+    const a = parseFloat(document.getElementById('real-a').value) || 0;
+    const b = parseFloat(document.getElementById('real-b').value) || 0;
+
+    // Update display values
+    document.getElementById('real-a-value').textContent = a;
+    document.getElementById('real-b-value').textContent = b;
+
+    const curve = {
+        name: `y² = x³ + ${a}x + ${b}`,
+        a: a,
+        b: b
+    };
+
+    if (realCurveVisualizer) {
+        realCurveVisualizer.setCurve(curve);
+        displayRealCurveInfo(curve);
+    }
+}
+
+/**
+ * Show custom real curve parameter controls
+ */
+function showCustomRealParams() {
+    const customDiv = document.getElementById('custom-real-params');
+    if (customDiv) {
+        customDiv.style.display = 'block';
+    }
+}
+
+/**
+ * Hide custom real curve parameter controls
+ */
+function hideCustomRealParams() {
+    const customDiv = document.getElementById('custom-real-params');
+    if (customDiv) {
+        customDiv.style.display = 'none';
+    }
+}
+
+// ============================================================================
+// TAB 2: FINITE FIELD CURVE HANDLERS
+// ============================================================================
+
+/**
+ * Handle finite field curve selection change
+ *
+ * REFACTORED: New handler for Tab 2 only
+ */
+function handleFiniteCurveChange() {
+    const select = document.getElementById('finite-curve-select');
+    const value = select.value;
+
+    let curve;
+
+    switch(value) {
+        case 'test-23':
+            curve = {
+                name: 'E(F₂₃): y² = x³ + 7',
+                a: 0n,
+                b: 7n,
+                p: 23n
+            };
+            hideCustomFiniteParams();
+            break;
+        case 'test-97':
+            curve = {
+                name: 'E(F₉₇): y² = x³ + 2x + 3',
+                a: 2n,
+                b: 3n,
+                p: 97n
+            };
+            hideCustomFiniteParams();
+            break;
+        case 'custom':
+            showCustomFiniteParams();
+            return;
+    }
+
+    currentFiniteCurve = curve;
+
+    if (finiteCurveVisualizer) {
+        finiteCurveVisualizer.setCurve(curve);
+        displayFiniteCurveInfo(curve);
+    }
+}
+
+/**
+ * Handle custom finite field curve application
+ *
+ * REFACTORED: New handler for Tab 2 custom curves
+ */
+function handleFiniteCustomCurve() {
+    const a = BigInt(document.getElementById('finite-a').value || 0);
+    const b = BigInt(document.getElementById('finite-b').value || 0);
+    const p = BigInt(document.getElementById('finite-p').value || 23);
+
+    // Validate prime (basic check)
+    if (p < 2n) {
+        UIUtils.showError('Prime p must be at least 2');
         return;
     }
 
-    if (curveName === 'test-small') {
-        // Small test curve for visualization
-        currentCurve = {
-            name: 'Test Curve (p=23)',
-            a: 0n,
-            b: 7n,
-            p: 23n
-        };
-    } else if (curveName === 'test-medium') {
-        currentCurve = {
-            name: 'Test Curve (p=97)',
-            a: 2n,
-            b: 3n,
-            p: 97n
-        };
-    } else {
-        // Standard curve
-        const standardCurve = ECCore.getCurve(curveName);
-        if (standardCurve) {
-            currentCurve = standardCurve;
-            UIUtils.showWarning('Large curve selected - visualization limited to parameters only');
-        }
+    if (p > 1000n) {
+        UIUtils.showWarning('Large primes (p > 1000) may not visualize well');
     }
 
-    if (visualizer && currentCurve.p && currentCurve.p < 1000n) {
-        visualizer.setCurve(currentCurve);
-    }
+    const curve = {
+        name: `E(F₍${p}₎): y² = x³ + ${a}x + ${b}`,
+        a: a,
+        b: b,
+        p: p
+    };
 
-    displayCurveInfo(currentCurve);
-}
+    currentFiniteCurve = curve;
 
-/**
- * Handle visualization mode change
- */
-function handleModeChange(event) {
-    currentMode = event.target.value;
-
-    if (visualizer) {
-        visualizer.setMode(currentMode);
-    }
-
-    // Update UI hints
-    const hint = document.getElementById('mode-hint');
-    if (hint) {
-        if (currentMode === 'real') {
-            hint.textContent = 'Viewing curve over real numbers (smooth, continuous)';
-        } else {
-            hint.textContent = 'Viewing curve over finite field (discrete points)';
-        }
+    if (finiteCurveVisualizer) {
+        finiteCurveVisualizer.setCurve(curve);
+        displayFiniteCurveInfo(curve);
     }
 }
 
 /**
- * Handle custom curve toggle
+ * Show custom finite curve parameter controls
  */
-function handleCustomCurveToggle() {
-    const customSection = document.getElementById('custom-curve-params');
-    const isChecked = document.getElementById('custom-curve-toggle')?.checked;
+function showCustomFiniteParams() {
+    const customDiv = document.getElementById('custom-finite-params');
+    if (customDiv) {
+        customDiv.style.display = 'block';
+    }
+}
 
-    if (customSection) {
-        customSection.style.display = isChecked ? 'block' : 'none';
+/**
+ * Hide custom finite curve parameter controls
+ */
+function hideCustomFiniteParams() {
+    const customDiv = document.getElementById('custom-finite-params');
+    if (customDiv) {
+        customDiv.style.display = 'none';
     }
 }
 
@@ -229,19 +382,76 @@ function handleCustomCurveToggle() {
 // ============================================================================
 
 /**
- * Display curve information
+ * Display real curve information (Tab 1)
  *
- * @param {Object} curve - Curve parameters
+ * REFACTORED: New display function for real curves only
  */
-function displayCurveInfo(curve) {
-    const infoDiv = document.getElementById('curve-info');
+function displayRealCurveInfo(curve) {
+    const infoDiv = document.getElementById('real-curve-info');
+    if (!infoDiv) return;
+
+    const { a, b } = curve;
+
+    // Compute discriminant: Δ = -16(4a³ + 27b²)
+    const discriminant = -16 * (4 * Math.pow(a, 3) + 27 * Math.pow(b, 2));
+
+    // Determine number of components
+    let components;
+    if (discriminant > 0) {
+        components = 'Two components (curve crosses itself)';
+    } else if (discriminant < 0) {
+        components = 'One component (connected curve)';
+    } else {
+        components = 'Singular (not a valid elliptic curve)';
+    }
+
+    let html = `
+    <div class="card card--result">
+    <h3>Curve Properties (Real Numbers)</h3>
+    <p><strong>Equation:</strong> y² = x³ + ${a}x + ${b}</p>
+    <p><strong>Discriminant (Δ):</strong> ${discriminant.toFixed(2)}</p>
+    <p><strong>Structure:</strong> ${components}</p>
+    `;
+
+    if (discriminant !== 0) {
+        html += `
+        <p class="info"><em>
+        ${discriminant < 0 ? 'This curve has one connected component extending to infinity.' :
+            'This curve has two separate components.'}
+            </em></p>
+            `;
+    } else {
+        html += DisplayComponents.createSecurityAlert(
+            'Singular curve! This is not a valid elliptic curve for cryptography.',
+            'danger'
+        );
+    }
+
+    html += DisplayComponents.createEducationalNote(
+        'Over real numbers, elliptic curves form smooth curves. The geometric chord-and-tangent ' +
+        'method works intuitively here. When we move to finite fields, the same algebraic formulas ' +
+        'apply, but we work with discrete points instead of continuous curves.'
+    );
+
+    html += '</div>';
+
+    UIUtils.displayResults('real-curve-info', html, false);
+}
+
+/**
+ * Display finite field curve information (Tab 2)
+ *
+ * REFACTORED: Renamed and focused on finite field only
+ */
+function displayFiniteCurveInfo(curve) {
+    const infoDiv = document.getElementById('finite-curve-info');
     if (!infoDiv) return;
 
     const { a, b, p } = curve;
 
     let html = `
     <div class="card card--result">
-        <h3>Curve Parameters</h3>
+    <h3>Curve Parameters (Finite Field F_${p})</h3>
     <p><strong>Equation:</strong> y² ≡ x³ + ${a}x + ${b} (mod ${p})</p>
     `;
 
@@ -255,13 +465,15 @@ function displayCurveInfo(curve) {
         const lowerBound = Math.floor(pNum + 1 - 2 * Math.sqrt(pNum));
         const upperBound = Math.ceil(pNum + 1 + 2 * Math.sqrt(pNum));
         html += `<p><strong>Hasse's theorem:</strong> ${lowerBound} ≤ #E(F_${p}) ≤ ${upperBound}</p>`;
-    } else {
-        html += `<p><strong>Field size:</strong> ${ECMathUtils.bitLength(p)} bits</p>`;
 
-        if (curve.n) {
-            html += `<p><strong>Group order:</strong> ${ECMathUtils.bitLength(curve.n)} bits</p>`;
-            html += `<p><strong>Cofactor:</strong> ${curve.h}</p>`;
-        }
+        html += `
+        <p class="info"><em>
+        Click on points in the visualization above to select them for operations.
+        Selected points will turn red with labels (A, B).
+        </em></p>
+        `;
+    } else {
+        html += `<p><strong>Field size:</strong> ${ECMathUtils.bitLength(p)} bits (too large to visualize)</p>`;
     }
 
     html += DisplayComponents.createEducationalNote(
@@ -271,14 +483,13 @@ function displayCurveInfo(curve) {
 
     html += '</div>';
 
-    UIUtils.displayResults('curve-info', html, false);
+    UIUtils.displayResults('finite-curve-info', html, false);
 }
 
 /**
  * Compute number of points on curve
  *
- * @param {Object} curve - {a, b, p}
- * @returns {Number} - Point count including infinity
+ * UNCHANGED: Same function as before
  */
 function computePointCount(curve) {
     const { a, b, p } = curve;
@@ -305,6 +516,8 @@ function computePointCount(curve) {
 
 /**
  * Display welcome message
+ *
+ * REFACTORED: Updated to reflect new tab structure
  */
 function displayWelcomeMessage() {
     const welcomeDiv = document.getElementById('welcome-message');
@@ -314,10 +527,10 @@ function displayWelcomeMessage() {
         <h2>Welcome to the Elliptic Curve Explorer</h2>
         <p>Explore the mathematics of elliptic curve cryptography through interactive visualizations:</p>
         <ol>
-        <li><strong>Visualize:</strong> See curves over real numbers or finite fields</li>
-        <li><strong>Interact:</strong> Click points on the curve to select them</li>
-        <li><strong>Compute:</strong> Perform point addition and scalar multiplication</li>
-        <li><strong>Learn:</strong> Understand the geometric and algebraic foundations of ECC</li>
+        <li><strong>Curve Visualization:</strong> See elliptic curves over real numbers (smooth, geometric)</li>
+        <li><strong>Point Operations:</strong> Work with curves over finite fields (discrete, cryptographic)</li>
+        <li><strong>Protocols:</strong> Learn ECDH and ECDSA (coming in Phase 3)</li>
+        <li><strong>Security:</strong> Understand ECDLP hardness and attacks (coming in Phase 4)</li>
         </ol>
         ${DisplayComponents.createEducationalNote(
             'Elliptic curves provide the same security as RSA with much smaller keys. ' +
@@ -329,19 +542,21 @@ function displayWelcomeMessage() {
 }
 
 // ============================================================================
-// POINT OPERATION HANDLERS
+// POINT OPERATION HANDLERS (TAB 2 ONLY)
 // ============================================================================
 
 /**
  * Handle point addition
+ *
+ * REFACTORED: Now uses finiteCurveVisualizer only
  */
 async function handlePointAddition() {
-    if (!visualizer) {
-        UIUtils.showError('Visualizer not initialized');
+    if (!finiteCurveVisualizer) {
+        UIUtils.showError('Finite curve visualizer not initialized');
         return;
     }
 
-    const selected = visualizer.getSelectedPoints();
+    const selected = finiteCurveVisualizer.getSelectedPoints();
 
     if (selected.length < 2) {
         UIUtils.showError('Please select 2 points on the curve (click on canvas)');
@@ -353,7 +568,7 @@ async function handlePointAddition() {
     UIUtils.showLoading('operation-results', 'Computing P + Q...');
 
     try {
-        await visualizer.animatePointAddition(P, Q, (result) => {
+        await finiteCurveVisualizer.animatePointAddition(P, Q, (result) => {
             displayPointOperationResult('Point Addition', P, Q, result, 'P + Q');
         });
     } catch (error) {
@@ -366,14 +581,16 @@ async function handlePointAddition() {
 
 /**
  * Handle point doubling
+ *
+ * REFACTORED: Now uses finiteCurveVisualizer only
  */
 async function handlePointDoubling() {
-    if (!visualizer) {
-        UIUtils.showError('Visualizer not initialized');
+    if (!finiteCurveVisualizer) {
+        UIUtils.showError('Finite curve visualizer not initialized');
         return;
     }
 
-    const selected = visualizer.getSelectedPoints();
+    const selected = finiteCurveVisualizer.getSelectedPoints();
 
     if (selected.length < 1) {
         UIUtils.showError('Please select 1 point on the curve (click on canvas)');
@@ -385,7 +602,7 @@ async function handlePointDoubling() {
     UIUtils.showLoading('operation-results', 'Computing 2P...');
 
     try {
-        await visualizer.animatePointAddition(P, P, (result) => {
+        await finiteCurveVisualizer.animatePointAddition(P, P, (result) => {
             displayPointOperationResult('Point Doubling', P, P, result, '2P');
         });
     } catch (error) {
@@ -398,14 +615,16 @@ async function handlePointDoubling() {
 
 /**
  * Handle scalar multiplication
+ *
+ * REFACTORED: Now uses finiteCurveVisualizer only
  */
 async function handleScalarMultiply() {
-    if (!visualizer) {
-        UIUtils.showError('Visualizer not initialized');
+    if (!finiteCurveVisualizer) {
+        UIUtils.showError('Finite curve visualizer not initialized');
         return;
     }
 
-    const selected = visualizer.getSelectedPoints();
+    const selected = finiteCurveVisualizer.getSelectedPoints();
 
     if (selected.length < 1) {
         UIUtils.showError('Please select 1 point on the curve (click on canvas)');
@@ -431,7 +650,7 @@ async function handleScalarMultiply() {
     UIUtils.showLoading('operation-results', `Computing ${k}P...`);
 
     try {
-        await visualizer.animateScalarMultiplication(k, P, (result) => {
+        await finiteCurveVisualizer.animateScalarMultiplication(k, P, (result) => {
             displayScalarMultiplyResult(k, P, result);
         });
     } catch (error) {
@@ -444,27 +663,23 @@ async function handleScalarMultiply() {
 
 /**
  * Handle clear selection
+ *
+ * REFACTORED: Now uses finiteCurveVisualizer only
  */
 function handleClearSelection() {
-    if (visualizer) {
-        visualizer.clearSelection();
+    if (finiteCurveVisualizer) {
+        finiteCurveVisualizer.clearSelection();
     }
 
     UIUtils.clearResults('operation-results');
 }
 
 // ============================================================================
-// RESULT DISPLAY
+// RESULT DISPLAY (UNCHANGED)
 // ============================================================================
 
 /**
  * Display point operation result
- *
- * @param {String} operation - Operation name
- * @param {Object} P - First point
- * @param {Object} Q - Second point
- * @param {Object} result - Result point
- * @param {String} notation - Mathematical notation
  */
 function displayPointOperationResult(operation, P, Q, result, notation) {
     let html = `
@@ -495,10 +710,6 @@ function displayPointOperationResult(operation, P, Q, result, notation) {
 
 /**
  * Display scalar multiplication result
- *
- * @param {BigInt} k - Scalar
- * @param {Object} P - Base point
- * @param {Object} result - Result point
  */
 function displayScalarMultiplyResult(k, P, result) {
     const binary = k.toString(2);
