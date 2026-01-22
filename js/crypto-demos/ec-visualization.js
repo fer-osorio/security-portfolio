@@ -75,6 +75,13 @@ class ECVisualizer {
         // Point visualization settings
         this.pointRadius = Config.ECC.POINT_RADIUS;
 
+        // Set default dimensions before first resize attempt
+        // This ensures canvas has non-zero dimensions even in hidden tabs
+        this.canvas.width = 800;
+        this.canvas.height = 600;
+        this.width = 800;
+        this.height = 600;
+
         // Resize canvas to fill container
         this.resizeCanvas();
 
@@ -89,9 +96,13 @@ class ECVisualizer {
      * If dimensions are zero, fall back to CSS-defined dimensions or sensible defaults
      */
     resizeCanvas() {
-        const rect = this.canvas.getBoundingClientRect();
+        // Get dimensions from parent container, not canvas itself
+        // Canvas has width: 100%, so its getBoundingClientRect() returns resolved min-width
+        // We want the container's width instead
+        const container = this.canvas.parentElement;
+        const rect = container ? container.getBoundingClientRect() : this.canvas.getBoundingClientRect();
 
-        // FIX: If canvas is hidden (0x0), use fallback dimensions
+        // If canvas is hidden (0x0), use fallback dimensions
         let width = rect.width;
         let height = rect.height;
 
@@ -136,7 +147,7 @@ class ECVisualizer {
             this.render();
         });
 
-        // FIX: Re-resize when tab becomes visible (fixes hidden canvas 0x0 issue)
+        // Re-resize when tab becomes visible
         this.canvas.addEventListener('tab-visible', () => {
             console.log(`Canvas ${this.canvas.id} tab became visible - resizing`);
             this.resizeCanvas();
@@ -155,7 +166,7 @@ class ECVisualizer {
         // Auto-adjust viewport based on mode
         if (this.mode === 'finite' && curve.p) {
             const p = Number(curve.p);
-            if (p < 100) {
+            if (p < Config.ECC.MAX_POINT_AMOUNT) {
                 // Small field: show all points
                 this.viewport = {
                     minX: -1,
@@ -254,34 +265,6 @@ class ECVisualizer {
             minY: -yAbsMax - yPadding,
             maxY: yAbsMax + yPadding
         };
-    }
-
-    /**
-     * Set visualization mode
-     *
-     * @param {String} mode - 'real' or 'finite'
-     */
-    setMode(mode) {
-        this.mode = mode;
-
-        // Recalculate viewport when switching modes
-        if (this.curve) {
-            if (mode === 'finite' && this.curve.p) {
-                const p = Number(this.curve.p);
-                if (p < 100) {
-                    this.viewport = {
-                        minX: -1,
-                        maxX: p + 1,
-                        minY: -1,
-                        maxY: p + 1
-                    };
-                }
-            } else if (mode === 'real') {
-                this.viewport = this.calculateOptimalViewport(this.curve);
-            }
-        }
-
-        this.render();
     }
 
     // ========================================================================
@@ -512,7 +495,7 @@ class ECVisualizer {
         const { a, b, p } = this.curve;
 
         // Only plot if p is reasonably small
-        if (!p || p > 1000n) {
+        if (!p || p > Config.ECC.MAX_POINT_AMOUNTn) {
             ctx.fillStyle = '#666';
             ctx.font = '14px sans-serif';
             ctx.textAlign = 'center';
