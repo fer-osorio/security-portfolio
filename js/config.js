@@ -110,7 +110,6 @@ const Config = {
          * PURPOSE: Prevent DoS attacks via extremely large inputs
          * RATIONALE: 10,000 chars is ~1,500 words (enough for any demo)
          *
-         * FOR YOUR BACKGROUND:
          * This is similar to MAX_PATH in Windows or PATH_MAX in POSIX,
          * but for user input instead of file paths.
          */
@@ -420,11 +419,18 @@ const Config = {
         DEFAULT_CURVE: 'secp256k1',
         CANVAS_WIDTH: 800,
         CANVAS_HEIGHT: 600,
-        POINT_RADIUS: 5,
+        POINT_RADIUS: {
+            BIG:    5,
+            MEDIUM: 3.66,
+            SMALL:  2.33,
+            TINY:   1
+
+        },
 
         // Animation settings
         ANIMATION_DURATION: 1000,  // ms
         ANIMATION_STEPS: 60,
+        MAX_POINT_AMOUNT: 65536,
 
         // Security bounds
         MAX_SCALAR_BITS: 256,
@@ -433,7 +439,7 @@ const Config = {
 
         // Color scheme
         COLORS: {
-            POINT: '#3498db',
+            POINT: '#2488cb',
             OPERATION_LINE: '#e74c3c',
             RESULT: '#27ae60',
             CURVE: '#2c3e50'
