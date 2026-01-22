@@ -21,7 +21,6 @@
  * - Reflection across x-axis
  * - Identity element (point at infinity)
  *
- * FOR YOUR BACKGROUND:
  * This bridges the gap between:
  * - Abstract algebra (group operations)
  * - Analytic geometry (curves, lines, intersections)
@@ -73,7 +72,7 @@ class ECVisualizer {
         this.colors = Config.ECC.COLORS;
 
         // Point visualization settings
-        this.pointRadius = Config.ECC.POINT_RADIUS;
+        this.pointRadius = Config.ECC.POINT_RADIUS.BIG;
 
         // Set default dimensions before first resize attempt
         // This ensures canvas has non-zero dimensions even in hidden tabs
@@ -495,7 +494,7 @@ class ECVisualizer {
         const { a, b, p } = this.curve;
 
         // Only plot if p is reasonably small
-        if (!p || p > Config.ECC.MAX_POINT_AMOUNTn) {
+        if (!p || p > BigInt(Config.ECC.MAX_POINT_AMOUNT)) {
             ctx.fillStyle = '#666';
             ctx.font = '14px sans-serif';
             ctx.textAlign = 'center';
@@ -507,6 +506,16 @@ class ECVisualizer {
         const points = this.computeFiniteFieldPoints();
 
         // Draw points
+        if(p < BigInt(Config.ECC.MAX_POINT_AMOUNT) / 64n) {
+            this.pointRadius = Config.ECC.POINT_RADIUS.BIG;
+        } else if(p < BigInt(Config.ECC.MAX_POINT_AMOUNT) / 16n) {
+            this.pointRadius = Config.ECC.POINT_RADIUS.MEDIUM;
+        } else if(p < BigInt(Config.ECC.MAX_POINT_AMOUNT) / 4n) {
+            this.pointRadius = Config.ECC.POINT_RADIUS.SMALL;
+        } else {
+            this.pointRadius = Config.ECC.POINT_RADIUS.TINY;
+        }
+        console.log("this.pointRadius = ", this.pointRadius);
         ctx.fillStyle = this.colors.POINT;
         for (const point of points) {
             this.drawPoint(Number(point.x), Number(point.y), this.pointRadius);
