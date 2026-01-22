@@ -17,7 +17,7 @@
             padding: var(--spacing-xl);
         }
 
-        /* REFACTORED: Styles for both canvases */
+        /* Styles for both canvases */
         .canvas-container {
             width: 100%;
             max-width: 800px;
@@ -117,7 +117,7 @@
         <!-- Error display -->
         <div id="error-message" class="alert alert--error" hidden></div>
 
-        <!-- REFACTORED: Updated tab labels -->
+        <!-- Updated tab labels -->
         <div class="tabs">
             <button class="tab-button active" data-tab="visualization">1. Curve Visualization (ℝ)</button>
             <button class="tab-button" data-tab="operations">2. Point Operations (F_p)</button>
@@ -127,7 +127,7 @@
 
         <!-- ====================================================================
              TAB 1: CURVE VISUALIZATION (REAL NUMBERS ONLY)
-             REFACTORED: Dedicated to geometric visualization
+             Dedicated to geometric visualization
              ==================================================================== -->
         <div id="visualization" class="tab-panel active">
             <h2>Elliptic Curve Geometry (Real Numbers)</h2>
@@ -137,7 +137,7 @@
                 <p>This visualization shows the smooth, continuous curve where the chord-and-tangent method is most intuitive.</p>
             </div>
 
-            <!-- REFACTORED: New curve selector for real curves only -->
+            <!-- New curve selector for real curves only -->
             <div class="card card--control">
                 <h3>Select Curve Equation</h3>
 
@@ -151,7 +151,7 @@
                     </select>
                 </div>
 
-                <!-- REFACTORED: New custom parameter controls with sliders -->
+                <!-- New custom parameter controls with sliders -->
                 <div id="custom-real-params" style="display: none;">
                     <h4>Custom Curve: y² = x³ + ax + b</h4>
 
@@ -174,10 +174,10 @@
                 </div>
             </div>
 
-            <!-- REFACTORED: New display div for real curve info -->
+            <!-- New display div for real curve info -->
             <div id="real-curve-info"></div>
 
-            <!-- REFACTORED: Dedicated canvas for real curves -->
+            <!-- Dedicated canvas for real curves -->
             <div class="canvas-container">
                 <canvas id="real-curve-canvas"></canvas>
             </div>
@@ -209,7 +209,7 @@
 
         <!-- ====================================================================
              TAB 2: POINT OPERATIONS (FINITE FIELD ONLY)
-             REFACTORED: Co-locates visualization with operations
+             Co-locates visualization with operations
              ==================================================================== -->
         <div id="operations" class="tab-panel">
             <h2>Point Operations (Finite Field F_p)</h2>
@@ -219,7 +219,7 @@
                 <p><strong>Instructions:</strong> Click on points in the visualization to select them (up to 2), then use the operation buttons below.</p>
             </div>
 
-            <!-- REFACTORED: New curve selector for finite field curves -->
+            <!-- New curve selector for finite field curves -->
             <div class="card card--control">
                 <h3>Select Curve (Finite Field)</h3>
 
@@ -232,7 +232,7 @@
                     </select>
                 </div>
 
-                <!-- REFACTORED: Custom finite field parameters -->
+                <!-- Custom finite field parameters -->
                 <div id="custom-finite-params" style="display: none;">
                     <h4>Custom Curve: y² ≡ x³ + ax + b (mod p)</h4>
 
@@ -255,10 +255,10 @@
                 </div>
             </div>
 
-            <!-- REFACTORED: New display div for finite curve info -->
+            <!-- New display div for finite curve info -->
             <div id="finite-curve-info"></div>
 
-            <!-- REFACTORED: Dedicated canvas for finite field curves -->
+            <!-- Dedicated canvas for finite field curves -->
             <div class="canvas-container">
                 <canvas id="finite-curve-canvas"></canvas>
             </div>
