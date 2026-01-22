@@ -19,7 +19,7 @@
 // GLOBAL STATE
 // ============================================================================
 
-// REFACTORED: Two separate visualizers instead of one with mode toggle
+// Two separate visualizers instead of one with mode toggle
 let realCurveVisualizer = null;      // Tab 1: Real number curves
 let finiteCurveVisualizer = null;    // Tab 2: Finite field curves
 let currentFiniteCurve = null;       // Currently selected finite field curve
@@ -32,7 +32,7 @@ let currentFiniteCurve = null;       // Currently selected finite field curve
  * Initialize the ECC demo when page loads
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('ECC Explorer initialized (REFACTORED)');
+    console.log('ECC Explorer initialized');
 
     // Set up event listeners
     setupEventListeners();
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
  * Set up all event listeners for user interactions
  */
 function setupEventListeners() {
-    // REFACTORED: Separate curve selectors for each tab
+    // Separate curve selectors for each tab
 
     // Tab 1: Real curve selection
     const realCurveSelect = document.getElementById('real-curve-select');
@@ -68,8 +68,6 @@ function setupEventListeners() {
     if (finiteCurveSelect) {
         finiteCurveSelect.addEventListener('change', handleFiniteCurveChange);
     }
-
-    // REMOVED: Mode toggle (no longer needed)
 
     // Custom curve parameters (Tab 1 - Real)
     const realCustomInputs = ['real-a', 'real-b'];
@@ -119,7 +117,6 @@ function setupEventListeners() {
 /**
  * Initialize both canvas visualizers
  *
- * REFACTORED: Create two separate visualizers instead of one
  *
  * NOTE: The finite curve visualizer starts in a hidden tab, so its canvas
  * will have 0x0 dimensions initially. This is fixed by the 'tab-visible'
@@ -159,7 +156,7 @@ function initializeVisualizers() {
 /**
  * Load default curves on startup
  *
- * REFACTORED: Load appropriate default for each tab
+ * Load appropriate default for each tab
  */
 function loadDefaultCurves() {
     // Tab 1: Default real curve (y² = x³ + 7, like secp256k1)
@@ -197,7 +194,7 @@ function loadDefaultCurves() {
 /**
  * Handle real curve selection change
  *
- * REFACTORED: New handler for Tab 1 only
+ * Handler for Tab 1 only
  */
 function handleRealCurveChange() {
     const select = document.getElementById('real-curve-select');
@@ -233,7 +230,7 @@ function handleRealCurveChange() {
 /**
  * Handle custom real curve parameter changes
  *
- * REFACTORED: New handler for Tab 1 custom curves
+ * Handler for Tab 1 custom curves
  */
 function handleRealCustomCurve() {
     const a = parseFloat(document.getElementById('real-a').value) || 0;
@@ -282,7 +279,7 @@ function hideCustomRealParams() {
 /**
  * Handle finite field curve selection change
  *
- * REFACTORED: New handler for Tab 2 only
+ * Handler for Tab 2 only
  */
 function handleFiniteCurveChange() {
     const select = document.getElementById('finite-curve-select');
@@ -325,7 +322,7 @@ function handleFiniteCurveChange() {
 /**
  * Handle custom finite field curve application
  *
- * REFACTORED: New handler for Tab 2 custom curves
+ * Handler for Tab 2 custom curves
  */
 function handleFiniteCustomCurve() {
     const a = BigInt(document.getElementById('finite-a').value || 0);
@@ -338,8 +335,8 @@ function handleFiniteCustomCurve() {
         return;
     }
 
-    if (p > 1000n) {
-        UIUtils.showWarning('Large primes (p > 1000) may not visualize well');
+    if (p > Config.ECC.MAX_POINT_AMOUNTn) {
+        UIUtils.showWarning('Large primes may not visualize well');
     }
 
     const curve = {
@@ -384,7 +381,7 @@ function hideCustomFiniteParams() {
 /**
  * Display real curve information (Tab 1)
  *
- * REFACTORED: New display function for real curves only
+ * Display function for real curves only
  */
 function displayRealCurveInfo(curve) {
     const infoDiv = document.getElementById('real-curve-info');
@@ -440,8 +437,6 @@ function displayRealCurveInfo(curve) {
 
 /**
  * Display finite field curve information (Tab 2)
- *
- * REFACTORED: Renamed and focused on finite field only
  */
 function displayFiniteCurveInfo(curve) {
     const infoDiv = document.getElementById('finite-curve-info');
@@ -455,7 +450,7 @@ function displayFiniteCurveInfo(curve) {
     <p><strong>Equation:</strong> y² ≡ x³ + ${a}x + ${b} (mod ${p})</p>
     `;
 
-    if (p < 1000n) {
+    if (p < Config.ECC.MAX_POINT_AMOUNTn) {
         // Compute and display point count
         const points = computePointCount(curve);
         html += `<p><strong>Points on curve:</strong> ${points} (including point at infinity)</p>`;
@@ -516,8 +511,6 @@ function computePointCount(curve) {
 
 /**
  * Display welcome message
- *
- * REFACTORED: Updated to reflect new tab structure
  */
 function displayWelcomeMessage() {
     const welcomeDiv = document.getElementById('welcome-message');
@@ -547,8 +540,6 @@ function displayWelcomeMessage() {
 
 /**
  * Handle point addition
- *
- * REFACTORED: Now uses finiteCurveVisualizer only
  */
 async function handlePointAddition() {
     if (!finiteCurveVisualizer) {
@@ -581,8 +572,6 @@ async function handlePointAddition() {
 
 /**
  * Handle point doubling
- *
- * REFACTORED: Now uses finiteCurveVisualizer only
  */
 async function handlePointDoubling() {
     if (!finiteCurveVisualizer) {
@@ -615,8 +604,6 @@ async function handlePointDoubling() {
 
 /**
  * Handle scalar multiplication
- *
- * REFACTORED: Now uses finiteCurveVisualizer only
  */
 async function handleScalarMultiply() {
     if (!finiteCurveVisualizer) {
@@ -663,8 +650,6 @@ async function handleScalarMultiply() {
 
 /**
  * Handle clear selection
- *
- * REFACTORED: Now uses finiteCurveVisualizer only
  */
 function handleClearSelection() {
     if (finiteCurveVisualizer) {
