@@ -423,14 +423,15 @@ const Config = {
             BIG:    5,
             MEDIUM: 3.66,
             SMALL:  2.33,
-            TINY:   1
+            TINY:   1,
+            EXTRA_TINY: 0.8
 
         },
 
         // Animation settings
         ANIMATION_DURATION: 1000,  // ms
         ANIMATION_STEPS: 60,
-        MAX_POINT_AMOUNT: 65536,
+        MAX_POINT_AMOUNT: 131072,  // 2^17
 
         // Security bounds
         MAX_SCALAR_BITS: 256,
@@ -439,7 +440,7 @@ const Config = {
 
         // Color scheme
         COLORS: {
-            POINT: '#2488cb',
+            POINT: '#0468ab',
             OPERATION_LINE: '#e74c3c',
             RESULT: '#27ae60',
             CURVE: '#2c3e50'
