@@ -517,7 +517,6 @@ class ECVisualizer {
         } else {
             this.pointRadius = Config.ECC.POINT_RADIUS.EXTRA_TINY;
         }
-        console.log("this.pointRadius = ", this.pointRadius);
         ctx.fillStyle = this.colors.POINT;
         for (const point of points) {
             this.drawPoint(Number(point.x), Number(point.y), this.pointRadius);
