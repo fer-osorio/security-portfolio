@@ -174,13 +174,13 @@
                 </div>
             </div>
 
-            <!-- New display div for real curve info -->
-            <div id="real-curve-info"></div>
-
             <!-- Dedicated canvas for real curves -->
             <div class="canvas-container">
                 <canvas id="real-curve-canvas"></canvas>
             </div>
+
+            <!-- New display div for real curve info -->
+            <div id="real-curve-info"></div>
 
             <div class="card card--control">
                 <h3>📚 Understanding the Visualization</h3>
@@ -227,7 +227,7 @@
                     <label for="finite-curve-select">Curve:</label>
                     <select id="finite-curve-select">
                         <option value="test-23" selected>E(F₂₃): y² = x³ + 7 (Small, easy to visualize)</option>
-                        <option value="test-97">E(F₉₇): y² = x³ + 2x + 3 (Medium size)</option>
+                        <option value="test-97">E(F₉₇): y² = x³ + 2x + 3</option>
                         <option value="custom">Custom parameters...</option>
                     </select>
                 </div>
@@ -247,21 +247,21 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="finite-p">Prime p (keep small for visualization, p < 200):</label>
-                        <input type="number" id="finite-p" value="23" min="2" max="1000">
+                        <label for="finite-p">Prime p (keep small for visualization, p < 131072):</label>
+                        <input type="number" id="finite-p" value="23" min="2" max="131072">
                     </div>
 
                     <button class="btn btn-secondary" id="apply-finite-custom-btn">Apply Custom Curve</button>
                 </div>
             </div>
 
-            <!-- New display div for finite curve info -->
-            <div id="finite-curve-info"></div>
-
             <!-- Dedicated canvas for finite field curves -->
             <div class="canvas-container">
                 <canvas id="finite-curve-canvas"></canvas>
             </div>
+
+            <!-- New display div for finite curve info -->
+            <div id="finite-curve-info"></div>
 
             <!-- Point operation controls (UNCHANGED structure, updated IDs) -->
             <div class="controls-grid">
