@@ -116,12 +116,6 @@ function setupEventListeners() {
 
 /**
  * Initialize both canvas visualizers
- *
- *
- * NOTE: The finite curve visualizer starts in a hidden tab, so its canvas
- * will have 0x0 dimensions initially. This is fixed by the 'tab-visible'
- * event handler in ec-visualization.js that triggers a resize when the
- * tab becomes visible.
  */
 function initializeVisualizers() {
     // Tab 1: Real curve visualizer
