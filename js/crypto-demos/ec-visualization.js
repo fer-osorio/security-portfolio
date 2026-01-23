@@ -216,7 +216,7 @@ class ECVisualizer {
         // Find approximate root of x³ + ax + b = 0 for left boundary
 
         // Heuristic: For a = 0 (Koblitz curves), use cube root of -b
-        if (Math.abs(a) < 0.01) {
+        if (Math.abs(a) <= 0.01) {
             // y² = x³ + b
             // Curve starts around x = ∛(-b) if b > 0
             const criticalX = b > 0 ? -Math.pow(b, 1/3) : -Math.pow(-b, 1/3);
@@ -353,7 +353,7 @@ class ECVisualizer {
         const ctx = this.ctx;
 
         // Grid lines (light gray)
-        ctx.strokeStyle = '#e0e0e0';
+        ctx.strokeStyle = '#b0b0b0';
         ctx.lineWidth = 0.5;
 
         // Vertical grid lines
@@ -512,8 +512,10 @@ class ECVisualizer {
             this.pointRadius = Config.ECC.POINT_RADIUS.MEDIUM;
         } else if(p < BigInt(Config.ECC.MAX_POINT_AMOUNT) / 4n) {
             this.pointRadius = Config.ECC.POINT_RADIUS.SMALL;
-        } else {
+        } else if(p < BigInt(Config.ECC.MAX_POINT_AMOUNT) / 2n) {
             this.pointRadius = Config.ECC.POINT_RADIUS.TINY;
+        } else {
+            this.pointRadius = Config.ECC.POINT_RADIUS.EXTRA_TINY;
         }
         console.log("this.pointRadius = ", this.pointRadius);
         ctx.fillStyle = this.colors.POINT;
