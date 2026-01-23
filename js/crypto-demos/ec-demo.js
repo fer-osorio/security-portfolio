@@ -440,8 +440,8 @@ function displayFiniteCurveInfo(curve) {
 
     let html = `
     <div class="card card--result">
-    <h3>Curve Parameters (Finite Field F_${p})</h3>
-    <p><strong>Equation:</strong> y² ≡ x³ + ${a}x + ${b} (mod ${p})</p>
+        <h3>Curve Parameters (Finite Field F_${p})</h3>
+        <p><strong>Equation:</strong> y² ≡ x³ + ${a}x + ${b} (mod ${p})</p>
     `;
 
     if (p < Config.ECC.MAX_POINT_AMOUNTn) {
@@ -457,8 +457,8 @@ function displayFiniteCurveInfo(curve) {
 
         html += `
         <p class="info"><em>
-        Click on points in the visualization above to select them for operations.
-        Selected points will turn red with labels (A, B).
+            Click on points in the visualization above to select them for operations.
+            Selected points will turn red with labels (A, B).
         </em></p>
         `;
     } else {
@@ -477,8 +477,6 @@ function displayFiniteCurveInfo(curve) {
 
 /**
  * Compute number of points on curve
- *
- * UNCHANGED: Same function as before
  */
 function computePointCount(curve) {
     const { a, b, p } = curve;
@@ -511,13 +509,13 @@ function displayWelcomeMessage() {
     if (welcomeDiv) {
         welcomeDiv.innerHTML = `
         <div class="welcome-content">
-        <h2>Welcome to the Elliptic Curve Explorer</h2>
-        <p>Explore the mathematics of elliptic curve cryptography through interactive visualizations:</p>
-        <ol>
-        <li><strong>Curve Visualization:</strong> See elliptic curves over real numbers (smooth, geometric)</li>
-        <li><strong>Point Operations:</strong> Work with curves over finite fields (discrete, cryptographic)</li>
-        <li><strong>Protocols:</strong> Learn ECDH and ECDSA (coming in Phase 3)</li>
-        <li><strong>Security:</strong> Understand ECDLP hardness and attacks (coming in Phase 4)</li>
+            <h2>Welcome to the Elliptic Curve Explorer</h2>
+            <p>Explore the mathematics of elliptic curve cryptography through interactive visualizations:</p>
+            <ol>
+                <li><strong>Curve Visualization:</strong> See elliptic curves over real numbers (smooth, geometric)</li>
+                <li><strong>Point Operations:</strong> Work with curves over finite fields (discrete, cryptographic)</li>
+                <li><strong>Protocols:</strong> Learn ECDH and ECDSA (coming in Phase 3)</li>
+                <li><strong>Security:</strong> Understand ECDLP hardness and attacks (coming in Phase 4)</li>
         </ol>
         ${DisplayComponents.createEducationalNote(
             'Elliptic curves provide the same security as RSA with much smaller keys. ' +
@@ -663,10 +661,10 @@ function handleClearSelection() {
 function displayPointOperationResult(operation, P, Q, result, notation) {
     let html = `
     <div class="card card--result">
-    <h3>✓ ${operation}</h3>
-    <div class="operation-display">
-    <p><strong>P:</strong> (${P.x}, ${P.y})</p>
-    <p><strong>Q:</strong> (${Q.x}, ${Q.y})</p>
+        <h3>✓ ${operation}</h3>
+        <div class="operation-display">
+            <p><strong>P:</strong> (${P.x}, ${P.y})</p>
+            <p><strong>Q:</strong> (${Q.x}, ${Q.y})</p>
     `;
 
     if (result && !result.isInfinity) {
@@ -695,10 +693,10 @@ function displayScalarMultiplyResult(k, P, result) {
 
     let html = `
     <div class="card card--result">
-    <h3>✓ Scalar Multiplication</h3>
-    <div class="operation-display">
-    <p><strong>Scalar k:</strong> ${k} = ${binary}₂</p>
-    <p><strong>Base point P:</strong> (${P.x}, ${P.y})</p>
+        <h3>✓ Scalar Multiplication</h3>
+        <div class="operation-display">
+            <p><strong>Scalar k:</strong> ${k} = ${binary}₂</p>
+            <p><strong>Base point P:</strong> (${P.x}, ${P.y})</p>
     `;
 
     if (result && !result.isInfinity) {
@@ -708,14 +706,14 @@ function displayScalarMultiplyResult(k, P, result) {
     }
 
     html += `
-    </div>
-    <div class="math-breakdown">
-    <h4>Algorithm: Double-and-Add</h4>
-    <p>Binary representation: ${binary}</p>
-    <p>Number of doublings: ${binary.length - 1}</p>
-    <p>Number of additions: ${binary.split('1').length - 1}</p>
-    <p>Total operations: ${binary.length - 1 + binary.split('1').length - 1}</p>
-    </div>
+        </div>
+        <div class="math-breakdown">
+            <h4>Algorithm: Double-and-Add</h4>
+            <p>Binary representation: ${binary}</p>
+            <p>Number of doublings: ${binary.length - 1}</p>
+            <p>Number of additions: ${binary.split('1').length - 1}</p>
+            <p>Total operations: ${binary.length - 1 + binary.split('1').length - 1}</p>
+        </div>
     ${DisplayComponents.createEducationalNote(
         'Scalar multiplication is the basis of ECC security. ' +
         'Computing kP is fast (O(log k)), but finding k given P and kP is hard (ECDLP).'
