@@ -420,6 +420,25 @@ function randomBigInt(bits) {
     return result;
 }
 
+/**
+ * Checks divisibility by small primes
+ *
+ * PURPOSE: Quick elimination of obviously composite numbers
+ *
+ * @param {BigInt} num - Number to test
+ * @returns Boolean - Test result
+ */
+function isDivisibleBySmallPrime(num) {
+    smallPrimes = Config.SMALL_PRIMES;
+    // Quick check: divisible by small primes?
+    for (const p of smallPrimes) {
+        if (num % BigInt(p) === 0n && num !== BigInt(p)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // ============================================================================
 // EXPORT ALL FUNCTIONS
 // ============================================================================
@@ -436,7 +455,8 @@ const MathUtils = {
     stringToBigInt,
     bigIntToString,
     bitLength,
-    randomBigInt
+    randomBigInt,
+    isDivisibleBySmallPrime
 };
 
 // Make available globally (for browser environment)
