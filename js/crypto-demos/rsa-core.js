@@ -142,7 +142,7 @@ function randomWitness(n) {
  * 4. Repeat until prime is found
  *
  * OPTIMIZATION: Check divisibility by small primes first
- * This eliminates ~80% of candidates before expensive Miller-Rabin test
+ * This eliminates ~90% of candidates before expensive Miller-Rabin test
  *
  * EXPECTED NUMBER OF ATTEMPTS:
  * Prime Number Theorem: π(n) ≈ n / ln(n)
@@ -159,9 +159,6 @@ function randomWitness(n) {
  * @returns {BigInt} - Random prime number
  */
 async function generatePrime(bits, progressCallback = null) {
-    // Small primes for trial division (optimization)
-    const smallPrimes = Config.RSA.SMALL_PRIMES
-
     let attempts = 0;
 
     while (true) {
@@ -176,13 +173,7 @@ async function generatePrime(bits, progressCallback = null) {
         }
 
         // Quick check: divisible by small primes?
-        let divisibleBySmallPrime = false;
-        for (const p of smallPrimes) {
-            if (candidate % BigInt(p) === 0n && candidate !== BigInt(p)) {
-                divisibleBySmallPrime = true;
-                break;
-            }
-        }
+        let divisibleBySmallPrime = MathUtils.isDivisibleBySmallPrime(candidate);
 
         if (divisibleBySmallPrime) {
             if (progressCallback) progressCallback(attempts, false);
