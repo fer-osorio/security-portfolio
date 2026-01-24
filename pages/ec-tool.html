@@ -44,8 +44,6 @@
             margin: var(--spacing-xl) 0;
         }
 
-        /* REMOVED: mode-selector styles (no longer needed) */
-
         .operation-display {
             background: var(--color-background);
             padding: var(--spacing-md);
@@ -75,6 +73,38 @@
             text-align: right;
             font-weight: bold;
             color: var(--color-primary);
+        }
+
+        .protocol-step {
+            background: white;
+            padding: var(--spacing-md);
+            margin: var(--spacing-md) 0;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--color-secondary);
+        }
+
+        .protocol-step h4 {
+            color: var(--color-primary);
+            margin-top: 0;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .success-message {
+            color: var(--color-success);
+            font-weight: var(--font-weight-bold);
+            padding: var(--spacing-sm);
+            background: #d4edda;
+            border-radius: 4px;
+            margin: var(--spacing-sm) 0;
+        }
+
+        .error-message {
+            color: #721c24;
+            font-weight: var(--font-weight-bold);
+            padding: var(--spacing-sm);
+            background: #f8d7da;
+            border-radius: 4px;
+            margin: var(--spacing-sm) 0;
         }
 
         @media (max-width: 768px) {
@@ -128,7 +158,7 @@
         <div class="tabs">
             <button class="tab-button active" data-tab="visualization">1. Curve Visualization (ℝ)</button>
             <button class="tab-button" data-tab="operations">2. Point Operations (F_p)</button>
-            <button class="tab-button" data-tab="protocols">3. Protocols (Coming Soon)</button>
+            <button class="tab-button" data-tab="protocols">3. Protocols</button>
             <button class="tab-button" data-tab="security">4. Security Analysis (Coming Soon)</button>
         </div>
 
@@ -365,18 +395,179 @@
         </div>
 
         <!-- ====================================================================
-             TAB 3: PROTOCOLS (PLACEHOLDER - No changes from before)
+             TAB 3: PROTOCOLS
              ==================================================================== -->
         <div id="protocols" class="tab-panel">
             <h2>Cryptographic Protocols</h2>
+
             <div class="alert alert--info">
-                <p><strong>Coming in Phase 3:</strong></p>
+                <p><strong>💡 Overview:</strong> These protocols demonstrate how elliptic curves enable secure key exchange and digital signatures.</p>
+            </div>
+
+            <!-- ECDH Section -->
+            <div class="card card--control">
+                <h3>🔐 ECDH: Elliptic Curve Diffie-Hellman Key Exchange</h3>
+
+                <p><strong>Purpose:</strong> Allow two parties to establish a shared secret over an insecure channel.</p>
+
+                <div class="form-group">
+                    <label for="ecdh-curve-select">Select Curve:</label>
+                    <select id="ecdh-curve-select">
+                        <!-- Option with bugs, commented for addition in the future.
+                            <option value="test-small">Test Curve (p = 23) - See all steps</option> -->
+                        <option value="secp256k1" selected>secp256k1 (Bitcoin)</option>
+                        <option value="P-256">P-256 (NIST)</option>
+                    </select>
+                </div>
+
+                <button id="ecdh-demo-btn" class="btn btn-primary">Run ECDH Demonstration</button>
+
+                <div id="ecdh-results" style="margin-top: 1rem;"></div>
+            </div>
+
+            <!-- ECDSA Section -->
+            <div class="card card--control">
+                <h3>✍️ ECDSA: Elliptic Curve Digital Signature Algorithm</h3>
+
+                <p><strong>Purpose:</strong> Create and verify digital signatures for message authentication and non-repudiation.</p>
+
+                <div class="form-group">
+                    <label for="ecdsa-curve-select">Select Curve:</label>
+                    <select id="ecdsa-curve-select">
+                        <option value="test-small">Test Curve (p = 23) - See all steps</option>
+                        <option value="secp256k1" selected>secp256k1 (Bitcoin)</option>
+                        <option value="P-256">P-256 (NIST)</option>
+                    </select>
+                </div>
+
+                <h4>Step 1: Sign Message</h4>
+                <div class="form-group">
+                    <label for="ecdsa-message">Message to sign:</label>
+                    <textarea id="ecdsa-message" placeholder="Enter your message here..." rows="3">Hello, ECDSA! This message is authentic.</textarea>
+                </div>
+
+                <button id="ecdsa-sign-btn" class="btn btn-primary">Generate Signature</button>
+
+                <div id="ecdsa-results" style="margin-top: 1rem;"></div>
+
+                <h4 style="margin-top: 2rem;">Step 2: Verify Signature</h4>
+                <div class="form-group">
+                    <label for="ecdsa-verify-message">Message to verify:</label>
+                    <textarea id="ecdsa-verify-message" placeholder="Enter message to verify..." rows="3">Hello, ECDSA! This message is authentic.</textarea>
+                    <p style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">
+                        💡 Try modifying this message to see verification fail
+                    </p>
+                </div>
+
+                <button id="ecdsa-verify-btn" class="btn btn-primary" disabled>Verify Signature</button>
+
+                <div id="ecdsa-verify-results" style="margin-top: 1rem;"></div>
+            </div>
+
+            <!-- Educational Content -->
+            <div class="card card--control">
+                <h3>📚 Understanding the Protocols</h3>
+
+                <h4>ECDH (Key Exchange)</h4>
+                <p><strong>The Problem:</strong> Alice and Bob want to share a secret key, but Eve is listening to their communication.</p>
+
+                <p><strong>The Solution:</strong></p>
+                <ol>
+                    <li>Alice picks random private key d_A, computes public key Q_A = d_A × G</li>
+                    <li>Bob picks random private key d_B, computes public key Q_B = d_B × G</li>
+                    <li>They exchange public keys Q_A and Q_B (Eve can see these)</li>
+                    <li>Alice computes shared secret: S = d_A × Q_B = d_A × (d_B × G)</li>
+                    <li>Bob computes shared secret: S = d_B × Q_A = d_B × (d_A × G)</li>
+                    <li>Both get same point: S = d_A × d_B × G</li>
+                </ol>
+
+                <p><strong>Why Eve Can't Compute S:</strong></p>
+                <p>Eve sees G, Q_A, and Q_B, but to compute S she needs either d_A or d_B.</p>
+                <p>Finding d_A from G and Q_A requires solving ECDLP - computationally infeasible for large curves.</p>
+
+                <h4>ECDSA (Digital Signatures)</h4>
+                <p><strong>The Problem:</strong> Bob receives a message claiming to be from Alice. How can he verify it's really from her?</p>
+
+                <p><strong>Signing (Alice):</strong></p>
+                <ol>
+                    <li>Alice has private key d and public key Q = d × G</li>
+                    <li>Hash message: h = H(m)</li>
+                    <li>Generate random nonce k, compute R = k × G</li>
+                    <li>Compute signature: r = R.x mod n, s = k⁻¹(h + r·d) mod n</li>
+                    <li>Send message m and signature (r, s) to Bob</li>
+                </ol>
+
+                <p><strong>Verification (Bob):</strong></p>
+                <ol>
+                    <li>Bob has Alice's public key Q</li>
+                    <li>Hash message: h = H(m)</li>
+                    <li>Compute w = s⁻¹ mod n</li>
+                    <li>Compute u₁ = h·w mod n, u₂ = r·w mod n</li>
+                    <li>Compute R' = u₁·G + u₂·Q</li>
+                    <li>Accept if R'.x ≡ r (mod n)</li>
+                </ol>
+
+                <p><strong>Why It Works:</strong></p>
+                <p>R' = u₁·G + u₂·Q = (h·w)·G + (r·w)·(d·G) = w·(h + r·d)·G = s⁻¹·(h + r·d)·G = k·G = R</p>
+
+                <p><strong>Security Properties:</strong></p>
                 <ul>
-                    <li>ECDH (Elliptic Curve Diffie-Hellman) key exchange simulation</li>
-                    <li>ECDSA (Elliptic Curve Digital Signature Algorithm) signing and verification</li>
-                    <li>Interactive demonstrations with step-by-step explanations</li>
-                    <li><strong>Standard curves (secp256k1, P-256) will be shown here</strong></li>
+                    <li><strong>Authentication:</strong> Only Alice (with private key d) could create valid signature</li>
+                    <li><strong>Integrity:</strong> Any change to message changes h, invalidating signature</li>
+                    <li><strong>Non-repudiation:</strong> Alice can't deny signing (only she has d)</li>
                 </ul>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="card card--control">
+                <h3>⚖️ ECDH vs ECDSA Comparison</h3>
+
+                <table class="probability-table">
+                    <thead>
+                        <tr>
+                            <th>Aspect</th>
+                            <th>ECDH</th>
+                            <th>ECDSA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Purpose</strong></td>
+                            <td>Key exchange</td>
+                            <td>Digital signatures</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Parties</strong></td>
+                            <td>2 (symmetric)</td>
+                            <td>2 (asymmetric: signer + verifier)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Output</strong></td>
+                            <td>Shared secret point</td>
+                            <td>Signature (r, s)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Key Usage</strong></td>
+                            <td>Ephemeral (one-time)</td>
+                            <td>Long-term public key</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Security Basis</strong></td>
+                            <td>CDH assumption</td>
+                            <td>ECDLP + hash security</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Real-world Use</strong></td>
+                            <td>TLS, Signal, WhatsApp</td>
+                            <td>Bitcoin, TLS certificates, JWT</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Critical Requirement</strong></td>
+                            <td>Authentication (prevent MitM)</td>
+                            <td>Unique random k per signature</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -386,7 +577,7 @@
         <div id="security" class="tab-panel">
             <h2>Security Analysis</h2>
             <div class="alert alert--info">
-                <p><strong>Coming in Phase 4:</strong></p>
+                <p><strong>Coming:</strong></p>
                 <ul>
                     <li>ECDLP (Elliptic Curve Discrete Logarithm Problem) hardness explanation</li>
                     <li>Parameter validation and attack scenarios</li>
