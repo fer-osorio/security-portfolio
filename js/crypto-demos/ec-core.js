@@ -123,17 +123,7 @@ class EllipticCurve {
      */
     _isPrimeLikely(n) {
         if (n < 2n) return false;
-        if (n === 2n) return true;
-        if (n % 2n === 0n) return false;
-
-        // Small primes check
-        const smallPrimes = [3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n];
-        for (const p of smallPrimes) {
-            if (n === p) return true;
-            if (n % p === 0n) return false;
-        }
-
-        return true;  // Assume prime for large n (trust standards)
+        return MathUtils.isDivisibleBySmallPrime(n);  // Assume prime for large n (trust standards)
     }
 
     /**
