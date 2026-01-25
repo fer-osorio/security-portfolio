@@ -160,13 +160,14 @@ class ECVisualizer {
      * @param {Object} curve - Curve parameters {a, b, p} or EllipticCurve
      */
     setCurve(curve) {
-        if (MathUtils.isDivisibleBySmallPrime(curve.p)) {
-            throw new Error(`Number p (='${curve.p}') is not a prime`);
-        }
         this.curve = curve;
 
         // Auto-adjust viewport based on mode
         if (this.mode === 'finite' && curve.p) {
+            // Primality test for p
+            if (MathUtils.isDivisibleBySmallPrime(curve.p)) {
+                throw new Error(`Number p (='${curve.p}') is not a prime`);
+            }
             const p = Number(curve.p);
             if (p < Config.ECC.MAX_POINT_AMOUNT) {
                 // Small field: show all points
