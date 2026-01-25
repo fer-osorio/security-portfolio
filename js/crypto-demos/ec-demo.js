@@ -359,6 +359,22 @@ function handleFiniteCustomCurve() {
         UIUtils.showWarning('Large primes may not visualize well');
     }
 
+    // If number p is not a prime, disable point operations; enable them otherwise
+    if(MathUtils.isDivisibleBySmallPrime(p)){
+        document.getElementById("point-add-btn").disabled = true;
+        document.getElementById("point-double-btn").disabled = true;
+        document.getElementById('scalar-input').disabled = true;
+        document.getElementById("scalar-multiply-btn").disabled = true;
+        document.getElementById("clear-selection-btn").disabled = true;
+        UIUtils.showError('Provided number p is not a prime, point operations are disabled');
+    } else {
+        document.getElementById("point-add-btn").disabled = false;
+        document.getElementById("point-double-btn").disabled = false;
+        document.getElementById('scalar-input').disabled = false;
+        document.getElementById("scalar-multiply-btn").disabled = false;
+        document.getElementById("clear-selection-btn").disabled = false;
+    }
+
     const curve = {
         name: `E(F₍${p}₎): y² = x³ + ${a}x + ${b}`,
         a: a,
