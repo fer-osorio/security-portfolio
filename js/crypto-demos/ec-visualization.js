@@ -160,6 +160,9 @@ class ECVisualizer {
      * @param {Object} curve - Curve parameters {a, b, p} or EllipticCurve
      */
     setCurve(curve) {
+        if (MathUtils.isDivisibleBySmallPrime(curve.p)) {
+            throw new Error(`Number p (='${curve.p}') is not a prime`);
+        }
         this.curve = curve;
 
         // Auto-adjust viewport based on mode
