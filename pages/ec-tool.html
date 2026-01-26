@@ -161,7 +161,7 @@
             <button class="tab-button active" data-tab="visualization">1. Curve Visualization (ℝ)</button>
             <button class="tab-button" data-tab="operations">2. Point Operations (F_p)</button>
             <button class="tab-button" data-tab="protocols">3. Protocols</button>
-            <button class="tab-button" data-tab="security">4. Security Analysis (Coming Soon)</button>
+            <button class="tab-button" data-tab="security">4. Security Analysis</button>
         </div>
 
         <!-- ====================================================================
@@ -574,17 +574,201 @@
         </div>
 
         <!-- ====================================================================
-             TAB 4: SECURITY ANALYSIS (PLACEHOLDER - No changes from before)
+             TAB 4: SECURITY ANALYSIS
              ==================================================================== -->
         <div id="security" class="tab-panel">
-            <h2>Security Analysis</h2>
-            <div class="alert alert--info">
-                <p><strong>Coming:</strong></p>
+            <h2>Security Analysis & Best Practices</h2>
+
+            <div class="card card--control">
+                <h3>🔐 What Makes ECC Secure?</h3>
+                <p>ECC security relies on the <strong>Elliptic Curve Discrete Logarithm Problem (ECDLP)</strong>:</p>
                 <ul>
-                    <li>ECDLP (Elliptic Curve Discrete Logarithm Problem) hardness explanation</li>
-                    <li>Parameter validation and attack scenarios</li>
-                    <li>Comparison: ECC vs RSA security levels</li>
-                    <li>Side-channel attack demonstrations</li>
+                    <li><strong>Easy:</strong> Compute Q = k × P (scalar multiplication, O(log k) operations)</li>
+                    <li><strong>Hard:</strong> Given P and Q, find k such that Q = k × P (exponential time)</li>
+                </ul>
+                <p>Best known classical attack: <strong>Pollard's rho algorithm</strong> with O(√n) complexity</p>
+                <p>For a 256-bit curve: ~2^128 operations required (impossible with current technology)</p>
+            </div>
+
+            <div class="card card--control">
+                <h3>⚠️ Vulnerabilities in This Implementation</h3>
+                <p>This tool demonstrates <strong>educational ECC</strong> for learning purposes. It has several limitations:</p>
+
+                <div class="alert alert--warning">
+                    <h4>1. Small Test Curves (Critical)</h4>
+                    <p>Test curves with p = 23 or p = 97 are <strong>COMPLETELY INSECURE</strong>:</p>
+                    <ul>
+                        <li><strong>ECDLP is trivial:</strong> Can brute-force private keys in milliseconds</li>
+                        <li><strong>Group order too small:</strong> Only ~30-100 points on curve</li>
+                        <li><strong>No security margin:</strong> Attacks are practical on any computer</li>
+                    </ul>
+                    <p><strong>Production requirement:</strong> Minimum 256-bit curves (secp256k1, P-256, Curve25519)</p>
+                </div>
+
+                <div class="alert alert--warning">
+                    <h4>2. Client-Side Key Storage</h4>
+                    <p>Keys are stored in browser memory:</p>
+                    <ul>
+                        <li>Vulnerable to XSS attacks</li>
+                        <li>Visible in browser DevTools</li>
+                        <li>No hardware protection</li>
+                        <li>Lost on page refresh</li>
+                    </ul>
+                    <p><strong>Production solution:</strong> Use Hardware Security Modules (HSMs), secure enclaves, or key management services</p>
+                </div>
+
+                <div class="alert alert--warning">
+                    <h4>3. Timing Attacks</h4>
+                    <p>Scalar multiplication timing depends on private key bits:</p>
+                    <ul>
+                        <li>Simple double-and-add leaks Hamming weight of scalar</li>
+                        <li>JavaScript timing observable via Performance API</li>
+                        <li>Can recover private key bits over many observations</li>
+                    </ul>
+                    <p><strong>Mitigation:</strong> Use constant-time algorithms (Montgomery ladder) - implemented in scalarMultiplySecure()</p>
+                </div>
+
+                <div class="alert alert--warning">
+                    <h4>4. Invalid Curve Attacks</h4>
+                    <p>Without point validation, attackers can provide points not on the curve:</p>
+                    <ul>
+                        <li>Points on quadratic twist (different curve, same field)</li>
+                        <li>Small subgroup points (order 2, 4, 8)</li>
+                        <li>Can leak private key bits through scalar multiplication</li>
+                    </ul>
+                    <p><strong>Defense:</strong> Always validate received points (implemented in validatePublicKey())</p>
+                </div>
+
+                <div class="alert alert--warning">
+                    <h4>5. ECDSA k-Nonce Security</h4>
+                    <p>The ephemeral key k in ECDSA is <strong>CRITICAL</strong>:</p>
+                    <ul>
+                        <li><strong>Reused k:</strong> Instant private key recovery (Sony PS3 hack)</li>
+                        <li><strong>Biased k:</strong> Lattice attacks can recover key</li>
+                        <li><strong>Predictable k:</strong> Direct key compromise</li>
+                    </ul>
+                    <p><strong>Solution:</strong> RFC 6979 deterministic ECDSA (implemented in this tool)</p>
+                </div>
+            </div>
+
+            <div class="card card--control">
+                <h3>✅ Real-World ECC Best Practices</h3>
+                <ul>
+                    <li><strong>Use standard curves:</strong> secp256k1 (Bitcoin), P-256 (NIST), Curve25519 (modern)</li>
+                    <li><strong>Minimum 256-bit security:</strong> Equivalent to 3072-bit RSA</li>
+                    <li><strong>Store keys in HSMs:</strong> Hardware-backed key storage</li>
+                    <li><strong>Validate all points:</strong> Check curve equation and subgroup membership</li>
+                    <li><strong>Use deterministic ECDSA:</strong> RFC 6979 for signature generation</li>
+                    <li><strong>Implement constant-time operations:</strong> Montgomery ladder for scalar multiplication</li>
+                    <li><strong>Use authenticated key exchange:</strong> Combine ECDH with digital signatures (X3DH, Noise protocol)</li>
+                    <li><strong>Regular key rotation:</strong> Limit exposure window for compromised keys</li>
+                    <li><strong>Use established libraries:</strong> libsodium, OpenSSL, BoringSSL - not hand-rolled crypto</li>
+                </ul>
+            </div>
+
+            <div class="card card--control">
+                <h3>🆚 ECC vs RSA: Security Comparison</h3>
+
+                <table class="probability-table">
+                    <thead>
+                        <tr>
+                            <th>Security Level (bits)</th>
+                            <th>ECC Key Size</th>
+                            <th>RSA Key Size</th>
+                            <th>Ratio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>80 (legacy, broken)</td>
+                            <td>160</td>
+                            <td>1024</td>
+                            <td>1:6</td>
+                        </tr>
+                        <tr>
+                            <td>112 (acceptable until 2030)</td>
+                            <td>224</td>
+                            <td>2048</td>
+                            <td>1:9</td>
+                        </tr>
+                        <tr>
+                            <td>128 (strong)</td>
+                            <td>256</td>
+                            <td>3072</td>
+                            <td>1:12</td>
+                        </tr>
+                        <tr>
+                            <td>192 (very strong)</td>
+                            <td>384</td>
+                            <td>7680</td>
+                            <td>1:20</td>
+                        </tr>
+                        <tr>
+                            <td>256 (extreme)</td>
+                            <td>521</td>
+                            <td>15360</td>
+                            <td>1:29</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p><strong>Note: Key sizes given in bits</strong></p>
+                <p><strong>ECC Mayor Advantage:</strong> Provides equivalent security with much smaller keys:</p>
+                <ul>
+                    <li><strong>Faster:</strong> Smaller keys = faster computations</li>
+                    <li><strong>Smaller:</strong> Less bandwidth, storage, and power consumption</li>
+                    <li><strong>Mobile-friendly:</strong> Ideal for IoT and embedded devices</li>
+                </ul>
+
+                <p><strong>Example:</strong> Bitcoin uses 256-bit ECC (secp256k1) for security equivalent to 3072-bit RSA</p>
+            </div>
+
+            <div class="card card--control">
+                <h3>🔮 Post-Quantum Cryptography</h3>
+                <p><strong>Quantum Threat:</strong> Shor's algorithm can break both ECC and RSA</p>
+                <ul>
+                    <li><strong>Classical computer:</strong> ECDLP requires O(√n) operations (infeasible)</li>
+                    <li><strong>Quantum computer:</strong> Shor's algorithm requires O((log n)³) operations (polynomial time!)</li>
+                    <li><strong>Timeline:</strong> Large-scale quantum computers may exist in 10-20 years</li>
+                </ul>
+
+                <p><strong>Post-Quantum Alternatives:</strong></p>
+                <ul>
+                    <li><strong>Lattice-based:</strong> CRYSTALS-Kyber (key exchange), CRYSTALS-Dilithium (signatures)</li>
+                    <li><strong>Code-based:</strong> Classic McEliece</li>
+                    <li><strong>Hash-based:</strong> SPHINCS+ (stateless signatures)</li>
+                    <li><strong>Isogeny-based:</strong> SIKE (broken in 2022, research ongoing)</li>
+                </ul>
+
+                <p><strong>NIST Post-Quantum Standards:</strong> Finalized in 2024, migration ongoing</p>
+
+                <p><strong>Hybrid Approach:</strong> Use both ECC and post-quantum algorithms for defense-in-depth</p>
+            </div>
+
+            <div class="card card--control">
+                <h3>📚 Further Learning</h3>
+                <p>To understand ECC security deeply, study:</p>
+                <ul>
+                    <li><strong>Abstract Algebra:</strong> Group theory, finite fields, Galois theory</li>
+                    <li><strong>Number Theory:</strong> Discrete logarithm problem, complexity theory</li>
+                    <li><strong>Cryptanalysis:</strong> Pollard's rho, baby-step giant-step, MOV attack</li>
+                    <li><strong>Side-Channel Attacks:</strong> Timing, power analysis, fault injection, cache attacks</li>
+                    <li><strong>Protocol Design:</strong> Key exchange protocols (X3DH, Noise), authenticated encryption</li>
+                    <li><strong>Standards:</strong> SECG, NIST FIPS 186-5, IETF RFCs (6979, 7748, 8032)</li>
+                </ul>
+            </div>
+
+            <div class="card card--control">
+                <h3>🌐 Real-World ECC Usage</h3>
+                <ul>
+                    <li><strong>Bitcoin & Cryptocurrencies:</strong> secp256k1 for transaction signatures</li>
+                    <li><strong>TLS/SSL:</strong> ECDHE-ECDSA cipher suites for web encryption</li>
+                    <li><strong>Signal Protocol:</strong> Curve25519 for end-to-end encrypted messaging</li>
+                    <li><strong>SSH:</strong> Ed25519 for authentication</li>
+                    <li><strong>Apple iMessage:</strong> ECDSA for message signing</li>
+                    <li><strong>WhatsApp:</strong> Signal protocol with Curve25519</li>
+                    <li><strong>U.S. Government:</strong> NIST P-256/P-384 (NSA Suite B)</li>
+                    <li><strong>Smart Cards:</strong> P-256 for contactless payments</li>
                 </ul>
             </div>
         </div>
