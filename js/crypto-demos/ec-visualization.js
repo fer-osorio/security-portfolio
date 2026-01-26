@@ -55,10 +55,10 @@ class ECVisualizer {
 
         // Viewport settings (for panning and zooming)
         this.viewport = {
-            minX: options.minX || -10,
-            maxX: options.maxX || 10,
-            minY: options.minY || -10,
-            maxY: options.maxY || 10
+            minX: options.minX || -16,
+            maxX: options.maxX || 16,
+            minY: options.minY || -16,
+            maxY: options.maxY || 16
         };
 
         // Selected points (for interactive operations)
@@ -178,96 +178,9 @@ class ECVisualizer {
                     maxY: p + 1
                 };
             }
-        } else if (this.mode === 'real') {
-            // Auto-adjust viewport for real curves
-            this.viewport = this.calculateOptimalViewport(curve);
         }
 
         this.render();
-    }
-
-    /**
-     * Calculate optimal viewport for real curve visualization
-     *
-     * MATHEMATICAL APPROACH:
-     * For y² = x³ + ax + b, the curve exists where x³ + ax + b ≥ 0
-     *
-     * STRATEGY:
-     * 1. Find critical points where dy/dx = 0 (local extrema)
-     * 2. Find inflection point (typically around x = 0 for standard curves)
-     * 3. Sample the curve to find actual y-range
-     * 4. Add padding for better visualization
-     *
-     * CRITICAL POINTS:
-     * From implicit differentiation: 2y(dy/dx) = 3x² + a
-     * At extrema: dy/dx = 0, so we need y = 0 or the tangent is vertical
-     * This occurs when 3x² + a = 0 → x = ±√(-a/3) (if a < 0)
-     *
-     * @param {Object} curve - {a, b}
-     * @returns {Object} - {minX, maxX, minY, maxY}
-     */
-    calculateOptimalViewport(curve) {
-        const a = Number(curve.a);
-        const b = Number(curve.b);
-
-        // Find x-range by analyzing the cubic
-        // We want to find where x³ + ax + b = 0 (curve touches x-axis)
-        // and extend a bit beyond that
-
-        let xMin, xMax;
-
-        // For standard curves like y² = x³ + 7, the curve extends from negative to positive
-        // Find approximate root of x³ + ax + b = 0 for left boundary
-
-        // Heuristic: For a = 0 (Koblitz curves), use cube root of -b
-        if (Math.abs(a) <= 0.01) {
-            // y² = x³ + b
-            // Curve starts around x = ∛(-b) if b > 0
-            const criticalX = b > 0 ? -Math.pow(b, 1/3) : -Math.pow(-b, 1/3);
-            xMin = criticalX - 2;
-            xMax = Math.abs(criticalX) + Math.abs(b) + 5;
-        } else if (a < 0) {
-            // Curve has a local maximum/minimum
-            // Critical point at x = √(-a/3)
-            const criticalX = Math.sqrt(-a / 3);
-            xMin = -criticalX - 3;
-            xMax = criticalX + 3;
-        } else {
-            // a ≥ 0: curve is monotonic, use heuristic range
-            xMin = -5;
-            xMax = 5;
-        }
-
-        // Sample the curve to find y-range
-        let yMin = 0, yMax = 0;
-        const samples = 200;
-        const step = (xMax - xMin) / samples;
-
-        for (let i = 0; i <= samples; i++) {
-            const x = xMin + i * step;
-            const ySquared = x * x * x + a * x + b;
-
-            if (ySquared >= 0) {
-                const y = Math.sqrt(ySquared);
-                yMin = Math.min(yMin, -y);
-                yMax = Math.max(yMax, y);
-            }
-        }
-
-        // Add 20% padding for better visualization
-        const xPadding = (xMax - xMin) * 0.2;
-        const yPadding = (yMax - yMin) * 0.2;
-
-        // Ensure viewport is centered around origin if curve is symmetric
-        // Most elliptic curves are symmetric about x-axis
-        const yAbsMax = Math.max(Math.abs(yMin), Math.abs(yMax));
-
-        return {
-            minX: xMin - xPadding,
-            maxX: xMax + xPadding,
-            minY: -yAbsMax - yPadding,
-            maxY: yAbsMax + yPadding
-        };
     }
 
     // ========================================================================
@@ -362,7 +275,7 @@ class ECVisualizer {
 
         // Vertical grid lines
         const xStep = this.mode === 'finite' && this.curve.p < 50 ? 1 :
-        (this.viewport.maxX - this.viewport.minX) / 10;
+        (this.viewport.maxX - this.viewport.minX) / 16;
         for (let x = Math.ceil(this.viewport.minX); x <= this.viewport.maxX; x += xStep) {
             const pos = this.curveToCanvas(x, 0);
             ctx.beginPath();
@@ -373,7 +286,7 @@ class ECVisualizer {
 
         // Horizontal grid lines
         const yStep = this.mode === 'finite' && this.curve.p < 50 ? 1 :
-        (this.viewport.maxY - this.viewport.minY) / 10;
+        (this.viewport.maxY - this.viewport.minY) / 16;
         for (let y = Math.ceil(this.viewport.minY); y <= this.viewport.maxY; y += yStep) {
             const pos = this.curveToCanvas(0, y);
             ctx.beginPath();
