@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECC Core Test Suite</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #2c3e50; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        .summary {
+            position: sticky;
+            top: 0;
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            z-index: 100;
+        }
+        .summary span {
+            margin-right: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 ECC Core Test Suite</h1>
+
+    <div class="summary" id="summary">
+        <span>Total: <span id="total-tests">0</span></span>
+        <span style="color: #28a745;">Passed: <span id="passed-tests">0</span></span>
+        <span style="color: #dc3545;">Failed: <span id="failed-tests">0</span></span>
+    </div>
+
+    <div id="test-output"></div>
+
+    <!-- Load dependencies -->
+    <script src="../js/config.js"></script>
+    <script src="../js/crypto-demos/math-utils.js"></script>
+    <script src="../js/crypto-demos/ec-math-utils.js"></script>
+    <script src="../js/crypto-demos/ec-core.js"></script>
+
+    <script>
+        /**
+         * Simple test framework
+         */
+        let totalTests = 0;
+        let passedTests = 0;
+        let failedTests = 0;
+
+        function assert(condition, testName, details = '') {
+            totalTests++;
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result ' + (condition ? 'pass' : 'fail');
+
+            if (condition) {
+                passedTests++;
+                resultDiv.innerHTML = `✅ <strong>PASS:</strong> ${testName}${details ? '<br>' + details : ''}`;
+            } else {
+                failedTests++;
+                resultDiv.innerHTML = `❌ <strong>FAIL:</strong> ${testName}${details ? '<br>' + details : ''}`;
+            }
+
+            document.getElementById('test-output').appendChild(resultDiv);
+            updateSummary();
+        }
+
+        function testSection(title) {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.innerHTML = `<h2>${title}</h2>`;
+            document.getElementById('test-output').appendChild(section);
+        }
+
+        function info(message) {
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'test-result info';
+            infoDiv.innerHTML = `ℹ️ ${message}`;
+            document.getElementById('test-output').appendChild(infoDiv);
+        }
+
+        function updateSummary() {
+            document.getElementById('total-tests').textContent = totalTests;
+            document.getElementById('passed-tests').textContent = passedTests;
+            document.getElementById('failed-tests').textContent = failedTests;
+        }
+
+        /**
+         * Run all tests
+         */
+        async function runAllTests() {
+            console.log('Starting ECC test suite...');
+
+            // Test 1: Finite Field Arithmetic
+            testSection('1️⃣ Finite Field Arithmetic');
+            testFiniteFieldArithmetic();
+
+            // Test 2: Point Validation
+            testSection('2️⃣ Point Validation');
+            testPointValidation();
+
+            // Test 3: Point Addition
+            testSection('3️⃣ Point Addition & Doubling');
+            testPointArithmetic();
+
+            // Test 4: Scalar Multiplication
+            testSection('4️⃣ Scalar Multiplication');
+            testScalarMultiplication();
+
+            // Test 5: Standard Curves
+            testSection('5️⃣ Standard Curve Parameters');
+            testStandardCurves();
+
+            // Test 6: ECDH
+            testSection('6️⃣ ECDH Key Exchange');
+            await testECDH();
+
+            // Test 7: ECDSA
+            testSection('7️⃣ ECDSA Signatures');
+            await testECDSA();
+
+            console.log('Test suite complete!');
+        }
+
+        /**
+         * Test finite field operations
+         */
+        function testFiniteFieldArithmetic() {
+            const p = 23n;
+
+            // Test modular addition
+            const sum = ECMathUtils.modAdd(15n, 12n, p);
+            assert(sum === 4n, 'Modular addition: (15 + 12) mod 23 = 4', `Result: ${sum}`);
+
+            // Test modular subtraction
+            const diff = ECMathUtils.modSub(5n, 10n, p);
+            assert(diff === 18n, 'Modular subtraction: (5 - 10) mod 23 = 18', `Result: ${diff}`);
+
+            // Test modular multiplication
+            const prod = ECMathUtils.modMul(7n, 8n, p);
+            assert(prod === 10n, 'Modular multiplication: (7 × 8) mod 23 = 10', `Result: ${prod}`);
+
+            // Test modular inverse
+            const inv = ECMathUtils.modInv(7n, p);
+            assert(inv === 10n, 'Modular inverse: 7⁻¹ mod 23 = 10', `Result: ${inv}, Verify: 7 × 10 mod 23 = ${(7n * 10n) % p}`);
+        }
+
+        /**
+         * Test point validation
+         */
+        function testPointValidation() {
+            // Small test curve: y² = x³ + 7 (mod 23) - like secp256k1 but tiny
+            const testCurve = { a: 0n, b: 7n, p: 23n };
+
+            // Valid point: (6, 4) on curve
+            const validPoint = new ECMathUtils.Point(6n, 4n, testCurve);
+            const isValid = ECMathUtils.isOnCurve(validPoint);
+            assert(isValid, 'Valid point (6, 4) recognized on y² = x³ + 7 (mod 23)',
+                `Verify: 4² = 16, 6³ + 7 = 223 ≡ 16 (mod 23) ✓`);
+
+            // Invalid point: (5, 5) not on curve
+            const invalidPoint = new ECMathUtils.Point(5n, 5n, testCurve);
+            const isInvalid = !ECMathUtils.isOnCurve(invalidPoint);
+            assert(isInvalid, 'Invalid point (5, 5) rejected',
+                `Verify: 5² = 25 ≡ 2, 5³ + 7 = 132 ≡ 16 (mod 23) ✗`);
+
+            // Curve validation
+            const validCurve = ECMathUtils.validateCurveParameters(testCurve);
+            assert(validCurve, 'Curve y² = x³ + 7 (mod 23) is non-singular',
+                `Δ = 4(0)³ + 27(7)² = 1323 ≡ 13 (mod 23) ≠ 0 ✓`);
+        }
+
+        /**
+         * Test point addition and doubling
+         */
+        function testPointArithmetic() {
+            const testCurve = { a: 0n, b: 7n, p: 23n };
+
+            // Point addition: P + Q
+            const P = new ECMathUtils.Point(6n, 4n, testCurve);
+            const Q = new ECMathUtils.Point(11n, 2n, testCurve);
+            const R = ECMathUtils.pointAdd(P, Q);
+
+            // Expected result: (8, 6) (verified by hand calculation)
+            assert(R.x === 8n && R.y === 6n, 'Point addition: P(6,4) + Q(11,2) = R(8,6)',
+                `Result: (${R.x}, ${R.y})`);
+
+            // Point doubling: 2P
+            const doubleP = ECMathUtils.pointDouble(P);
+            assert(doubleP.x === 15n && doubleP.y === 1n, 'Point doubling: 2P(6,4) = (15,1)',
+                `Result: (${doubleP.x}, ${doubleP.y})`);
+
+            // Identity: P + ∞ = P
+            const infinity = ECMathUtils.Point.infinity(testCurve);
+            const sumWithIdentity = ECMathUtils.pointAdd(P, infinity);
+            assert(sumWithIdentity.x === P.x && sumWithIdentity.y === P.y,
+                'Identity property: P + ∞ = P');
+
+            // Inverse: P + (-P) = ∞
+            const negP = ECMathUtils.pointNegate(P);
+            const sumWithInverse = ECMathUtils.pointAdd(P, negP);
+            assert(sumWithInverse.isInfinity, 'Inverse property: P + (-P) = ∞');
+        }
+
+        /**
+         * Test scalar multiplication
+         */
+        function testScalarMultiplication() {
+            const testCurve = { a: 0n, b: 7n, p: 23n };
+            const P = new ECMathUtils.Point(5n, 4n, testCurve);
+
+            // Test: 3P = P + P + P
+            const triple1 = ECMathUtils.scalarMultiply(3n, P);
+            const triple2 = ECMathUtils.pointAdd(ECMathUtils.pointAdd(P, P), P);
+            assert(triple1.x === triple2.x && triple1.y === triple2.y,
+                'Scalar multiplication: 3P equals P + P + P',
+                `3P = (${triple1.x}, ${triple1.y})`);
+
+            // Test: 0P = ∞
+            const zeroP = ECMathUtils.scalarMultiply(0n, P);
+            assert(zeroP.isInfinity, 'Edge case: 0P = ∞');
+
+            // Test: 1P = P
+            const oneP = ECMathUtils.scalarMultiply(1n, P);
+            assert(oneP.x === P.x && oneP.y === P.y, 'Edge case: 1P = P');
+
+            // Test secure multiplication equals regular
+            const k = 7n;
+            const result1 = ECMathUtils.scalarMultiply(k, P);
+            const result2 = ECMathUtils.scalarMultiplySecure(k, P);
+            assert(result1.x === result2.x && result1.y === result2.y,
+                'Secure scalar multiply equals regular (correctness)',
+                `7P = (${result1.x}, ${result1.y})`);
+        }
+
+        /**
+         * Test standard curve parameters
+         */
+        function testStandardCurves() {
+            // Test secp256k1
+            try {
+                const secp256k1 = ECCore.getCurve('secp256k1');
+                assert(secp256k1 !== null, 'secp256k1 curve loaded');
+                assert(ECMathUtils.isOnCurve(secp256k1.G), 'secp256k1 generator on curve');
+
+                info(`secp256k1: ${ECMathUtils.bitLength(secp256k1.p)}-bit field, ` +
+                     `${ECMathUtils.bitLength(secp256k1.n)}-bit group order`);
+            } catch (e) {
+                assert(false, 'secp256k1 validation failed: ' + e.message);
+            }
+
+            // Test P-256
+            try {
+                const P256 = ECCore.getCurve('P-256');
+                assert(P256 !== null, 'P-256 curve loaded');
+                assert(ECMathUtils.isOnCurve(P256.G), 'P-256 generator on curve');
+
+                info(`P-256: ${ECMathUtils.bitLength(P256.p)}-bit field, ` +
+                     `${ECMathUtils.bitLength(P256.n)}-bit group order`);
+            } catch (e) {
+                assert(false, 'P-256 validation failed: ' + e.message);
+            }
+        }
+
+        /**
+         * Test ECDH key exchange
+         */
+        async function testECDH() {
+            const curve = ECCore.getCurve('secp256k1');
+            const ecdh = new ECCore.ECDH(curve);
+
+            // Alice generates keys
+            const alice = ecdh.generateKeyPair();
+            assert(alice.privateKey > 0n && alice.privateKey < curve.n,
+                'Alice private key in valid range [1, n-1]');
+            assert(ECMathUtils.isOnCurve(alice.publicKey),
+                'Alice public key on curve');
+
+            // Bob generates keys
+            const bob = ecdh.generateKeyPair();
+            assert(bob.privateKey > 0n && bob.privateKey < curve.n,
+                'Bob private key in valid range [1, n-1]');
+            assert(ECMathUtils.isOnCurve(bob.publicKey),
+                'Bob public key on curve');
+
+            // Compute shared secrets
+            const aliceSecret = ecdh.computeSharedSecret(alice.privateKey, bob.publicKey);
+            const bobSecret = ecdh.computeSharedSecret(bob.privateKey, alice.publicKey);
+
+            // Verify equality
+            assert(aliceSecret.x === bobSecret.x && aliceSecret.y === bobSecret.y,
+                'ECDH: Shared secrets match',
+                `Alice and Bob computed same point (${aliceSecret.x.toString(16).substring(0, 16)}...)`);
+
+            // Derive session keys
+            const aliceKey = await ecdh.deriveKey(aliceSecret);
+            const bobKey = await ecdh.deriveKey(bobSecret);
+            assert(aliceKey === bobKey,
+                'Derived session keys match',
+                `Key: ${aliceKey.substring(0, 32)}...`);
+        }
+
+        /**
+         * Test ECDSA signatures
+         */
+        async function testECDSA() {
+            const curve = ECCore.getCurve('secp256k1');
+            const ecdsa = new ECCore.ECDSA(curve);
+
+            // Generate key pair
+            const keyPair = ecdsa.generateKeyPair();
+            assert(keyPair.privateKey > 0n && keyPair.privateKey < curve.n,
+                'ECDSA private key valid');
+            assert(ECMathUtils.isOnCurve(keyPair.publicKey),
+                'ECDSA public key on curve');
+
+            // Sign message
+            const message = 'Hello, ECDSA!';
+            const signature = await ecdsa.sign(message, keyPair.privateKey);
+
+            assert(signature.r > 0n && signature.r < curve.n,
+                'Signature component r valid', `r = ${signature.r.toString(16).substring(0, 16)}...`);
+            assert(signature.s > 0n && signature.s < curve.n,
+                'Signature component s valid', `s = ${signature.s.toString(16).substring(0, 16)}...`);
+
+            // Verify signature (correct)
+            const isValid = await ecdsa.verify(message, signature, keyPair.publicKey);
+            assert(isValid, 'ECDSA signature verifies correctly');
+
+            // Verify with wrong message (should fail)
+            const wrongMessage = 'Hello, World!';
+            const isInvalid = await ecdsa.verify(wrongMessage, signature, keyPair.publicKey);
+            assert(!isInvalid, 'ECDSA signature fails for wrong message');
+
+            // Deterministic signatures (same message → same signature)
+            const signature2 = await ecdsa.sign(message, keyPair.privateKey);
+            assert(signature.r === signature2.r && signature.s === signature2.s,
+                'Deterministic ECDSA: Same message produces same signature');
+        }
+
+        // Run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 100);
+        });
+    </script>
+</body>
+</html>

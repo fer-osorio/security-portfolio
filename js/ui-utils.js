@@ -222,6 +222,17 @@ const UIUtils = {
         const targetPanel = document.getElementById(targetTabId);
         if (targetPanel) {
             targetPanel.classList.add('active');
+            // Trigger resize for any canvases in the newly visible tab
+            // We need to wait for ONE animation frames:
+            // 1. First rAF: Browser schedules the style recalculation
+            requestAnimationFrame(() => {
+                const canvases = targetPanel.querySelectorAll('canvas');
+                canvases.forEach(canvas => {
+                    // Dispatch custom event that visualizers can listen to
+                    const event = new CustomEvent('tab-visible', { detail: { tabId: targetTabId } });
+                    canvas.dispatchEvent(event);
+                });
+            });
         } else {
             console.error(`Tab panel not found: ${targetTabId}`);
         }
