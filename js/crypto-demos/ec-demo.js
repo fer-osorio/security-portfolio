@@ -148,10 +148,10 @@ function initializeVisualizers() {
     try {
         realCurveVisualizer = new ECVisualizer('real-curve-canvas', {
             mode: 'real',  // Fixed mode
-            minX: -5,
-            maxX: 5,
-            minY: -5,
-            maxY: 5
+            minX: -8,
+            maxX: 8,
+            minY: -8,
+            maxY: 8
         });
         console.log('Real curve visualizer initialized');
     } catch (error) {
