@@ -1,0 +1,162 @@
+/* ============================================================================
+ *  ECC TOOL PAGE STYLES
+ *
+ *  Contains only styles unique to ECC tool that cannot be generalized:
+ *  - Canvas container and visualization
+ *  - Protocol step displays
+ *  - Slider controls for real curve parameters
+ *  - Operation displays
+ *  - Success/error message formatting
+ *
+ *  All reusable components (tabs, cards, forms, alerts) are in components/
+ *  ============================================================================ */
+
+/* ============================================================================
+ *  TOOL CONTAINER
+ *  ============================================================================ */
+
+.ec-tool-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-xl);
+}
+
+/* ============================================================================
+ *  CANVAS VISUALIZATION
+ *  ============================================================================ */
+
+.canvas-container {
+    width: 100%;
+    max-width: 800px;
+    margin: var(--spacing-xl) auto;
+    background: white;
+    border: 2px solid var(--color-border);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+    /* Ensure container has dimensions even when parent tab is hidden */
+    min-height: 600px;
+}
+
+.canvas-container canvas {
+    width: 100%;
+    height: 600px;
+    display: block;
+    cursor: crosshair;
+}
+
+/* ============================================================================
+ *  CONTROLS GRID - Layout for operation buttons
+ *  ============================================================================ */
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+    margin: var(--spacing-xl) 0;
+}
+
+/* ============================================================================
+ *  OPERATION DISPLAY - Shows computation results
+ *  ============================================================================ */
+
+.operation-display {
+    background: var(--color-background);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    margin: var(--spacing-md) 0;
+    font-family: var(--code-font);
+}
+
+.operation-display p {
+    margin: var(--spacing-xs) 0;
+}
+
+/* ============================================================================
+ *  SLIDER CONTROLS - For real curve parameter adjustment
+ *  ============================================================================ */
+
+.slider-control {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin: var(--spacing-md) 0;
+}
+
+.slider-control input[type="range"] {
+    flex: 1;
+}
+
+.slider-control .value-display {
+    min-width: 3rem;
+    text-align: right;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+/* ============================================================================
+ *  PROTOCOL STEPS - ECDH/ECDSA step-by-step displays
+ *  ============================================================================ */
+
+.protocol-step {
+    background: white;
+    padding: var(--spacing-md);
+    margin: var(--spacing-md) 0;
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--color-secondary);
+}
+
+.protocol-step h4 {
+    color: var(--color-primary);
+    margin-top: 0;
+    margin-bottom: var(--spacing-sm);
+}
+
+/* ============================================================================
+ *  SUCCESS/ERROR MESSAGES - Protocol result indicators
+ *  ============================================================================ */
+
+.success-message {
+    color: var(--color-success);
+    font-weight: var(--font-weight-bold);
+    padding: var(--spacing-sm);
+    background: #d4edda;
+    border-radius: 4px;
+    margin: var(--spacing-sm) 0;
+}
+
+.error-message {
+    color: #721c24;
+    font-weight: var(--font-weight-bold);
+    padding: var(--spacing-sm);
+    background: #f8d7da;
+    border-radius: 4px;
+    margin: var(--spacing-sm) 0;
+}
+
+/* ============================================================================
+ *  RESPONSIVE ADJUSTMENTS
+ *  ============================================================================ */
+
+@media (max-width: 768px) {
+    .ec-tool-container {
+        padding: var(--spacing-lg) var(--spacing-md);
+    }
+
+    .canvas-container canvas {
+        height: 400px;
+    }
+
+    .controls-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .canvas-container {
+        min-height: 400px;
+    }
+
+    .protocol-step {
+        padding: var(--spacing-sm);
+    }
+}
