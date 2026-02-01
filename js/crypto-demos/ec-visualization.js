@@ -152,6 +152,19 @@ class ECVisualizer {
             this.resizeCanvas();
             this.render();
         });
+
+        // Set up toggle button if it exists
+        const toggleBtn = document.getElementById('theme-toggle');
+        if (toggleBtn) {
+            // If theme changes, render again with proper colors
+            toggleBtn.addEventListener('click', () => {
+                this.render();
+            }
+
+            );
+        }
+
+
     }
 
     /**
@@ -248,6 +261,17 @@ class ECVisualizer {
 
         // Clear canvas
         this.ctx.clearRect(0, 0, this.width, this.height);
+
+        // Get user's theme preference before drawing
+        const userPreference = localStorage.getItem("theme");
+        if (userPreference) {
+            // Elliptic curve colors are designed for light theme; inverting for dark theme
+            if (userPreference === 'dark') {
+                this.ctx.filter = 'invert(1)'
+            } else {
+                this.ctx.filter = 'none'
+            }
+        }
 
         // Draw coordinate axes
         this.drawAxes();
