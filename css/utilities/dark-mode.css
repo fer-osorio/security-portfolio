@@ -293,6 +293,35 @@
         color: #f5b7b1;
     }
 
+    /* ECC tool specific */
+    :root:not([data-theme="light"]) .canvas-container {
+        background: var(--color-surface);
+        border-color: var(--color-border);
+    }
+
+    :root:not([data-theme="light"]) .protocol-step {
+        background: var(--color-surface);
+        border-left-color: var(--color-secondary);
+    }
+
+    :root:not([data-theme="light"]) .success-message {
+        background: #27362f;
+        color: #a9dfbf;
+    }
+
+    :root:not([data-theme="light"]) .error-message {
+        background: #3d2a2e;
+        color: #f5b7b1;
+    }
+
+    :root:not([data-theme="light"]) .slider-control .value-display {
+        color: var(--color-secondary);
+    }
+
+    /*:root:not([data-theme="light"]) #mode-hint {
+        color: var(--color-text-light);
+    }*/
+
     /* Tags */
     :root:not([data-theme="light"]) .tag {
         background-color: var(--color-surface);
@@ -510,6 +539,35 @@
     background: #3d2a2e;
     color: #f5b7b1;
 }
+
+/* ECC tool specific */
+:root[data-theme="dark"] .canvas-container {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .protocol-step {
+    background: var(--color-surface);
+    border-left-color: var(--color-secondary);
+}
+
+:root[data-theme="dark"] .success-message {
+    background: #27362f;
+    color: #a9dfbf;
+}
+
+:root[data-theme="dark"] .error-message {
+    background: #3d2a2e;
+    color: #f5b7b1;
+}
+
+:root[data-theme="dark"] .slider-control .value-display {
+    color: var(--color-secondary);
+}
+
+/*:root[data-theme="dark"] #mode-hint {
+    color: var(--color-text-light);
+}*/
 
 :root[data-theme="dark"] .tag {
     background-color: var(--color-surface);
