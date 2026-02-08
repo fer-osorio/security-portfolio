@@ -281,10 +281,9 @@ class ECVisualizer {
             this.drawRealCurve();
         } else if (this.mode === 'finite') {
             this.drawFiniteFieldCurve();
+            // Draw selected points
+            this.drawSelectedPoints();
         }
-
-        // Draw selected points
-        this.drawSelectedPoints();
     }
 
     /**
@@ -350,9 +349,12 @@ class ECVisualizer {
      * 2. For each x, solve y² = x³ + ax + b
      * 3. Plot both +y and -y solutions
      * 4. Handle discontinuities (curve may have 1 or 2 components)
+     * 5. IMPROVED: Find exact roots when ySquared changes sign
      *
      * MATHEMATICAL NOTE:
      * Curve may be disconnected if discriminant changes sign
+     * When ySquared transitions through zero, we find the exact root
+     * where the curve touches the x-axis
      */
     drawRealCurve() {
         const ctx = this.ctx;
@@ -367,6 +369,8 @@ class ECVisualizer {
 
         let upperPath = [];
         let lowerPath = [];
+        let prevYSquared = null;
+        let prevX = null;
 
         for (let i = 0; i <= numSamples; i++) {
             const x = this.viewport.minX + i * xStep;
@@ -374,19 +378,63 @@ class ECVisualizer {
             // Compute y² = x³ + ax + b
             const ySquared = x * x * x + Number(a) * x + Number(b);
 
-            if (ySquared >= 0) {
+            // Handle exact zero (rare with floating-point, but possible with integer inputs)
+            if(ySquared === 0) {
+                if(prevYSquared > 0){
+                    // Ending, close current curve section
+                    upperPath.push({ x, y: 0 });
+                    lowerPath.push({ x, y: 0 });
+                    // Draw completed paths
+                    if (upperPath.length > 1) {
+                        this.drawPath(upperPath);
+                        this.drawPath(lowerPath);
+                    }
+                    // Start fresh paths
+                    upperPath = [];
+                    lowerPath = [];
+                } else {
+                    // Startgin, begin new curve section
+                    upperPath = [{ x, y: 0 }];
+                    lowerPath = [{ x, y: 0 }];
+                }
+            } else if (prevYSquared !== null && prevYSquared * ySquared < 0) {
+                // Sign change, find exact root between prevX and x
+                const root = this.findCubicRoot(prevX, x, a, b);
+                if (root !== null) {
+                    // Add root point to close the gap
+                    if (prevYSquared > 0 && ySquared < 0) {
+                        // Curve is ending (going from positive to negative)
+                        upperPath.push({ x: root, y: 0 });
+                        lowerPath.push({ x: root, y: 0 });
+
+                        // Draw completed paths
+                        if (upperPath.length > 1) {
+                            this.drawPath(upperPath);
+                            this.drawPath(lowerPath);
+                        }
+                        // Start fresh paths
+                        upperPath = [];
+                        lowerPath = [];
+                    } else {
+                        // Curve is starting (going from negative to positive)
+                        // Start new paths from the root
+                        upperPath = [{ x: root, y: 0 }];
+                        lowerPath = [{ x: root, y: 0 }];
+                    }
+                }
+            }
+
+            if (ySquared > 0) {
                 const y = Math.sqrt(ySquared);
                 upperPath.push({ x, y });
                 lowerPath.push({ x, y: -y });
-            } else {
-                // Discontinuity: start new path
-                if (upperPath.length > 1) {
-                    this.drawPath(upperPath);
-                    this.drawPath(lowerPath);
-                }
-                upperPath = [];
-                lowerPath = [];
-            }
+            } /*else if (upperPath.length > 0 && prevYSquared > 0) {
+                // Just transitioned to negative (already handled root above)
+                // Paths have been drawn, continue with empty paths
+            }*/
+
+            prevYSquared = ySquared;
+            prevX = x;
         }
 
         // Draw remaining paths
@@ -394,6 +442,92 @@ class ECVisualizer {
             this.drawPath(upperPath);
             this.drawPath(lowerPath);
         }
+    }
+
+    /**
+     * Find root of x³ + ax + b = 0 in interval [x1, x2] using bisection
+     *
+     * ALGORITHM: Bisection method
+     * Given f(x1) and f(x2) have opposite signs,
+     * repeatedly halve the interval until we find the root
+     *
+     * COMPLEXITY: O(log(1/ε)) where ε is desired precision
+     *
+     * WHY BISECTION:
+     * - Guaranteed to converge for continuous functions
+     * - Simple and robust
+     * - Fast enough for visualization (typical: 20-30 iterations)
+     *
+     * ALTERNATIVE: Newton's method (faster but can diverge)
+     *
+     * @param {Number} x1 - Left endpoint
+     * @param {Number} x2 - Right endpoint
+     * @param {Number} a - Curve parameter
+     * @param {Number} b - Curve parameter
+     * @returns {Number|null} - Root x where x³ + ax + b = 0
+     *
+     * EDUCATIONAL NOTE: Cardano's Formula
+     *
+     * We could use Cardano's analytical formula for x³ + ax + b = 0:
+     *
+     * For one real root (Δ < 0):
+     *   Δ = -4a³ - 27b²
+     *   x = ∛(-b/2 + √(-Δ/108)) + ∛(-b/2 - √(-Δ/108))
+     *
+     * However, for visualization purposes, bisection is preferred:
+     * 1. We only need the root in a specific interval [x₁, x₂]
+     * 2. Bisection handles all cases uniformly (no Δ > 0 special case)
+     * 3. Numerical stability is guaranteed
+     * 4. Simpler implementation = fewer bugs
+     *
+     * Cardano's formula is beautiful mathematically but overkill here.
+     * For finding ALL roots or symbolic analysis, Cardano would be ideal.
+     */
+    findCubicRoot(x1, x2, a, b) {
+        const f = (x) => x * x * x + Number(a) * x + Number(b);
+
+        const tolerance = 1e-3;  // Precision: 0.001
+        const maxIterations = 25;
+
+        let left = x1;
+        let right = x2;
+        let fLeft = f(left);
+        let fRight = f(right);
+
+        // Sanity check: ensure opposite signs
+        if (fLeft * fRight > 0) {
+            return null;  // No root in interval (shouldn't happen)
+        }
+
+        // Bisection loop
+        for (let iter = 0; iter < maxIterations; iter++) {
+            const mid = (left + right) / 2;
+            const fMid = f(mid);
+
+            // Check if we found the root (within tolerance)
+            if (Math.abs(fMid) < tolerance) {
+                return mid;
+            }
+
+            // Narrow the interval
+            if (fLeft * fMid < 0) {
+                // Root is in left half
+                right = mid;
+                fRight = fMid;
+            } else {
+                // Root is in right half
+                left = mid;
+                fLeft = fMid;
+            }
+
+            // Check if interval is small enough
+            if (Math.abs(right - left) < tolerance) {
+                return (left + right) / 2;
+            }
+        }
+
+        // Return midpoint if max iterations reached
+        return (left + right) / 2;
     }
 
     /**
