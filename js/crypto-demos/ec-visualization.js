@@ -465,6 +465,23 @@ class ECVisualizer {
      * @param {Number} a - Curve parameter
      * @param {Number} b - Curve parameter
      * @returns {Number|null} - Root x where x³ + ax + b = 0
+     *
+     * EDUCATIONAL NOTE: Cardano's Formula
+     *
+     * We could use Cardano's analytical formula for x³ + ax + b = 0:
+     *
+     * For one real root (Δ < 0):
+     *   Δ = -4a³ - 27b²
+     *   x = ∛(-b/2 + √(-Δ/108)) + ∛(-b/2 - √(-Δ/108))
+     *
+     * However, for visualization purposes, bisection is preferred:
+     * 1. We only need the root in a specific interval [x₁, x₂]
+     * 2. Bisection handles all cases uniformly (no Δ > 0 special case)
+     * 3. Numerical stability is guaranteed
+     * 4. Simpler implementation = fewer bugs
+     *
+     * Cardano's formula is beautiful mathematically but overkill here.
+     * For finding ALL roots or symbolic analysis, Cardano would be ideal.
      */
     findCubicRoot(x1, x2, a, b) {
         const f = (x) => x * x * x + Number(a) * x + Number(b);
