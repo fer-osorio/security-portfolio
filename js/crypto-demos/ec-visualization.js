@@ -378,11 +378,28 @@ class ECVisualizer {
             // Compute y² = x³ + ax + b
             const ySquared = x * x * x + Number(a) * x + Number(b);
 
-            // Detect sign change and find exact root
-            if (prevYSquared !== null && prevYSquared * ySquared < 0 && ySquared !== 0) {
-                // Sign change detected! Find exact root between prevX and x
+            // Handle exact zero (rare with floating-point, but possible with integer inputs)
+            if(ySquared === 0) {
+                if(prevYSquared > 0){
+                    // Ending, close current curve section
+                    upperPath.push({ x, y: 0 });
+                    lowerPath.push({ x, y: 0 });
+                    // Draw completed paths
+                    if (upperPath.length > 1) {
+                        this.drawPath(upperPath);
+                        this.drawPath(lowerPath);
+                    }
+                    // Start fresh paths
+                    upperPath = [];
+                    lowerPath = [];
+                } else {
+                    // Startgin, begin new curve section
+                    upperPath = [{ x, y: 0 }];
+                    lowerPath = [{ x, y: 0 }];
+                }
+            } else if (prevYSquared !== null && prevYSquared * ySquared < 0) {
+                // Sign change, find exact root between prevX and x
                 const root = this.findCubicRoot(prevX, x, a, b);
-
                 if (root !== null) {
                     // Add root point to close the gap
                     if (prevYSquared > 0 && ySquared < 0) {
@@ -407,7 +424,7 @@ class ECVisualizer {
                 }
             }
 
-            if (ySquared >= 0) {
+            if (ySquared > 0) {
                 const y = Math.sqrt(ySquared);
                 upperPath.push({ x, y });
                 lowerPath.push({ x, y: -y });
@@ -452,7 +469,7 @@ class ECVisualizer {
     findCubicRoot(x1, x2, a, b) {
         const f = (x) => x * x * x + Number(a) * x + Number(b);
 
-        const tolerance = 1e-3;  // Precision: 0.000001
+        const tolerance = 1e-3;  // Precision: 0.001
         const maxIterations = 25;
 
         let left = x1;
