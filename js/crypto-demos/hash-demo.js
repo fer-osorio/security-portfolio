@@ -178,7 +178,7 @@ function displayHashResults(input, results, totalTime) {
 
     // Display each algorithm's result using DisplayComponents
     for (const [algo, data] of Object.entries(results)) {
-        html += DisplayComponents.createHashOutputDisplay({
+        html += HashDisplay.createHashOutputDisplay({
             algorithm: algo,
             hash: data.hash,
             time: data.time,
@@ -295,7 +295,7 @@ function displayAvalancheResults(original, modified, hash1, hash2, avalanche, al
     });
 
     // Use DisplayComponents for avalanche summary
-    html += DisplayComponents.createAvalancheSummary(avalanche, quality);
+    html += HashDisplay.createAvalancheSummary(avalanche, quality);
 
     // Use DisplayComponents for bit visualization
     html += `
@@ -389,7 +389,7 @@ function displayBirthdayResults(info, attempts50, probabilities) {
                 <strong>50% collision probability:</strong> ${attempts50} attempts
             </p>
 
-            ${DisplayComponents.createBirthdayProbabilityTable(probabilities)}
+            ${HashDisplay.createBirthdayProbabilityTable(probabilities)}
         </div>
 
         <div class="real-world-context">

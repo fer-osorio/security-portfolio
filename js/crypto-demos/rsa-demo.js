@@ -178,7 +178,7 @@ function displayKeys(keys, duration) {
     const resultsDiv = document.getElementById('key-gen-results');
 
     // Use DisplayComponents for consistent HTML generation
-    const keyDisplay = DisplayComponents.createKeyDisplayCard({
+    const keyDisplay = RSADisplay.createKeyDisplayCard({
         title: `✓ RSA Keys Generated (${duration}s)`,
         publicKey: keys.publicKey,
         privateKey: keys.privateKey,
@@ -255,7 +255,7 @@ async function handleEncrypt() {
  * Display encryption results
  */
 function displayEncryptionResults(originalMessage, messageInt, ciphertext, duration) {
-    const encryptionDisplay = DisplayComponents.createEncryptionResult({
+    const encryptionDisplay = RSADisplay.createEncryptionResult({
         originalMessage,
         messageInt: messageInt.toString(),
         ciphertext: ciphertext.toString(),
@@ -324,7 +324,7 @@ async function handleDecrypt() {
  * Display decryption results
  */
 function displayDecryptionResults(ciphertext, plaintextInt, plaintextStr, duration) {
-    const decryptionDisplay = DisplayComponents.createDecryptionResult({
+    const decryptionDisplay = RSADisplay.createDecryptionResult({
         ciphertext: ciphertext.toString(),
         plaintextInt: plaintextInt.toString(),
         plaintextStr,
