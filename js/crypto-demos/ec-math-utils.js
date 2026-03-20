@@ -35,224 +35,6 @@
  */
 
 // ============================================================================
-// FINITE FIELD ARITHMETIC
-// ============================================================================
-
-/**
- * Modular addition: (a + b) mod p
- *
- * COMPLEXITY: O(1)
- *
- * @param {BigInt} a
- * @param {BigInt} b
- * @param {BigInt} p - Prime modulus
- * @returns {BigInt}
- */
-function modAdd(a, b, p) {
-    return (a + b) % p;
-}
-
-/**
- * Modular subtraction: (a - b) mod p
- *
- * ENSURES POSITIVE RESULT:
- * JavaScript's % can return negative values for negative inputs
- * We add p if result is negative to ensure [0, p)
- *
- * @param {BigInt} a
- * @param {BigInt} b
- * @param {BigInt} p
- * @returns {BigInt}
- */
-function modSub(a, b, p) {
-    let result = (a - b) % p;
-    if (result < 0n) {
-        result += p;
-    }
-    return result;
-}
-
-/**
- * Modular multiplication: (a × b) mod p
- *
- * @param {BigInt} a
- * @param {BigInt} b
- * @param {BigInt} p
- * @returns {BigInt}
- */
-function modMul(a, b, p) {
-    return (a * b) % p;
-}
-
-/**
- * Modular inverse: a⁻¹ mod p such that (a × a⁻¹) ≡ 1 (mod p)
- *
- * REUSE: Delegates to MathUtils.modInverse (Extended Euclidean Algorithm)
- *
- * WHY THIS WORKS:
- * For prime p, every non-zero element in F_p has a unique inverse
- * This follows from F_p being a field
- *
- * ALGORITHM: Extended Euclidean Algorithm
- * Finds x, y such that ax + py = gcd(a, p) = 1
- * Then x ≡ a⁻¹ (mod p)
- *
- * COMPLEXITY: O(log p)
- *
- * @param {BigInt} a
- * @param {BigInt} p - Prime modulus
- * @returns {BigInt|null} - Inverse or null if doesn't exist
- */
-function modInv(a, p) {
-    // Leverage existing implementation
-    return MathUtils.modInverse(a, p);
-}
-
-/**
- * Modular exponentiation: base^exp mod p
- *
- * REUSE: Delegates to MathUtils.modPow (Binary exponentiation)
- *
- * NOT DIRECTLY USED IN ECC but included for completeness
- * (Used in some optimizations and square root algorithms)
- *
- * @param {BigInt} base
- * @param {BigInt} exp
- * @param {BigInt} p
- * @returns {BigInt}
- */
-function modPow(base, exp, p) {
-    return MathUtils.modPow(base, exp, p);
-}
-
-/**
- * Legendre symbol: (a|p) = a^((p-1)/2) mod p
- * Returns: 1 if a is quadratic residue mod p
- *          -1 if a is non-quadratic residue mod p
- *          0 if a ≡ 0 (mod p)
- */
-function legendreSymbol(a, p) {
-    const ls = modPow(a, (p - 1n) / 2n, p);
-    // Convert to standard Legendre symbol values
-    if (ls === 0n) return 0n;
-    if (ls === 1n) return 1n;
-    // If ls = p-1, that's ≡ -1 (mod p)
-    return -1n;
-}
-
-/**
- * Tonelli-Shanks algorithm for modular square root
- * Finds x such that x² ≡ a (mod p) for any odd prime p
- *
- * ALGORITHM OVERVIEW:
- * 1. Handle special cases (a = 0, p = 2)
- * 2. Check if a is quadratic residue (Legendre symbol = 1)
- * 3. Special fast case: p ≡ 3 (mod 4)
- * 4. General case: Tonelli-Shanks for p ≡ 1 (mod 4)
- *
- * TONELLI-SHANKS CORE IDEA:
- * We factor p-1 = Q * 2^S (Q odd)
- * We iteratively refine an approximation R until R² ≡ a (mod p)
- * Uses a non-residue z to generate elements of the 2-Sylow subgroup
- *
- * @param {BigInt} a - The number to find square root of
- * @param {BigInt} p - Odd prime modulus
- * @returns {BigInt|null} - Square root (smaller of the two) or null if doesn't exist
- */
-function modSqrt(a, p) {
-    // Quick return for zero
-    if (a === 0n) return 0n;
-
-    // Ensure a is in valid range [0, p-1]
-    a = a % p;
-    if (a < 0n) a += p;
-
-    // Check if a is quadratic residue
-    if (legendreSymbol(a, p) !== 1n) {
-        return null;  // Not a quadratic residue
-    }
-
-    // Special case: p = 2
-    if (p === 2n) return a;
-
-    // Special case: p ≡ 3 (mod 4) - Simple formula
-    if (p % 4n === 3n) {
-        // x = a^((p+1)/4) mod p
-        return modPow(a, (p + 1n) / 4n, p);
-    }
-
-    // --- GENERAL CASE: Tonelli-Shanks for p ≡ 1 (mod 4) ---
-
-    // STEP 1: Factor p-1 = Q * 2^S (Q odd)
-    let Q = p - 1n;
-    let S = 0n;
-    while ((Q & 1n) === 0n) {  // While Q is even
-        Q >>= 1n;  // Q = Q / 2
-        S++;
-    }
-
-    // STEP 2: Find a quadratic non-residue z
-    // A non-residue satisfies: z^((p-1)/2) ≡ -1 (mod p)
-    let z = 2n;
-    while (legendreSymbol(z, p) !== -1n) {
-        z++;
-    }
-
-    // STEP 3: Initialize variables
-    let c = modPow(z, Q, p);  // c = z^Q mod p (order = 2^S)
-    let t = modPow(a, Q, p);  // t = a^Q mod p
-    let R = modPow(a, (Q + 1n) / 2n, p);  // R = a^((Q+1)/2) mod p
-
-    // INVARIANT: R² ≡ a * t (mod p)
-    // We'll adjust R and t until t ≡ 1 (mod p), then R is our answer
-
-    // STEP 4: Main loop - refine until t becomes 1
-    while (t !== 1n) {
-        // Find the smallest 0 < m < S such that t^(2^m) ≡ 1 (mod p)
-        let m = 0n;
-        let t2m = t;
-
-        // t2m will be t^(2^m) at each step
-        // Find m by repeated squaring of t
-        while (t2m !== 1n && m < S) {
-            t2m = (t2m * t2m) % p;
-            m++;
-        }
-
-        if (m === 0n) break;  // t is already 1
-
-        // Safety check: if m == S, something's wrong
-        if (m === S) {
-            console.error("Error: m == S, t should be 1 by now");
-            break;
-        }
-
-        // STEP 5: Calculate b = c^(2^(S-m-1)) mod p
-        // We need 2^(S-m-1) as exponent
-        let exponent = 1n;
-        for (let i = 0; i < Number(S - m - 1n); i++) {
-            exponent <<= 1n;  // Multiply by 2
-        }
-        let b = modPow(c, exponent, p);
-
-        // STEP 6: Update variables
-        // R_new = R * b (mod p)
-        R = (R * b) % p;
-
-        // t_new = t * b² (mod p)
-        c = (b * b) % p;
-        t = (t * c) % p;
-
-        // S = m (for next iteration)
-        S = m;
-    }
-
-    // At this point: t ≡ 1, so R² ≡ a (mod p)
-    // Return the smaller root (the other is p - R)
-    return R <= p - R ? R : p - R;
-}
-
-// ============================================================================
 // POINT REPRESENTATION
 // ============================================================================
 
@@ -368,13 +150,13 @@ function isOnCurve(P) {
     const { a, b, p } = P.curve;
 
     // Left side: y² mod p
-    const lhs = modMul(P.y, P.y, p);
+    const lhs = MathUtils.modMul(P.y, P.y, p);
 
     // Right side: x³ + ax + b mod p
-    const x2 = modMul(P.x, P.x, p);           // x²
-    const x3 = modMul(x2, P.x, p);            // x³
-    const ax = modMul(a, P.x, p);             // ax
-    const rhs = modAdd(modAdd(x3, ax, p), b, p);  // x³ + ax + b
+    const x2 = MathUtils.modMul(P.x, P.x, p);           // x²
+    const x3 = MathUtils.modMul(x2, P.x, p);            // x³
+    const ax = MathUtils.modMul(a, P.x, p);             // ax
+    const rhs = MathUtils.modAdd(MathUtils.modAdd(x3, ax, p), b, p);  // x³ + ax + b
 
     return lhs === rhs;
 }
@@ -399,16 +181,16 @@ function validateCurveParameters(curve) {
     const { a, b, p } = curve;
 
     // Compute 4a³
-    const a2 = modMul(a, a, p);
-    const a3 = modMul(a2, a, p);
-    const fourA3 = modMul(4n, a3, p);
+    const a2 = MathUtils.modMul(a, a, p);
+    const a3 = MathUtils.modMul(a2, a, p);
+    const fourA3 = MathUtils.modMul(4n, a3, p);
 
     // Compute 27b²
-    const b2 = modMul(b, b, p);
-    const twentySevenB2 = modMul(27n, b2, p);
+    const b2 = MathUtils.modMul(b, b, p);
+    const twentySevenB2 = MathUtils.modMul(27n, b2, p);
 
     // Check 4a³ + 27b² ≠ 0 (mod p)
-    const discriminant = modAdd(fourA3, twentySevenB2, p);
+    const discriminant = MathUtils.modAdd(fourA3, twentySevenB2, p);
 
     return discriminant !== 0n;
 }
@@ -494,22 +276,22 @@ function pointAdd(P, Q) {
 
     // General case: P ≠ Q
     // Compute slope: λ = (y₂ - y₁) / (x₂ - x₁) mod p
-    const numerator = modSub(Q.y, P.y, p);
-    const denominator = modSub(Q.x, P.x, p);
-    const denominatorInv = modInv(denominator, p);
+    const numerator = MathUtils.modSub(Q.y, P.y, p);
+    const denominator = MathUtils.modSub(Q.x, P.x, p);
+    const denominatorInv = MathUtils.modInverse(denominator, p);
 
     if (denominatorInv === null) {
         throw new Error('Division by zero in point addition');
     }
 
-    const lambda = modMul(numerator, denominatorInv, p);
+    const lambda = MathUtils.modMul(numerator, denominatorInv, p);
 
     // Compute x₃ = λ² - x₁ - x₂ mod p
-    const lambda2 = modMul(lambda, lambda, p);
-    const x3 = modSub(modSub(lambda2, P.x, p), Q.x, p);
+    const lambda2 = MathUtils.modMul(lambda, lambda, p);
+    const x3 = MathUtils.modSub(MathUtils.modSub(lambda2, P.x, p), Q.x, p);
 
     // Compute y₃ = λ(x₁ - x₃) - y₁ mod p
-    const y3 = modSub(modMul(lambda, modSub(P.x, x3, p), p), P.y, p);
+    const y3 = MathUtils.modSub(MathUtils.modMul(lambda, MathUtils.modSub(P.x, x3, p), p), P.y, p);
 
     return new Point(x3, y3, P.curve);
 }
@@ -554,23 +336,23 @@ function pointDouble(P) {
     }
 
     // Compute slope: λ = (3x² + a) / (2y) mod p
-    const x2 = modMul(P.x, P.x, p);           // x²
-    const numerator = modAdd(modMul(3n, x2, p), a, p);  // 3x² + a
-    const denominator = modMul(2n, P.y, p);    // 2y
-    const denominatorInv = modInv(denominator, p);
+    const x2 = MathUtils.modMul(P.x, P.x, p);           // x²
+    const numerator = MathUtils.modAdd(MathUtils.modMul(3n, x2, p), a, p);  // 3x² + a
+    const denominator = MathUtils.modMul(2n, P.y, p);    // 2y
+    const denominatorInv = MathUtils.modInverse(denominator, p);
 
     if (denominatorInv === null) {
         throw new Error('Division by zero in point doubling');
     }
 
-    const lambda = modMul(numerator, denominatorInv, p);
+    const lambda = MathUtils.modMul(numerator, denominatorInv, p);
 
     // Compute x₃ = λ² - 2x₁ mod p
-    const lambda2 = modMul(lambda, lambda, p);
-    const x3 = modSub(lambda2, modMul(2n, P.x, p), p);
+    const lambda2 = MathUtils.modMul(lambda, lambda, p);
+    const x3 = MathUtils.modSub(lambda2, MathUtils.modMul(2n, P.x, p), p);
 
     // Compute y₃ = λ(x₁ - x₃) - y₁ mod p
-    const y3 = modSub(modMul(lambda, modSub(P.x, x3, p), p), P.y, p);
+    const y3 = MathUtils.modSub(MathUtils.modMul(lambda, MathUtils.modSub(P.x, x3, p), p), P.y, p);
 
     return new Point(x3, y3, P.curve);
 }
@@ -786,30 +568,11 @@ function randomBigIntRange(min, max) {
     return min + (randomValue % range);
 }
 
-/**
- * Get bit length of BigInt
- *
- * @param {BigInt} n
- * @returns {Number}
- */
-function bitLength(n) {
-    if (n === 0n) return 0;
-    return n.toString(2).length;
-}
-
 // ============================================================================
 // EXPORT ALL FUNCTIONS
 // ============================================================================
 
 const ECMathUtils = {
-    // Finite field operations
-    modAdd,
-    modSub,
-    modMul,
-    modInv,
-    modPow,
-    modSqrt,
-
     // Point class
     Point,
 
@@ -826,8 +589,7 @@ const ECMathUtils = {
     pointOrder,
 
     // Utilities
-    randomBigIntRange,
-    bitLength
+    randomBigIntRange
 };
 
 // Make available globally

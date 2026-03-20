@@ -618,13 +618,13 @@ class ECVisualizer {
             const x = BigInt(xNum);
 
             // Compute y² = x³ + ax + b (mod p)
-            const x2 = ECMathUtils.modMul(x, x, p);
-            const x3 = ECMathUtils.modMul(x2, x, p);
-            const ax = ECMathUtils.modMul(a, x, p);
-            const ySquared = ECMathUtils.modAdd(ECMathUtils.modAdd(x3, ax, p), b, p);
+            const x2 = MathUtils.modMul(x, x, p);
+            const x3 = MathUtils.modMul(x2, x, p);
+            const ax = MathUtils.modMul(a, x, p);
+            const ySquared = MathUtils.modAdd(MathUtils.modAdd(x3, ax, p), b, p);
 
             // Check if ySquared is a quadratic residue
-            const y = ECMathUtils.modSqrt(ySquared, p);
+            const y = MathUtils.modSqrt(ySquared, p);
 
             if (y !== null) {
                 points.push({ x, y });
