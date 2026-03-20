@@ -504,7 +504,7 @@ function displayFiniteCurveInfo(curve) {
         </em></p>
         `;
     } else {
-        html += `<p><strong>Field size:</strong> ${ECMathUtils.bitLength(p)} bits (too large to visualize)</p>`;
+        html += `<p><strong>Field size:</strong> ${MathUtils.bitLength(p)} bits (too large to visualize)</p>`;
     }
 
     html += DisplayComponents.createEducationalNote(
@@ -525,12 +525,12 @@ function computePointCount(curve) {
     let count = 1; // Point at infinity
 
     for (let x = 0n; x < p; x++) {
-        const x2 = ECMathUtils.modMul(x, x, p);
-        const x3 = ECMathUtils.modMul(x2, x, p);
-        const ax = ECMathUtils.modMul(a, x, p);
-        const ySquared = ECMathUtils.modAdd(ECMathUtils.modAdd(x3, ax, p), b, p);
+        const x2 = MathUtils.modMul(x, x, p);
+        const x3 = MathUtils.modMul(x2, x, p);
+        const ax = MathUtils.modMul(a, x, p);
+        const ySquared = MathUtils.modAdd(MathUtils.modAdd(x3, ax, p), b, p);
 
-        const y = ECMathUtils.modSqrt(ySquared, p);
+        const y = MathUtils.modSqrt(ySquared, p);
 
         if (y !== null) {
             count++; // +y
