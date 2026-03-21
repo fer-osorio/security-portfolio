@@ -188,7 +188,7 @@ function loadDefaultCurves() {
 
     if (realCurveVisualizer) {
         realCurveVisualizer.setCurve(defaultRealCurve);
-        displayRealCurveInfo(defaultRealCurve);
+        ECDisplay.displayRealCurveInfo(defaultRealCurve);
     }
 
     // Tab 2: Default finite field curve (small for visualization)
@@ -203,7 +203,7 @@ function loadDefaultCurves() {
 
     if (finiteCurveVisualizer) {
         finiteCurveVisualizer.setCurve(defaultFiniteCurve);
-        displayFiniteCurveInfo(defaultFiniteCurve);
+        ECDisplay.displayFiniteCurveInfo(defaultFiniteCurve);
     }
 }
 
