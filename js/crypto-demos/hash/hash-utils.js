@@ -333,6 +333,22 @@ function attemptsFor50PercentCollision(hashBits) {
 }
 
 /**
+ * Format binary string with spaces every 8 bits
+ *
+ * USED IN: Hash output binary view
+ *
+ * @param {string} binary - Binary string
+ * @returns {string} - Formatted binary string with spaces
+ */
+function formatBinary(binary) {
+    let formatted = '';
+    for (let i = 0; i < binary.length; i += 8) {
+        formatted += binary.substring(i, i + 8) + ' ';
+    }
+    return formatted.trim();
+}
+
+/**
  * Format large numbers in human-readable form
  *
  * EXAMPLES:
@@ -491,11 +507,12 @@ const HashUtils = {
     generateBitDiff,
     birthdayAttackProbability,
     attemptsFor50PercentCollision,
+    formatBinary,
     formatLargeNumber,
-        constantTimeCompare,
-        chunkData,
-        benchmarkHash,
-        isValidHash
+    constantTimeCompare,
+    chunkData,
+    benchmarkHash,
+    isValidHash
 };
 
 // Make available globally
