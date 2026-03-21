@@ -440,6 +440,154 @@ function isDivisibleBySmallPrime(num) {
 }
 
 // ============================================================================
+// FINITE FIELD ARITHMETIC (shared with EC)
+// ============================================================================
+
+/**
+ * Modular addition: (a + b) mod p
+ *
+ * @param {BigInt} a
+ * @param {BigInt} b
+ * @param {BigInt} p - Prime modulus
+ * @returns {BigInt}
+ */
+function modAdd(a, b, p) {
+    return (a + b) % p;
+}
+
+/**
+ * Modular subtraction: (a - b) mod p
+ *
+ * Ensures positive result: adds p if result is negative.
+ *
+ * @param {BigInt} a
+ * @param {BigInt} b
+ * @param {BigInt} p
+ * @returns {BigInt}
+ */
+function modSub(a, b, p) {
+    let result = (a - b) % p;
+    if (result < 0n) {
+        result += p;
+    }
+    return result;
+}
+
+/**
+ * Modular multiplication: (a × b) mod p
+ *
+ * @param {BigInt} a
+ * @param {BigInt} b
+ * @param {BigInt} p
+ * @returns {BigInt}
+ */
+function modMul(a, b, p) {
+    return (a * b) % p;
+}
+
+/**
+ * Legendre symbol: (a|p) = a^((p-1)/2) mod p
+ *
+ * Returns:  1 if a is a quadratic residue mod p
+ *          -1 if a is a non-quadratic residue mod p
+ *           0 if a ≡ 0 (mod p)
+ *
+ * @param {BigInt} a
+ * @param {BigInt} p - Odd prime
+ * @returns {BigInt} 1n, -1n, or 0n
+ */
+function legendreSymbol(a, p) {
+    const ls = modPow(a, (p - 1n) / 2n, p);
+    if (ls === 0n) return 0n;
+    if (ls === 1n) return 1n;
+    // ls = p-1, which is ≡ -1 (mod p)
+    return -1n;
+}
+
+/**
+ * Tonelli-Shanks algorithm for modular square root
+ *
+ * Finds x such that x² ≡ a (mod p) for any odd prime p.
+ *
+ * ALGORITHM OVERVIEW:
+ * 1. Handle special cases (a = 0, p = 2)
+ * 2. Check if a is quadratic residue (Legendre symbol = 1)
+ * 3. Special fast case: p ≡ 3 (mod 4)
+ * 4. General case: Tonelli-Shanks for p ≡ 1 (mod 4)
+ *
+ * @param {BigInt} a - The number to find square root of
+ * @param {BigInt} p - Odd prime modulus
+ * @returns {BigInt|null} - Square root (smaller of the two) or null if doesn't exist
+ */
+function modSqrt(a, p) {
+    if (a === 0n) return 0n;
+
+    a = a % p;
+    if (a < 0n) a += p;
+
+    if (legendreSymbol(a, p) !== 1n) {
+        return null;
+    }
+
+    if (p === 2n) return a;
+
+    // Special case: p ≡ 3 (mod 4)
+    if (p % 4n === 3n) {
+        return modPow(a, (p + 1n) / 4n, p);
+    }
+
+    // General case: Tonelli-Shanks for p ≡ 1 (mod 4)
+
+    // Factor p-1 = Q * 2^S (Q odd)
+    let Q = p - 1n;
+    let S = 0n;
+    while ((Q & 1n) === 0n) {
+        Q >>= 1n;
+        S++;
+    }
+
+    // Find a quadratic non-residue z
+    let z = 2n;
+    while (legendreSymbol(z, p) !== -1n) {
+        z++;
+    }
+
+    let c = modPow(z, Q, p);
+    let t = modPow(a, Q, p);
+    let R = modPow(a, (Q + 1n) / 2n, p);
+
+    while (t !== 1n) {
+        let m = 0n;
+        let t2m = t;
+
+        while (t2m !== 1n && m < S) {
+            t2m = (t2m * t2m) % p;
+            m++;
+        }
+
+        if (m === 0n) break;
+
+        if (m === S) {
+            console.error('Error: m == S in Tonelli-Shanks');
+            break;
+        }
+
+        let exponent = 1n;
+        for (let i = 0; i < Number(S - m - 1n); i++) {
+            exponent <<= 1n;
+        }
+        let b = modPow(c, exponent, p);
+
+        R = (R * b) % p;
+        c = (b * b) % p;
+        t = (t * c) % p;
+        S = m;
+    }
+
+    return R <= p - R ? R : p - R;
+}
+
+// ============================================================================
 // EXPORT ALL FUNCTIONS
 // ============================================================================
 
@@ -456,7 +604,12 @@ const MathUtils = {
     bigIntToString,
     bitLength,
     randomBigInt,
-    isDivisibleBySmallPrime
+    isDivisibleBySmallPrime,
+    modAdd,
+    modSub,
+    modMul,
+    legendreSymbol,
+    modSqrt
 };
 
 // Make available globally (for browser environment)

@@ -135,8 +135,8 @@ class EllipticCurve {
         return {
             name: this.name,
             equation: `y² = x³ + ${this.a}x + ${this.b} (mod p)`,
-            fieldSize: ECMathUtils.bitLength(this.p),
-            groupOrder: ECMathUtils.bitLength(this.n),
+            fieldSize: MathUtils.bitLength(this.p),
+            groupOrder: MathUtils.bitLength(this.n),
             cofactor: this.h.toString(),
             generator: {
                 x: this.G.x.toString(16),
@@ -538,14 +538,14 @@ class ECDSA {
         }
 
         // Step 4: Compute s = k⁻¹(h + r·d) mod n
-        const kInv = ECMathUtils.modInv(k, this.curve.n);
+        const kInv = MathUtils.modInverse(k, this.curve.n);
         if (kInv === null) {
             throw new Error('Failed to compute k⁻¹ (implementation error)');
         }
 
-        const rd = ECMathUtils.modMul(r, privateKey, this.curve.n);
-        const h_plus_rd = ECMathUtils.modAdd(h, rd, this.curve.n);
-        const s = ECMathUtils.modMul(kInv, h_plus_rd, this.curve.n);
+        const rd = MathUtils.modMul(r, privateKey, this.curve.n);
+        const h_plus_rd = MathUtils.modAdd(h, rd, this.curve.n);
+        const s = MathUtils.modMul(kInv, h_plus_rd, this.curve.n);
 
         // Check s ≠ 0 (negligible probability)
         if (s === 0n) {
@@ -602,16 +602,16 @@ class ECDSA {
         const h = await this._hashMessage(message);
 
         // Step 3: Compute w = s⁻¹ mod n
-        const w = ECMathUtils.modInv(s, n);
+        const w = MathUtils.modInverse(s, n);
         if (w === null) {
             return false;
         }
 
         // Step 4: Compute u₁ = h·w mod n
-        const u1 = ECMathUtils.modMul(h, w, n);
+        const u1 = MathUtils.modMul(h, w, n);
 
         // Step 5: Compute u₂ = r·w mod n
-        const u2 = ECMathUtils.modMul(r, w, n);
+        const u2 = MathUtils.modMul(r, w, n);
 
         // Step 6: Compute R' = u₁G + u₂Q
         const u1G = ECMathUtils.scalarMultiplySecure(u1, this.curve.G);
