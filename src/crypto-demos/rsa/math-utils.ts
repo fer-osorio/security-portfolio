@@ -255,16 +255,16 @@ export function legendreSymbol(a: bigint, p: bigint): number {
 /**
  * Tonelli-Shanks algorithm for modular square root.
  * Finds x such that x² ≡ a (mod p) for any odd prime p.
- * Throws if no square root exists.
+ * Returns null if no square root exists.
  */
-export function modSqrt(a: bigint, p: bigint): bigint {
+export function modSqrt(a: bigint, p: bigint): bigint | null {
     if (a === 0n) return 0n;
 
     a = a % p;
     if (a < 0n) a += p;
 
     if (legendreSymbol(a, p) !== 1) {
-        throw new Error('No quadratic residue: a is not a perfect square mod p');
+        return null;  // No quadratic residue: a is not a perfect square mod p
     }
 
     if (p === 2n) return a;
