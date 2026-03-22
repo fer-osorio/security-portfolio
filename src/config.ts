@@ -233,6 +233,7 @@ export const Config = {
         ANIMATION_DURATION: 1000,
         ANIMATION_STEPS:    60,
         MAX_POINT_AMOUNT:   131072,
+        MAX_POINT_AMOUNTn:  131072n as bigint,
 
         MAX_SCALAR_BITS: 256,
         MIN_COFACTOR:    1,
