@@ -4,6 +4,7 @@
  * ============================================================================
  */
 
+import '../../dark-mode-toggle';
 import { generateKeyPair, encrypt, decrypt, RSAKeyPair } from './rsa-core';
 import {
     createKeyDisplayCard,

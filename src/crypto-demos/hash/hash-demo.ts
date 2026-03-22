@@ -11,6 +11,7 @@
  * ============================================================================
  */
 
+import '../../dark-mode-toggle';
 import { SupportedAlgorithm, computeHash, isCryptoJSAvailable } from './hash-core';
 import {
     createHashOutputDisplay,
