@@ -15,7 +15,7 @@ describe('sha256() — known vectors', () => {
 
     it('hashes "Hello, World!" correctly', async () => {
         const result = await sha256('Hello, World!');
-        expect(result).toBe('dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986d');
+        expect(result).toBe('dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f');
     });
 
     it('returns a 64-char lowercase hex string', async () => {
