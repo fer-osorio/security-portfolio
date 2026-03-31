@@ -2,46 +2,52 @@
  * ============================================================================
  * HASH FUNCTION VISUALIZER - UI CONTROLLER
  *
- * This module handles all user interactions and DOM updates for the
- * hash function visualization tool.
+ * Handles user interactions and DOM updates for the hash function tool.
  *
  * ARCHITECTURE: MVC pattern
- * - Model: hash-core.js (hash computations)
+ * - Model: hash-core.ts (hash computations)
  * - View: hash-tool.html (DOM structure)
  * - Controller: this file (event handling, UI updates)
- *
- * - Uses shared UIUtils for common DOM operations
- * - Uses DisplayComponents for consistent HTML generation
- * - Uses Config for all constants and configuration
- * - Hash-specific logic (avalanche visualization, birthday calculations)
- *
  * ============================================================================
  */
 
+import '../../dark-mode-toggle';
+import { SupportedAlgorithm, computeHash, isCryptoJSAvailable } from './hash-core';
+import {
+    createHashOutputDisplay,
+    createAvalancheSummary,
+    createBirthdayProbabilityTable,
+    AvalancheQuality,
+    ProbabilityRow,
+} from './hash-display';
+import {
+    computeAvalanche,
+    hexToBinary,
+    generateBitDiff,
+    attemptsFor50PercentCollision,
+    birthdayAttackProbability,
+    formatLargeNumber,
+    AvalancheResult,
+} from './hash-utils';
+import { DisplayComponents } from '../../display-components';
+import { UIUtils } from '../../ui-utils';
+import { Config, AlgorithmInfo } from '../../config';
+
 // ============================================================================
-// GLOBAL STATE
+// MODULE STATE
 // ============================================================================
 
-let currentHashes = {};
-let lastInput = '';
+let lastInput: string = '';
 
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
 
-/**
- * Initialize the hash demo when page loads
- */
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Hash Visualizer initialized');
 
-    // Check dependencies
     checkDependencies();
-
-    // Set up event listeners
     setupEventListeners();
-
-    // Display welcome message
     displayWelcomeMessage();
 });
 
@@ -49,12 +55,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // DEPENDENCY CHECKING
 // ============================================================================
 
-/**
- * Check if required libraries are loaded
- */
-function checkDependencies() {
-    if (!HashCore.isCryptoJSAvailable()) {
-        console.warn('⚠️ CryptoJS not loaded. MD5 and SHA-3 will not be available.');
+function checkDependencies(): void {
+    if (!isCryptoJSAvailable()) {
+        console.warn('CryptoJS not loaded. MD5 and SHA-3 will not be available.');
         UIUtils.showWarning('Some hash functions (MD5, SHA-3) require CryptoJS library.');
     }
 }
@@ -63,42 +66,35 @@ function checkDependencies() {
 // EVENT HANDLER SETUP
 // ============================================================================
 
-/**
- * Set up all event listeners
- */
-function setupEventListeners() {
-    // Hash computation
+function setupEventListeners(): void {
     const computeBtn = document.getElementById('compute-hash-btn');
     if (computeBtn) {
         computeBtn.addEventListener('click', handleComputeHash);
     }
 
-    // Avalanche effect
     const avalancheBtn = document.getElementById('avalanche-btn');
     if (avalancheBtn) {
         avalancheBtn.addEventListener('click', handleAvalanche);
     }
 
-    // Birthday attack calculator
     const birthdayBtn = document.getElementById('birthday-calc-btn');
     if (birthdayBtn) {
         birthdayBtn.addEventListener('click', handleBirthdayCalculator);
     }
 
-    // Use shared utilities for common patterns
     UIUtils.setupCopyButtons();
     UIUtils.setupTabs();
 }
 
 // ============================================================================
-// HASH COMPUTATION HANDLERS
+// HASH COMPUTATION
 // ============================================================================
 
-/**
- * Handle hash computation
- */
-async function handleComputeHash() {
-    const input = document.getElementById('hash-input').value;
+async function handleComputeHash(): Promise<void> {
+    const inputEl = document.getElementById('hash-input') as HTMLInputElement | null;
+    if (!inputEl) return;
+
+    const input = inputEl.value;
     const selectedAlgos = getSelectedAlgorithms();
 
     if (!input) {
@@ -111,20 +107,16 @@ async function handleComputeHash() {
         return;
     }
 
-    // Clear previous results
     UIUtils.clearResults('hash-results');
-
-    // Show loading indicator
     UIUtils.showLoading('hash-results', 'Computing hashes...');
 
     try {
         const startTime = performance.now();
-        const results = {};
+        const results: Record<string, { hash: string; time: string }> = {};
 
-        // Compute hashes for all selected algorithms
         for (const algo of selectedAlgos) {
             const algoStartTime = performance.now();
-            const hash = await HashCore.computeHash(input, algo);
+            const hash = await computeHash(input, algo);
             const algoEndTime = performance.now();
 
             results[algo] = {
@@ -136,36 +128,32 @@ async function handleComputeHash() {
         const endTime = performance.now();
         const totalTime = (endTime - startTime).toFixed(2);
 
-        // Store results
-        currentHashes = results;
         lastInput = input;
 
-        // Display results
         displayHashResults(input, results, totalTime);
 
     } catch (error) {
         console.error('Hash computation failed:', error);
-        UIUtils.showError('Hash computation failed: ' + error.message);
+        UIUtils.showError('Hash computation failed: ' + (error as Error).message);
     } finally {
         UIUtils.hideLoading('hash-results');
     }
 }
 
-/**
- * Get selected hash algorithms from checkboxes
- */
-function getSelectedAlgorithms() {
+function getSelectedAlgorithms(): SupportedAlgorithm[] {
     const checkboxes = document.querySelectorAll('input[name="hash-algorithm"]:checked');
-    return Array.from(checkboxes).map(cb => cb.value);
+    // DOM values are set by the HTML author and are trusted to be valid algorithm names
+    return Array.from(checkboxes).map(cb => (cb as HTMLInputElement).value as SupportedAlgorithm);
 }
 
-/**
- * Display hash computation results
- */
-function displayHashResults(input, results, totalTime) {
+function displayHashResults(
+    input: string,
+    results: Record<string, { hash: string; time: string }>,
+    totalTime: string
+): void {
     let html = `
     <div class="hash-results-container">
-        <h3>✓ Hash Computation Complete (${totalTime}ms)</h3>
+        <h3>Hash Computation Complete (${totalTime}ms)</h3>
 
         <div class="input-display">
             <h4>Input</h4>
@@ -176,9 +164,8 @@ function displayHashResults(input, results, totalTime) {
     <div class="hash-outputs">
     `;
 
-    // Display each algorithm's result using DisplayComponents
     for (const [algo, data] of Object.entries(results)) {
-        html += HashDisplay.createHashOutputDisplay({
+        html += createHashOutputDisplay({
             algorithm: algo,
             hash: data.hash,
             time: data.time,
@@ -193,15 +180,21 @@ function displayHashResults(input, results, totalTime) {
 }
 
 // ============================================================================
-// AVALANCHE EFFECT HANDLERS
+// AVALANCHE EFFECT
 // ============================================================================
 
-/**
- * Handle avalanche effect demonstration
- */
-async function handleAvalanche() {
-    const baseInput = document.getElementById('avalanche-input').value;
-    const algorithm = document.getElementById('avalanche-algorithm').value;
+async function handleAvalanche(): Promise<void> {
+    const baseInputEl  = document.getElementById('avalanche-input')     as HTMLInputElement  | null;
+    const algorithmEl  = document.getElementById('avalanche-algorithm') as HTMLSelectElement | null;
+    if (!baseInputEl || !algorithmEl) return;
+
+    // Pre-fill from last hash input if the field is blank
+    if (!baseInputEl.value && lastInput) {
+        baseInputEl.value = lastInput;
+    }
+
+    const baseInput = baseInputEl.value;
+    const algorithm = algorithmEl.value as SupportedAlgorithm;
 
     if (!baseInput) {
         UIUtils.showError('Please enter base text for avalanche test');
@@ -212,69 +205,64 @@ async function handleAvalanche() {
     UIUtils.showLoading('avalanche-results', 'Computing avalanche effect...');
 
     try {
-        // Compute hash of original input
-        const originalHash = await HashCore.computeHash(baseInput, algorithm);
+        const originalHash = await computeHash(baseInput, algorithm);
 
-        // Create modified input (flip last bit)
+        // Flip last bit, avoiding the non-printable DEL character
         const modifiedInput = baseInput.slice(0, -1) +
-        String.fromCharCode(
-            // The following condition prevents the presence of the non-printable character DEL
-            // Notice: Still one and only one bit flipped
-            baseInput.charAt(baseInput.length - 1) === '~' ? 124
-            : baseInput.charCodeAt(baseInput.length - 1) ^ 1
-        );
+            String.fromCharCode(
+                baseInput.charAt(baseInput.length - 1) === '~' ? 124
+                : baseInput.charCodeAt(baseInput.length - 1) ^ 1
+            );
 
-        // Compute hash of modified input
-        const modifiedHash = await HashCore.computeHash(modifiedInput, algorithm);
+        const modifiedHash = await computeHash(modifiedInput, algorithm);
 
-        // Calculate avalanche effect
-        const avalanche = HashUtils.computeAvalanche(originalHash, modifiedHash);
+        const avalanche = computeAvalanche(originalHash, modifiedHash);
 
-        // Display results
         displayAvalancheResults(baseInput, modifiedInput, originalHash, modifiedHash, avalanche, algorithm);
 
     } catch (error) {
         console.error('Avalanche test failed:', error);
-        UIUtils.showError('Avalanche test failed: ' + error.message);
+        UIUtils.showError('Avalanche test failed: ' + (error as Error).message);
     } finally {
         UIUtils.hideLoading('avalanche-results');
     }
 }
 
-/**
- * Display avalanche effect results
- *
- * REFACTORED: Now uses DisplayComponents for consistent HTML generation
- */
-function displayAvalancheResults(original, modified, hash1, hash2, avalanche, algorithm) {
-    const binary1 = HashUtils.hexToBinary(hash1);
-    const binary2 = HashUtils.hexToBinary(hash2);
-    const bitDiff = HashUtils.generateBitDiff(binary1, binary2);
-
-    const info = Config.getAlgorithmInfo(algorithm);
-
-    // Evaluate avalanche quality
-    const percentage = parseFloat(avalanche.percentage);
-    let quality, color;
-    if (percentage >= 45 && percentage <= 55) {
-        quality = 'Excellent';
-        color = 'green';
-    } else if (percentage >= 40 && percentage <= 60) {
-        quality = 'Good';
-        color = 'blue';
-    } else {
-        quality = 'Poor';
-        color = 'red';
+function displayAvalancheResults(
+    original: string,
+    modified: string,
+    hash1: string,
+    hash2: string,
+    avalanche: AvalancheResult,
+    algorithm: string
+): void {
+    const info: AlgorithmInfo | null = Config.getAlgorithmInfo(algorithm);
+    if (!info) {
+        UIUtils.showError('Unknown algorithm: ' + algorithm);
+        return;
     }
 
-    // Build HTML using DisplayComponents
+    const binary1 = hexToBinary(hash1);
+    const binary2 = hexToBinary(hash2);
+    const bitDiff = generateBitDiff(binary1, binary2);
+
+    const percentage = parseFloat(avalanche.percentage);
+    let quality: AvalancheQuality;
+
+    if (percentage >= 45 && percentage <= 55) {
+        quality = 'Excellent';
+    } else if (percentage >= 40 && percentage <= 60) {
+        quality = 'Good';
+    } else {
+        quality = 'Poor';
+    }
+
     let html = `
     <div class="avalanche-container">
-        <h3>✓ Avalanche Effect Analysis</h3>
-        <p class="algorithm-name">Algorithm: ${info.name}</p>
+        <h3>Avalanche Effect Analysis</h3>
+        <p class="algorithm-name">Algorithm: ${UIUtils.escapeHtml(info.name)}</p>
     `;
 
-    // Use DisplayComponents for comparison display
     html += DisplayComponents.createComparisonDisplay({
         original: {
             title: 'Original Input',
@@ -294,10 +282,8 @@ function displayAvalancheResults(original, modified, hash1, hash2, avalanche, al
         }
     });
 
-    // Use DisplayComponents for avalanche summary
-    html += HashDisplay.createAvalancheSummary(avalanche, quality);
+    html += createAvalancheSummary(avalanche, quality);
 
-    // Use DisplayComponents for bit visualization
     html += `
     <div class="bit-visualization">
         <h4>Bit-Level Comparison</h4>
@@ -311,15 +297,15 @@ function displayAvalancheResults(original, modified, hash1, hash2, avalanche, al
 }
 
 // ============================================================================
-// BIRTHDAY ATTACK HANDLERS
+// BIRTHDAY ATTACK CALCULATOR
 // ============================================================================
 
-/**
- * Handle birthday attack calculator
- */
-function handleBirthdayCalculator() {
-    const algorithm = document.getElementById('birthday-algorithm').value;
-    const info = Config.getAlgorithmInfo(algorithm);
+function handleBirthdayCalculator(): void {
+    const algorithmEl = document.getElementById('birthday-algorithm') as HTMLSelectElement | null;
+    if (!algorithmEl) return;
+
+    const algorithm = algorithmEl.value;
+    const info: AlgorithmInfo | null = Config.getAlgorithmInfo(algorithm);
 
     if (!info) {
         UIUtils.showError('Invalid algorithm selected');
@@ -327,49 +313,42 @@ function handleBirthdayCalculator() {
     }
 
     const hashBits = info.outputBits;
+    const attempts50 = attemptsFor50PercentCollision(hashBits);
 
-    // Calculate various probabilities
-    const attempts50 = HashUtils.attemptsFor50PercentCollision(hashBits);
-
-    // Sample probabilities at different attempt counts
     const probabilities = [
-        { attempts: Math.pow(2, hashBits / 4), label: `2^${hashBits / 4}` },
-        { attempts: Math.pow(2, hashBits / 3), label: `2^${(hashBits / 3).toFixed(1)}` },
-        { attempts: Math.pow(2, hashBits / 2), label: `2^${hashBits / 2}` },
-        { attempts: Math.pow(2, hashBits / 1.5), label: `2^${(hashBits / 1.5).toFixed(1)}` }
+        { attempts: Math.pow(2, hashBits / 4),     label: `2^${hashBits / 4}` },
+        { attempts: Math.pow(2, hashBits / 3),     label: `2^${(hashBits / 3).toFixed(1)}` },
+        { attempts: Math.pow(2, hashBits / 2),     label: `2^${hashBits / 2}` },
+        { attempts: Math.pow(2, hashBits / 1.5),   label: `2^${(hashBits / 1.5).toFixed(1)}` }
     ].map(item => {
-        const probability = HashUtils.birthdayAttackProbability(hashBits, item.attempts) * 100;
+        const probability = birthdayAttackProbability(hashBits, item.attempts) * 100;
 
-        // Determine security assessment
-        let assessment;
+        let assessment: string;
         if (probability < 0.000001) {
-            assessment = '<span class="secure">✅ Effectively Impossible</span>';
+            assessment = '<span class="secure">Effectively Impossible</span>';
         } else if (probability < 0.01) {
-            assessment = '<span class="secure">✅ Highly Secure</span>';
+            assessment = '<span class="secure">Highly Secure</span>';
         } else if (probability < 10) {
-            assessment = '<span class="warning">⚠️ Possible with Resources</span>';
+            assessment = '<span class="warning">Possible with Resources</span>';
         } else {
-            assessment = '<span class="insecure">⛔ Practical Attack</span>';
+            assessment = '<span class="insecure">Practical Attack</span>';
         }
 
-        return {
-            ...item,
-            probability,
-            assessment
-        };
+        return { ...item, probability, assessment };
     });
 
     displayBirthdayResults(info, attempts50, probabilities);
 }
 
-/**
- * Display birthday attack calculator results
- */
-function displayBirthdayResults(info, attempts50, probabilities) {
+function displayBirthdayResults(
+    info: AlgorithmInfo,
+    attempts50: string,
+    probabilities: ProbabilityRow[]
+): void {
     let html = `
     <div class="birthday-container">
-        <h3>🎂 Birthday Attack Analysis</h3>
-        <p class="algorithm-name">Algorithm: ${info.name} (${info.outputBits}-bit output)</p>
+        <h3>Birthday Attack Analysis</h3>
+        <p class="algorithm-name">Algorithm: ${UIUtils.escapeHtml(info.name)} (${info.outputBits}-bit output)</p>
 
         <div class="birthday-explanation">
             <h4>What is a Birthday Attack?</h4>
@@ -389,23 +368,23 @@ function displayBirthdayResults(info, attempts50, probabilities) {
                 <strong>50% collision probability:</strong> ${attempts50} attempts
             </p>
 
-            ${HashDisplay.createBirthdayProbabilityTable(probabilities)}
+            ${createBirthdayProbabilityTable(probabilities)}
         </div>
 
         <div class="real-world-context">
             <h4>Real-World Context</h4>
             <p>
                 <strong>Bitcoin mining:</strong> ~500 exahashes/second globally
-                (500 × 10^18 hashes/second)
+                (500 x 10^18 hashes/second)
             </p>
             <p>
-                <strong>Time to 50% collision for ${info.name} (assume 1 billion hashes/second):</strong>
+                <strong>Time to 50% collision for ${UIUtils.escapeHtml(info.name)} (assume 1 billion hashes/second):</strong>
                 ${estimateCollisionTime(info.outputBits)} years
             </p>
             <p class="conclusion">
                 ${info.outputBits >= 256 ?
-                '✅ Collision-resistant in practice (more time than age of universe)' :
-                '⚠️ May be vulnerable with sufficient computational resources'}
+                'Collision-resistant in practice (more time than age of universe)' :
+                'May be vulnerable with sufficient computational resources'}
             </p>
         </div>
     </div>
@@ -415,12 +394,9 @@ function displayBirthdayResults(info, attempts50, probabilities) {
 }
 
 /**
- * Estimate time to find collision
- *
- * HASH-SPECIFIC: This calculation is specific to birthday attack analysis
+ * Estimate years to find collision at 1 billion hashes/second
  */
-function estimateCollisionTime(hashBits) {
-    // Assume 1 billion hashes/second (aggressive estimate)
+function estimateCollisionTime(hashBits: number): string {
     const hashesPerSecond = 1e9;
     const attemptsNeeded = Math.pow(2, hashBits / 2);
     const secondsNeeded = attemptsNeeded / hashesPerSecond;
@@ -431,20 +407,15 @@ function estimateCollisionTime(hashBits) {
     } else if (yearsNeeded > 1e10) {
         return yearsNeeded.toExponential(2);
     } else {
-        return HashUtils.formatLargeNumber(yearsNeeded);
+        return formatLargeNumber(yearsNeeded);
     }
 }
 
 // ============================================================================
-// INITIAL DISPLAY
+// WELCOME MESSAGE
 // ============================================================================
 
-/**
- * Display welcome message
- *
- * HASH-SPECIFIC: Welcome content is tool-specific, stays in this file
- */
-function displayWelcomeMessage() {
+function displayWelcomeMessage(): void {
     const welcomeDiv = document.getElementById('welcome-message');
     if (welcomeDiv) {
         welcomeDiv.innerHTML = `
@@ -456,12 +427,14 @@ function displayWelcomeMessage() {
                 <li><strong>Avalanche Effect:</strong> See how changing one bit affects the output</li>
                 <li><strong>Birthday Attack:</strong> Understand collision probability and security</li>
                 <li><strong>Security Analysis:</strong> Learn about hash function properties and vulnerabilities</li>
-        </ol>
-        ${DisplayComponents.createEducationalNote(
-            'This tool demonstrates both secure (SHA-256, SHA-3) and broken (MD5, SHA-1) hash functions. ' +
-            'The broken algorithms are included for educational comparison only.'
-        )}
+            </ol>
+            ${DisplayComponents.createEducationalNote(
+                'This tool demonstrates both secure (SHA-256, SHA-3) and broken (MD5, SHA-1) hash functions. ' +
+                'The broken algorithms are included for educational comparison only.'
+            )}
         </div>
         `;
     }
 }
+
+export {};

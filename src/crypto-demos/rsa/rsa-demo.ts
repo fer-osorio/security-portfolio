@@ -1,45 +1,40 @@
 /**
  * ============================================================================
  * RSA INTERACTIVE TOOL - UI CONTROLLER
- *
- * This module handles all user interactions and updates the DOM.
- * It acts as the "controller" in MVC architecture.
- *
- * - Uses shared UIUtils for common DOM operations
- * - Uses DisplayComponents for consistent HTML generation
- * - Uses Config for all constants and configuration
- * - Removed duplicate code (escapeHtml, setupCopyButtons, setupTabs, etc.)
- * - Kept RSA-specific logic (key generation UI, progress updates)
- *
  * ============================================================================
  */
 
+import '../../dark-mode-toggle';
+import { generateKeyPair, encrypt, decrypt, RSAKeyPair } from './rsa-core';
+import {
+    createKeyDisplayCard,
+    createEncryptionResult,
+    createDecryptionResult,
+} from './rsa-display';
+import { stringToBigInt, bigIntToString, bitLength } from './math-utils';
+import { DisplayComponents, ProgressData } from '../../display-components';
+import { UIUtils } from '../../ui-utils';
+import { Config } from '../../config';
+
 // ============================================================================
-// GLOBAL STATE (stored in memory, never persisted)
+// MODULE STATE
 // ============================================================================
 
-let currentKeys = null;
-let lastCiphertext = null;
+let currentKeys: RSAKeyPair | null = null;
+let lastCiphertext: string | null = null;
 
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
 
-/**
- * Initialize the RSA demo when page loads
- */
 document.addEventListener('DOMContentLoaded', function() {
     console.log('RSA Demo initialized');
 
-    // Check if we're in a secure context (required for crypto operations)
     if (!window.isSecureContext) {
         showSecurityWarning();
     }
 
-    // Set up event listeners
     setupEventListeners();
-
-    // Display initial educational content
     displayWelcomeMessage();
 });
 
@@ -47,29 +42,22 @@ document.addEventListener('DOMContentLoaded', function() {
 // EVENT HANDLER SETUP
 // ============================================================================
 
-/**
- * Set up all event listeners for user interactions
- */
-function setupEventListeners() {
-    // Key generation
+function setupEventListeners(): void {
     const generateBtn = document.getElementById('generate-keys-btn');
     if (generateBtn) {
         generateBtn.addEventListener('click', handleGenerateKeys);
     }
 
-    // Encryption
     const encryptBtn = document.getElementById('encrypt-btn');
     if (encryptBtn) {
         encryptBtn.addEventListener('click', handleEncrypt);
     }
 
-    // Decryption
     const decryptBtn = document.getElementById('decrypt-btn');
     if (decryptBtn) {
         decryptBtn.addEventListener('click', handleDecrypt);
     }
 
-    // Use shared utilities for common patterns
     UIUtils.setupCopyButtons();
     UIUtils.setupTabs();
 }
@@ -78,79 +66,62 @@ function setupEventListeners() {
 // KEY GENERATION HANDLERS
 // ============================================================================
 
-/**
- * Handle key generation button click
- */
-async function handleGenerateKeys() {
-    const keySizeSelect = document.getElementById('key-size');
-    const keySize = parseInt(keySizeSelect.value);
+async function handleGenerateKeys(): Promise<void> {
+    const keySizeEl = document.getElementById('key-size');
+    if (!keySizeEl) return;
+    const keySize = parseInt((keySizeEl as HTMLSelectElement).value, 10);
 
-    // Use shared button state management
     const generateBtn = document.getElementById('generate-keys-btn');
     UIUtils.setButtonLoading(generateBtn, 'Generating...');
 
-    // Use shared result clearing
     UIUtils.clearResults(['key-gen-results', 'encryption-results', 'decryption-results']);
 
-    // Show progress using shared utility
-    const progressDiv = document.getElementById('key-gen-progress');
-    UIUtils.showLoading(progressDiv, 'Initializing key generation...');
+    UIUtils.showLoading('key-gen-progress', 'Initializing key generation...');
 
     try {
         const startTime = performance.now();
 
-        // Generate keys with progress callback
-        const keys = await RSACore.generateKeyPair(keySize, (stage, data) => {
+        const keys = await generateKeyPair(keySize, (stage, data) => {
             updateProgress(stage, data);
         });
 
         const endTime = performance.now();
-        const duration = ((endTime - startTime) / 1000).toFixed(2);
+        const duration = endTime - startTime;
 
-        // Store keys in memory (NEVER persist to localStorage!)
         currentKeys = keys;
-
-        // Display results
         displayKeys(keys, duration);
 
-        // Enable encryption/decryption
-        document.getElementById('encrypt-btn').disabled = false;
+        const encryptBtnEl = document.getElementById('encrypt-btn');
+        if (encryptBtnEl) (encryptBtnEl as HTMLButtonElement).disabled = false;
 
         console.log('Key generation successful:', keys);
 
     } catch (error) {
         console.error('Key generation failed:', error);
-        UIUtils.showError('Key generation failed: ' + error.message);
+        UIUtils.showError('Key generation failed: ' + (error as Error).message);
     } finally {
-        // Re-enable button using shared utility
         UIUtils.resetButton(generateBtn, 'Generate RSA Keys');
-        UIUtils.hideLoading(progressDiv);
+        UIUtils.hideLoading('key-gen-progress');
     }
 }
 
-/**
- * Update progress display during key generation
- *
- * RSA-SPECIFIC
- */
-function updateProgress(stage, data) {
+function updateProgress(stage: string, data: ProgressData | null): void {
     const progressDiv = document.getElementById('key-gen-progress');
+    if (!progressDiv) return;
 
-    // Use shared scroll utility
     UIUtils.scrollToElement(progressDiv, Config.UI.SCROLL_BLOCK_CENTER);
 
-    // RSA-SPECIFIC progress messages
     let message = '';
-    switch(stage) {
+    switch (stage) {
         case 'Generating prime p':
             message = '<p><strong>Step 1/4:</strong> Generating prime p...</p>';
-            if (data) {
+            if (data && data.attempt) {
                 message += `<p class="progress-detail">Attempt ${data.attempt}${data.isPrime ? ' ✓ Prime found!' : ''}</p>`;
             }
             break;
         case 'Generating prime q':
             message = '<p><strong>Step 2/4:</strong> Generating prime q...</p>';
-            if (data) {
+            if (data && data.attempt) {
                 message += `<p class="progress-detail">Attempt ${data.attempt}${data.isPrime ? ' ✓ Prime found!' : ''}</p>`;
             }
             break;
@@ -171,28 +142,19 @@ function updateProgress(stage, data) {
     progressDiv.innerHTML = message;
 }
 
-/**
- * Display generated keys in the UI
- */
-function displayKeys(keys, duration) {
-    const resultsDiv = document.getElementById('key-gen-results');
-
-    // Use DisplayComponents for consistent HTML generation
-    const keyDisplay = RSADisplay.createKeyDisplayCard({
-        title: `✓ RSA Keys Generated (${duration}s)`,
-        publicKey: keys.publicKey,
+function displayKeys(keys: RSAKeyPair, duration: number): void {
+    const keyDisplay = createKeyDisplayCard({
+        title: `✓ RSA Keys Generated (${(duration / 1000).toFixed(2)}s)`,
+        publicKey:  keys.publicKey,
         privateKey: keys.privateKey,
         educational: {
-            p: keys.p,
-            q: keys.q,
-            phi: keys.phi
-        }
+            p:   keys.p,
+            q:   keys.q,
+            phi: keys.phi,
+        },
     });
 
-    // Use shared display utility
     UIUtils.displayResults('key-gen-results', keyDisplay, true);
-
-    // Setup copy buttons for the newly rendered content
     UIUtils.setupCopyButtons();
 }
 
@@ -200,17 +162,16 @@ function displayKeys(keys, duration) {
 // ENCRYPTION HANDLERS
 // ============================================================================
 
-/**
- * Handle encryption button click
- */
-async function handleEncrypt() {
+async function handleEncrypt(): Promise<void> {
     if (!currentKeys) {
         UIUtils.showError('Please generate keys first!');
         return;
     }
+    const keys = currentKeys;
 
-    const messageInput = document.getElementById('plaintext-input');
-    const message = messageInput.value.trim();
+    const messageInputEl = document.getElementById('plaintext-input');
+    if (!messageInputEl) return;
+    const message = (messageInputEl as HTMLInputElement).value.trim();
 
     if (!message) {
         UIUtils.showError('Please enter a message to encrypt');
@@ -218,60 +179,58 @@ async function handleEncrypt() {
     }
 
     try {
-        // Convert message to BigInt
-        const messageInt = MathUtils.stringToBigInt(message);
+        const messageInt = stringToBigInt(message);
 
-        // Check if message is too large
-        if (messageInt >= currentKeys.publicKey.n) {
-            const maxBytes = Math.floor(MathUtils.bitLength(currentKeys.publicKey.n) / 8) - 1;
-            UIUtils.showError(`Message too large! Maximum message length: ~${maxBytes} bytes. Your message: ${message.length} bytes.`);
+        if (messageInt >= keys.publicKey.n) {
+            const maxBytes = Math.floor(bitLength(keys.publicKey.n) / 8) - 1;
+            UIUtils.showError(
+                `Message too large! Maximum message length: ~${maxBytes} bytes. Your message: ${message.length} bytes.`
+            );
             return;
         }
 
-        // Encrypt
         const startTime = performance.now();
-        const ciphertext = RSACore.encrypt(messageInt, currentKeys.publicKey);
+        const ciphertext = encrypt(messageInt, keys.publicKey);
         const endTime = performance.now();
-        const duration = ((endTime - startTime)).toFixed(2);
+        const duration = endTime - startTime;
 
-        // Store ciphertext for decryption
-        lastCiphertext = ciphertext;
-
-        // Display results using shared component
+        lastCiphertext = ciphertext.toString();
         displayEncryptionResults(message, messageInt, ciphertext, duration);
 
-        // Enable decryption
-        document.getElementById('decrypt-btn').disabled = false;
+        const decryptBtnEl = document.getElementById('decrypt-btn');
+        if (decryptBtnEl) (decryptBtnEl as HTMLButtonElement).disabled = false;
 
         console.log('Encryption successful');
 
     } catch (error) {
         console.error('Encryption failed:', error);
-        UIUtils.showError('Encryption failed: ' + error.message);
+        UIUtils.showError('Encryption failed: ' + (error as Error).message);
     }
 }
 
-/**
- * Display encryption results
- */
-function displayEncryptionResults(originalMessage, messageInt, ciphertext, duration) {
-    const encryptionDisplay = RSADisplay.createEncryptionResult({
+function displayEncryptionResults(
+    originalMessage: string,
+    messageInt: bigint,
+    ciphertext: bigint,
+    duration: number
+): void {
+    if (!currentKeys) return;
+
+    const encryptionDisplay = createEncryptionResult({
         originalMessage,
         messageInt: messageInt.toString(),
         ciphertext: ciphertext.toString(),
-        duration,
-        publicKey: currentKeys.publicKey
+        duration:   duration.toFixed(2),
+        publicKey:  currentKeys.publicKey,
     });
 
     UIUtils.displayResults('encryption-results', encryptionDisplay, true);
 
-    // Populate ciphertext in decryption input
-    const decryptInput = document.getElementById('ciphertext-input');
-    if (decryptInput) {
-        decryptInput.value = ciphertext.toString();
+    const decryptInputEl = document.getElementById('ciphertext-input');
+    if (decryptInputEl) {
+        (decryptInputEl as HTMLInputElement).value = ciphertext.toString();
     }
 
-    // Setup copy buttons for the newly rendered content
     UIUtils.setupCopyButtons();
 }
 
@@ -279,57 +238,67 @@ function displayEncryptionResults(originalMessage, messageInt, ciphertext, durat
 // DECRYPTION HANDLERS
 // ============================================================================
 
-/**
- * Handle decryption button click
- */
-async function handleDecrypt() {
+async function handleDecrypt(): Promise<void> {
     if (!currentKeys) {
         UIUtils.showError('Please generate keys first!');
         return;
     }
+    const keys = currentKeys;
 
-    const ciphertextInput = document.getElementById('ciphertext-input');
-    let ciphertextStr = ciphertextInput.value.trim();
+    const ciphertextInputEl = document.getElementById('ciphertext-input');
+    if (!ciphertextInputEl) return;
+    let ciphertextStr = (ciphertextInputEl as HTMLInputElement).value.trim();
+
+    // Fall back to stored ciphertext if the input field is empty
+    if (!ciphertextStr && lastCiphertext) {
+        ciphertextStr = lastCiphertext;
+    }
 
     if (!ciphertextStr) {
         UIUtils.showError('Please enter ciphertext to decrypt');
         return;
     }
 
+    let ciphertext: bigint;
     try {
-        // Parse ciphertext as BigInt
-        const ciphertext = BigInt(ciphertextStr);
+        ciphertext = BigInt(ciphertextStr);
+    } catch {
+        UIUtils.showError('Invalid ciphertext: must be a valid integer');
+        return;
+    }
 
-        // Decrypt
+    try {
         const startTime = performance.now();
-        const plaintextInt = RSACore.decrypt(ciphertext, currentKeys.privateKey);
+        const plaintextInt = decrypt(ciphertext, keys.privateKey);
         const endTime = performance.now();
-        const duration = ((endTime - startTime)).toFixed(2);
+        const duration = endTime - startTime;
 
-        // Convert back to string
-        const plaintextStr = MathUtils.bigIntToString(plaintextInt);
+        const plaintextStr = bigIntToString(plaintextInt);
 
-        // Display results using shared component
         displayDecryptionResults(ciphertext, plaintextInt, plaintextStr, duration);
 
         console.log('Decryption successful');
 
     } catch (error) {
         console.error('Decryption failed:', error);
-        UIUtils.showError('Decryption failed: ' + error.message);
+        UIUtils.showError('Decryption failed: ' + (error as Error).message);
     }
 }
 
-/**
- * Display decryption results
- */
-function displayDecryptionResults(ciphertext, plaintextInt, plaintextStr, duration) {
-    const decryptionDisplay = RSADisplay.createDecryptionResult({
-        ciphertext: ciphertext.toString(),
+function displayDecryptionResults(
+    ciphertext: bigint,
+    plaintextInt: bigint,
+    plaintextStr: string,
+    duration: number
+): void {
+    if (!currentKeys) return;
+
+    const decryptionDisplay = createDecryptionResult({
+        ciphertext:   ciphertext.toString(),
         plaintextInt: plaintextInt.toString(),
         plaintextStr,
-        duration,
-        privateKey: currentKeys.privateKey
+        duration:     duration.toFixed(2),
+        privateKey:   currentKeys.privateKey,
     });
 
     UIUtils.displayResults('decryption-results', decryptionDisplay, true);
@@ -339,12 +308,7 @@ function displayDecryptionResults(ciphertext, plaintextInt, plaintextStr, durati
 // INITIAL DISPLAY
 // ============================================================================
 
-/**
- * Display welcome message with instructions
- *
- * RSA-SPECIFIC: Welcome content is tool-specific
- */
-function displayWelcomeMessage() {
+function displayWelcomeMessage(): void {
     const welcomeDiv = document.getElementById('welcome-message');
     if (welcomeDiv) {
         welcomeDiv.innerHTML = `
@@ -365,10 +329,7 @@ function displayWelcomeMessage() {
     }
 }
 
-/**
- * Show security warning if not in secure context
- */
-function showSecurityWarning() {
+function showSecurityWarning(): void {
     const warningDiv = document.createElement('div');
     warningDiv.className = 'alert alert--banner alert--warning';
     warningDiv.innerHTML = DisplayComponents.createWarningAlert(
@@ -378,3 +339,5 @@ function showSecurityWarning() {
     );
     document.body.insertBefore(warningDiv, document.body.firstChild);
 }
+
+export {};
