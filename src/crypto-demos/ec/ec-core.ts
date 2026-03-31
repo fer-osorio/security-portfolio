@@ -17,52 +17,53 @@
  */
 
 import {
-    Point,
-    CurveParams,
-    isOnCurve,
-    scalarMultiply,
-    scalarMultiplySecure,
-    randomBigIntRange,
-    validateCurveParameters,
-    pointAdd,
-} from './ec-math-utils';
+  Point,
+  CurveParams,
+  isOnCurve,
+  scalarMultiply,
+  scalarMultiplySecure,
+  pointOrder,
+  randomBigIntRange,
+  validateCurveParameters,
+  pointAdd,
+} from "./ec-math-utils";
 
 import {
-    modInverse,
-    modMul,
-    modAdd,
-    bitLength,
-    isDivisibleBySmallPrime,
-} from '../rsa/math-utils';
+  modInverse,
+  modMul,
+  modAdd,
+  bitLength,
+  isDivisibleBySmallPrime,
+} from "../rsa/math-utils";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 export interface EllipticCurveParams extends CurveParams {
-    name: string;
-    n:    bigint;
-    h:    bigint;
-    G:    Point;
+  name: string;
+  n: bigint;
+  h: bigint;
+  G: Point;
 }
 
 export interface ECKeyPair {
-    privateKey: bigint;
-    publicKey:  Point;
+  privateKey: bigint;
+  publicKey: Point;
 }
 
 export interface ECDSASignature {
-    r: bigint;
-    s: bigint;
+  r: bigint;
+  s: bigint;
 }
 
 export interface CurveInfo {
-    name:      string;
-    equation:  string;
-    fieldSize: number;
-    groupOrder: number;
-    cofactor:  string;
-    generator: { x: string; y: string };
+  name: string;
+  equation: string;
+  fieldSize: number;
+  groupOrder: number;
+  cofactor: string;
+  generator: { x: string; y: string };
 }
 
 // ============================================================================
@@ -82,101 +83,104 @@ export interface CurveInfo {
  * - h: Cofactor = #E(F_p) / n (usually 1 for prime-order curves)
  */
 export class EllipticCurve implements EllipticCurveParams {
-    name: string;
-    p:    bigint;
-    a:    bigint;
-    b:    bigint;
-    n:    bigint;
-    h:    bigint;
-    G:    Point;
+  name: string;
+  p: bigint;
+  a: bigint;
+  b: bigint;
+  n: bigint;
+  h: bigint;
+  G: Point;
 
-    constructor(
-        name: string,
-        p:    bigint,
-        a:    bigint,
-        b:    bigint,
-        G:    { x: bigint; y: bigint },
-        n:    bigint,
-        h:    bigint,
-    ) {
-        this.name = name;
-        this.p    = p;
-        this.a    = a;
-        this.b    = b;
-        this.n    = n;
-        this.h    = h;
+  constructor(
+    name: string,
+    p: bigint,
+    a: bigint,
+    b: bigint,
+    G: { x: bigint; y: bigint },
+    n: bigint,
+    h: bigint,
+  ) {
+    this.name = name;
+    this.p = p;
+    this.a = a;
+    this.b = b;
+    this.n = n;
+    this.h = h;
 
-        // Create generator point
-        this.G = new Point(G.x, G.y, this);
+    // Create generator point
+    this.G = new Point(G.x, G.y, this);
 
-        // Validate curve on construction
-        this.validate();
+    // Validate curve on construction
+    this.validate();
+  }
+
+  /**
+   * Validate curve parameters
+   *
+   * CHECKS:
+   * 1. Non-singularity: 4a³ + 27b² ≠ 0 (mod p)
+   * 2. Generator on curve: G satisfies curve equation
+   * 3. Generator order: nG = ∞
+   *
+   * @throws {Error} If validation fails
+   */
+  validate(): void {
+    // Check non-singularity
+    if (!validateCurveParameters(this)) {
+      throw new Error(`Curve ${this.name} is singular (invalid parameters)`);
     }
 
-    /**
-     * Validate curve parameters
-     *
-     * CHECKS:
-     * 1. Non-singularity: 4a³ + 27b² ≠ 0 (mod p)
-     * 2. Generator on curve: G satisfies curve equation
-     * 3. Generator order: nG = ∞
-     *
-     * @throws {Error} If validation fails
-     */
-    validate(): void {
-        // Check non-singularity
-        if (!validateCurveParameters(this)) {
-            throw new Error(`Curve ${this.name} is singular (invalid parameters)`);
-        }
-
-        // Check generator is on curve
-        if (!isOnCurve(this.G)) {
-            throw new Error(`Generator point not on curve ${this.name}`);
-        }
-
-        // Check nG = ∞ (generator has correct order)
-        const nG = scalarMultiply(this.n, this.G);
-        if (!nG.isInfinity) {
-            throw new Error(`Generator order incorrect for curve ${this.name}`);
-        }
-
-        // For small n, do a basic primality check
-        if (this.n < 1000000n) {
-            // Simple primality check for educational small curves
-            // NOTE: isDivisibleBySmallPrime returns true for composites;
-            // this function inherits the original logic as-is.
-            if (!this._isPrimeLikely(this.n)) {
-                console.warn(`Order n may not be prime for curve ${this.name}`);
-            }
-        }
+    // Check generator is on curve
+    if (!isOnCurve(this.G)) {
+      throw new Error(`Generator point not on curve ${this.name}`);
     }
 
-    /**
-     * Basic primality check (preserves original logic from JS source)
-     *
-     * @private
-     */
-    private _isPrimeLikely(n: bigint): boolean {
-        if (n < 2n) return false;
-        return isDivisibleBySmallPrime(n);  // Assume prime for large n (trust standards)
+    // Check nG = ∞ (generator has correct order)
+    const nG = scalarMultiply(this.n, this.G);
+    if (!nG.isInfinity) {
+      throw new Error(`Generator order incorrect for curve ${this.name}.
+              Point (${this.G.x},${this.G.y})
+              Expected order: ${this.n}
+              Actual point order: ${pointOrder(this.G)}`);
     }
 
-    /**
-     * Get curve information for display
-     */
-    getInfo(): CurveInfo {
-        return {
-            name:       this.name,
-            equation:   `y² = x³ + ${this.a}x + ${this.b} (mod p)`,
-            fieldSize:  bitLength(this.p),
-            groupOrder: bitLength(this.n),
-            cofactor:   this.h.toString(),
-            generator: {
-                x: this.G.x.toString(16),
-                y: this.G.y.toString(16),
-            },
-        };
+    // For small n, do a basic primality check
+    if (this.n < 1000000n) {
+      // Simple primality check for educational small curves
+      // NOTE: isDivisibleBySmallPrime returns true for composites;
+      // this function inherits the original logic as-is.
+      if (!this._isPrimeLikely(this.n)) {
+        console.warn(`Order n may not be prime for curve ${this.name}`);
+      }
     }
+  }
+
+  /**
+   * Basic primality check (preserves original logic from JS source)
+   *
+   * @private
+   */
+  private _isPrimeLikely(n: bigint): boolean {
+    if (n < 2n) return false;
+    return isDivisibleBySmallPrime(n); // Assume prime for large n (trust standards)
+  }
+
+  /**
+   * Get curve information for display
+   */
+  getInfo(): CurveInfo {
+    return {
+      name: this.name,
+      equation: `y² = x³ + ${this.a}x + ${this.b} (mod p)`,
+      fieldSize: bitLength(this.p),
+      groupOrder: bitLength(this.n),
+      cofactor: this.h.toString(),
+      generator: {
+        x: this.G.x.toString(16),
+        y: this.G.y.toString(16),
+      },
+    };
+  }
 }
 
 // ============================================================================
@@ -190,28 +194,32 @@ export class EllipticCurve implements EllipticCurveParams {
  * CURVE EQUATION: y² = x³ + 7 (mod p)
  */
 const secp256k1 = new EllipticCurve(
-    'secp256k1',
+  "secp256k1",
 
-    // p = 2^256 - 2^32 - 977 (Solinas prime for fast reduction)
-    BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F'),
+  // p = 2^256 - 2^32 - 977 (Solinas prime for fast reduction)
+  BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"),
 
-    // a = 0 (Koblitz curve)
-    0n,
+  // a = 0 (Koblitz curve)
+  0n,
 
-    // b = 7
-    7n,
+  // b = 7
+  7n,
 
-    // Generator G (uncompressed)
-    {
-        x: BigInt('0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798'),
-        y: BigInt('0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8'),
-    },
+  // Generator G (uncompressed)
+  {
+    x: BigInt(
+      "0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798",
+    ),
+    y: BigInt(
+      "0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8",
+    ),
+  },
 
-    // n = order of G (prime)
-    BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141'),
+  // n = order of G (prime)
+  BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"),
 
-    // h = 1 (prime-order curve, no small subgroups)
-    1n,
+  // h = 1 (prime-order curve, no small subgroups)
+  1n,
 );
 
 /**
@@ -221,28 +229,32 @@ const secp256k1 = new EllipticCurve(
  * CURVE EQUATION: y² = x³ - 3x + b (mod p)
  */
 const P256 = new EllipticCurve(
-    'P-256',
+  "P-256",
 
-    // p = 2^256 - 2^224 + 2^192 + 2^96 - 1 (Generalized Mersenne prime)
-    BigInt('0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF'),
+  // p = 2^256 - 2^224 + 2^192 + 2^96 - 1 (Generalized Mersenne prime)
+  BigInt("0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF"),
 
-    // a = -3 (chosen for efficient arithmetic)
-    BigInt('0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC'),
+  // a = -3 (chosen for efficient arithmetic)
+  BigInt("0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC"),
 
-    // b (verifiably pseudorandom from seed)
-    BigInt('0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B'),
+  // b (verifiably pseudorandom from seed)
+  BigInt("0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B"),
 
-    // Generator G
-    {
-        x: BigInt('0x6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296'),
-        y: BigInt('0x4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5'),
-    },
+  // Generator G
+  {
+    x: BigInt(
+      "0x6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296",
+    ),
+    y: BigInt(
+      "0x4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5",
+    ),
+  },
 
-    // n = order of G
-    BigInt('0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551'),
+  // n = order of G
+  BigInt("0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551"),
 
-    // h = 1
-    1n,
+  // h = 1
+  1n,
 );
 
 /**
@@ -251,39 +263,39 @@ const P256 = new EllipticCurve(
  */
 let testF23: EllipticCurve | null = null;
 try {
-    testF23 = new EllipticCurve(
-        'Test-F23',
-        23n,
-        0n,
-        7n,
-        { x: 6n, y: 4n },
-        28n,
-        1n,
-    );
+  testF23 = new EllipticCurve(
+    "Test-F23",
+    97n,
+    2n,
+    3n,
+    { x: 3n, y: 6n },
+    5n,
+    20n,
+  );
 } catch (e) {
-    console.warn('Test curve initialization failed:', e);
+  console.warn("Test curve initialization failed:", e);
 }
 
 /**
  * Curve registry (for lookup by name)
  */
 const CURVES: Record<string, EllipticCurve> = {
-    'secp256k1': secp256k1,
-    'P-256':     P256,
-    'P256':      P256,      // Alias
-    'secp256r1': P256,      // Alias
+  secp256k1: secp256k1,
+  "P-256": P256,
+  P256: P256, // Alias
+  secp256r1: P256, // Alias
 };
 
 if (testF23) {
-    CURVES['test-small'] = testF23;
-    CURVES['Test-F23']   = testF23;
+  CURVES["test-small"] = testF23;
+  CURVES["Test-F23"] = testF23;
 }
 
 /**
  * Get curve by name
  */
 export function getCurve(name: string): EllipticCurve | null {
-    return CURVES[name] ?? null;
+  return CURVES[name] ?? null;
 }
 
 // ============================================================================
@@ -301,102 +313,106 @@ export function getCurve(name: string): EllipticCurve | null {
  * 5. Both compute shared secret S = dₐd_bG
  */
 export class ECDH {
-    private curve: EllipticCurve;
+  private curve: EllipticCurve;
 
-    constructor(curve: EllipticCurve) {
-        this.curve = curve;
+  constructor(curve: EllipticCurve) {
+    this.curve = curve;
+  }
+
+  /**
+   * Generate ECDH key pair
+   *
+   * @returns {ECKeyPair} - {privateKey: bigint, publicKey: Point}
+   */
+  generateKeyPair(): ECKeyPair {
+    // Generate random private key in [1, n-1]
+    const privateKey = randomBigIntRange(1n, this.curve.n);
+
+    // Compute public key Q = dG
+    const publicKey = scalarMultiplySecure(privateKey, this.curve.G);
+
+    // Validate public key is on curve (sanity check)
+    if (!isOnCurve(publicKey)) {
+      throw new Error(
+        "Generated public key not on curve (implementation error)",
+      );
     }
 
-    /**
-     * Generate ECDH key pair
-     *
-     * @returns {ECKeyPair} - {privateKey: bigint, publicKey: Point}
-     */
-    generateKeyPair(): ECKeyPair {
-        // Generate random private key in [1, n-1]
-        const privateKey = randomBigIntRange(1n, this.curve.n);
+    return { privateKey, publicKey };
+  }
 
-        // Compute public key Q = dG
-        const publicKey = scalarMultiplySecure(privateKey, this.curve.G);
+  /**
+   * Compute shared secret
+   *
+   * SECURITY CRITICAL: Validates other party's public key before use.
+   * Without validation, attacker can choose malicious Q_other to leak private key.
+   */
+  computeSharedSecret(privateKey: bigint, otherPublicKey: Point): Point {
+    // Validate other party's public key
+    this.validatePublicKey(otherPublicKey);
 
-        // Validate public key is on curve (sanity check)
-        if (!isOnCurve(publicKey)) {
-            throw new Error('Generated public key not on curve (implementation error)');
-        }
+    // Compute shared secret S = d × Q_other
+    const sharedSecret = scalarMultiplySecure(privateKey, otherPublicKey);
 
-        return { privateKey, publicKey };
+    // Verify result is not identity (degenerate case)
+    if (sharedSecret.isInfinity) {
+      throw new Error("Shared secret is point at infinity (invalid input)");
     }
 
-    /**
-     * Compute shared secret
-     *
-     * SECURITY CRITICAL: Validates other party's public key before use.
-     * Without validation, attacker can choose malicious Q_other to leak private key.
-     */
-    computeSharedSecret(privateKey: bigint, otherPublicKey: Point): Point {
-        // Validate other party's public key
-        this.validatePublicKey(otherPublicKey);
+    return sharedSecret;
+  }
 
-        // Compute shared secret S = d × Q_other
-        const sharedSecret = scalarMultiplySecure(privateKey, otherPublicKey);
-
-        // Verify result is not identity (degenerate case)
-        if (sharedSecret.isInfinity) {
-            throw new Error('Shared secret is point at infinity (invalid input)');
-        }
-
-        return sharedSecret;
+  /**
+   * Validate received public key
+   *
+   * CHECKS:
+   * 1. Point is on curve
+   * 2. Point is not identity (∞)
+   * 3. Point is in correct subgroup (order check)
+   *
+   * @throws {Error} If validation fails
+   */
+  validatePublicKey(publicKey: Point): void {
+    if (!isOnCurve(publicKey)) {
+      throw new Error("Public key not on curve");
     }
 
-    /**
-     * Validate received public key
-     *
-     * CHECKS:
-     * 1. Point is on curve
-     * 2. Point is not identity (∞)
-     * 3. Point is in correct subgroup (order check)
-     *
-     * @throws {Error} If validation fails
-     */
-    validatePublicKey(publicKey: Point): void {
-        if (!isOnCurve(publicKey)) {
-            throw new Error('Public key not on curve');
-        }
-
-        if (publicKey.isInfinity) {
-            throw new Error('Public key is point at infinity');
-        }
-
-        const nQ = scalarMultiply(this.curve.n, publicKey);
-        if (!nQ.isInfinity) {
-            throw new Error('Public key not in correct subgroup');
-        }
+    if (publicKey.isInfinity) {
+      throw new Error("Public key is point at infinity");
     }
 
-    /**
-     * Derive session key from shared secret
-     *
-     * Hashes the x-coordinate with a label to produce a session key.
-     * For production: use HKDF (RFC 5869).
-     */
-    async deriveKey(sharedSecret: Point, label = 'ECDH'): Promise<string> {
-        // Extract x-coordinate as entropy source
-        const x = sharedSecret.x.toString(16).padStart(64, '0');
-
-        // Combine with label for domain separation
-        const input   = x + label;
-
-        // Hash to derive key (using SHA-256)
-        const encoder    = new TextEncoder();
-        const data       = encoder.encode(input);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-
-        // Convert to hex string
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex   = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-        return hashHex;
+    const nQ = scalarMultiply(this.curve.n, publicKey);
+    if (!nQ.isInfinity) {
+      throw new Error("Public key not in correct subgroup");
     }
+  }
+
+  /**
+   * Derive session key from shared secret
+   *
+   * Hashes the x-coordinate with a label to produce a session key.
+   * For production: use HKDF (RFC 5869).
+   */
+  async deriveKey(sharedSecret: Point, label = "ECDH"): Promise<string> {
+    // Extract x-coordinate as entropy source
+    const x = sharedSecret.x.toString(16).padStart(64, "0");
+
+    // Combine with label for domain separation
+    const input = x + label;
+
+    // Hash to derive key (using SHA-256)
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+    // Convert to hex string
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    return hashHex;
+  }
 }
 
 // ============================================================================
@@ -414,196 +430,203 @@ export class ECDH {
  * This implementation uses simplified RFC 6979 for deterministic k.
  */
 export class ECDSA {
-    private curve: EllipticCurve;
+  private curve: EllipticCurve;
 
-    constructor(curve: EllipticCurve) {
-        this.curve = curve;
+  constructor(curve: EllipticCurve) {
+    this.curve = curve;
+  }
+
+  /**
+   * Generate ECDSA key pair (delegates to ECDH)
+   */
+  generateKeyPair(): ECKeyPair {
+    const ecdh = new ECDH(this.curve);
+    return ecdh.generateKeyPair();
+  }
+
+  /**
+   * Sign message
+   *
+   * ALGORITHM:
+   * 1. Hash message: h = H(m)
+   * 2. Generate k deterministically (simplified RFC 6979)
+   * 3. Compute R = kG, r = R.x mod n
+   * 4. Compute s = k⁻¹(h + r·d) mod n
+   * 5. Return signature (r, s)
+   */
+  async sign(message: string, privateKey: bigint): Promise<ECDSASignature> {
+    // Step 1: Hash message
+    const h = await this._hashMessage(message);
+
+    // Step 2: Generate deterministic k (simplified RFC 6979)
+    const k = await this._generateNonce(privateKey, h);
+
+    // Step 3: Compute R = kG
+    const R = scalarMultiplySecure(k, this.curve.G);
+    const r = R.x % this.curve.n;
+
+    // Check r ≠ 0 (negligible probability)
+    if (r === 0n) {
+      throw new Error("Signature generation failed: r = 0 (regenerate k)");
     }
 
-    /**
-     * Generate ECDSA key pair (delegates to ECDH)
-     */
-    generateKeyPair(): ECKeyPair {
-        const ecdh = new ECDH(this.curve);
-        return ecdh.generateKeyPair();
+    // Step 4: Compute s = k⁻¹(h + r·d) mod n
+    const kInv = modInverse(k, this.curve.n);
+    const rd = modMul(r, privateKey, this.curve.n);
+    const h_rd = modAdd(h, rd, this.curve.n);
+    const s = modMul(kInv, h_rd, this.curve.n);
+
+    // Check s ≠ 0 (negligible probability)
+    if (s === 0n) {
+      throw new Error("Signature generation failed: s = 0 (regenerate k)");
     }
 
-    /**
-     * Sign message
-     *
-     * ALGORITHM:
-     * 1. Hash message: h = H(m)
-     * 2. Generate k deterministically (simplified RFC 6979)
-     * 3. Compute R = kG, r = R.x mod n
-     * 4. Compute s = k⁻¹(h + r·d) mod n
-     * 5. Return signature (r, s)
-     */
-    async sign(message: string, privateKey: bigint): Promise<ECDSASignature> {
-        // Step 1: Hash message
-        const h = await this._hashMessage(message);
+    return { r, s };
+  }
 
-        // Step 2: Generate deterministic k (simplified RFC 6979)
-        const k = await this._generateNonce(privateKey, h);
+  /**
+   * Verify signature
+   *
+   * ALGORITHM:
+   * 1. Validate signature: 1 ≤ r, s < n
+   * 2. Hash message: h = H(m)
+   * 3. Compute w = s⁻¹ mod n
+   * 4. Compute u₁ = h·w mod n, u₂ = r·w mod n
+   * 5. Compute R' = u₁G + u₂Q
+   * 6. Accept if R'.x ≡ r (mod n)
+   */
+  async verify(
+    message: string,
+    signature: ECDSASignature,
+    publicKey: Point,
+  ): Promise<boolean> {
+    const { r, s } = signature;
+    const n = this.curve.n;
 
-        // Step 3: Compute R = kG
-        const R = scalarMultiplySecure(k, this.curve.G);
-        const r = R.x % this.curve.n;
-
-        // Check r ≠ 0 (negligible probability)
-        if (r === 0n) {
-            throw new Error('Signature generation failed: r = 0 (regenerate k)');
-        }
-
-        // Step 4: Compute s = k⁻¹(h + r·d) mod n
-        const kInv    = modInverse(k, this.curve.n);
-        const rd      = modMul(r, privateKey, this.curve.n);
-        const h_rd    = modAdd(h, rd, this.curve.n);
-        const s       = modMul(kInv, h_rd, this.curve.n);
-
-        // Check s ≠ 0 (negligible probability)
-        if (s === 0n) {
-            throw new Error('Signature generation failed: s = 0 (regenerate k)');
-        }
-
-        return { r, s };
+    // Step 1: Validate signature components
+    if (r < 1n || r >= n || s < 1n || s >= n) {
+      return false;
     }
 
-    /**
-     * Verify signature
-     *
-     * ALGORITHM:
-     * 1. Validate signature: 1 ≤ r, s < n
-     * 2. Hash message: h = H(m)
-     * 3. Compute w = s⁻¹ mod n
-     * 4. Compute u₁ = h·w mod n, u₂ = r·w mod n
-     * 5. Compute R' = u₁G + u₂Q
-     * 6. Accept if R'.x ≡ r (mod n)
-     */
-    async verify(message: string, signature: ECDSASignature, publicKey: Point): Promise<boolean> {
-        const { r, s } = signature;
-        const n        = this.curve.n;
-
-        // Step 1: Validate signature components
-        if (r < 1n || r >= n || s < 1n || s >= n) {
-            return false;
-        }
-
-        // Validate public key
-        try {
-            const ecdh = new ECDH(this.curve);
-            ecdh.validatePublicKey(publicKey);
-        } catch (_e) {
-            return false;
-        }
-
-        // Step 2: Hash message
-        const h = await this._hashMessage(message);
-
-        // Step 3: Compute w = s⁻¹ mod n
-        let w: bigint;
-        try {
-            w = modInverse(s, n);
-        } catch (_e) {
-            return false;
-        }
-
-        // Step 4: Compute u₁ = h·w mod n, u₂ = r·w mod n
-        const u1 = modMul(h, w, n);
-        const u2 = modMul(r, w, n);
-
-        // Step 5: Compute R' = u₁G + u₂Q
-        const u1G    = scalarMultiplySecure(u1, this.curve.G);
-        const u2Q    = scalarMultiplySecure(u2, publicKey);
-        const Rprime = pointAdd(u1G, u2Q);
-
-        // Check if R' is point at infinity (invalid)
-        if (Rprime.isInfinity) {
-            return false;
-        }
-
-        // Step 6: Accept if R'.x ≡ r (mod n)
-        const v = Rprime.x % n;
-        return v === r;
+    // Validate public key
+    try {
+      const ecdh = new ECDH(this.curve);
+      ecdh.validatePublicKey(publicKey);
+    } catch (_e) {
+      return false;
     }
 
-    /**
-     * Hash message to integer in [0, n-1]
-     *
-     * @private
-     */
-    private async _hashMessage(message: string): Promise<bigint> {
-        const encoder    = new TextEncoder();
-        const data       = encoder.encode(message);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    // Step 2: Hash message
+    const h = await this._hashMessage(message);
 
-        // Convert hash to BigInt
-        const hashArray  = new Uint8Array(hashBuffer);
-        let h = 0n;
-        for (let i = 0; i < hashArray.length; i++) {
-            h = (h << 8n) | BigInt(hashArray[i]);
-        }
-
-        // Reduce modulo n
-        return h % this.curve.n;
+    // Step 3: Compute w = s⁻¹ mod n
+    let w: bigint;
+    try {
+      w = modInverse(s, n);
+    } catch (_e) {
+      return false;
     }
 
-    /**
-     * Generate deterministic nonce (simplified RFC 6979)
-     *
-     * k = HMAC-SHA256(privateKey, hash) mod n
-     *
-     * SECURITY: Deterministic (same message → same k), unpredictable
-     * without private key, unique for each message.
-     *
-     * @private
-     */
-    private async _generateNonce(privateKey: bigint, messageHash: bigint): Promise<bigint> {
-        // Convert inputs to byte arrays
-        const keyBytes  = this._bigIntToBytes(privateKey);
-        const hashBytes = this._bigIntToBytes(messageHash);
+    // Step 4: Compute u₁ = h·w mod n, u₂ = r·w mod n
+    const u1 = modMul(h, w, n);
+    const u2 = modMul(r, w, n);
 
-        // Concatenate for HMAC input
-        const combined = new Uint8Array(keyBytes.length + hashBytes.length);
-        combined.set(keyBytes, 0);
-        combined.set(hashBytes, keyBytes.length);
+    // Step 5: Compute R' = u₁G + u₂Q
+    const u1G = scalarMultiplySecure(u1, this.curve.G);
+    const u2Q = scalarMultiplySecure(u2, publicKey);
+    const Rprime = pointAdd(u1G, u2Q);
 
-        // Import key for HMAC
-        const hmacKey = await crypto.subtle.importKey(
-            'raw',
-            keyBytes,
-            { name: 'HMAC', hash: 'SHA-256' },
-            false,
-            ['sign'],
-        );
-
-        // Compute HMAC
-        const signature = await crypto.subtle.sign('HMAC', hmacKey, combined);
-
-        // Convert to BigInt
-        const sigArray = new Uint8Array(signature);
-        let k = 0n;
-        for (let i = 0; i < sigArray.length; i++) {
-            k = (k << 8n) | BigInt(sigArray[i]);
-        }
-
-        // Ensure k ∈ [1, n-1]
-        k = k % this.curve.n;
-        if (k === 0n) k = 1n;
-
-        return k;
+    // Check if R' is point at infinity (invalid)
+    if (Rprime.isInfinity) {
+      return false;
     }
 
-    /**
-     * Convert BigInt to 32-byte array
-     *
-     * @private
-     */
-    private _bigIntToBytes(n: bigint): Uint8Array<ArrayBuffer> {
-        const hex   = n.toString(16).padStart(64, '0');
-        const bytes: Uint8Array<ArrayBuffer> = new Uint8Array(32);
-        for (let i = 0; i < 32; i++) {
-            bytes[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);
-        }
-        return bytes;
+    // Step 6: Accept if R'.x ≡ r (mod n)
+    const v = Rprime.x % n;
+    return v === r;
+  }
+
+  /**
+   * Hash message to integer in [0, n-1]
+   *
+   * @private
+   */
+  private async _hashMessage(message: string): Promise<bigint> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(message);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+    // Convert hash to BigInt
+    const hashArray = new Uint8Array(hashBuffer);
+    let h = 0n;
+    for (let i = 0; i < hashArray.length; i++) {
+      h = (h << 8n) | BigInt(hashArray[i]);
     }
+
+    // Reduce modulo n
+    return h % this.curve.n;
+  }
+
+  /**
+   * Generate deterministic nonce (simplified RFC 6979)
+   *
+   * k = HMAC-SHA256(privateKey, hash) mod n
+   *
+   * SECURITY: Deterministic (same message → same k), unpredictable
+   * without private key, unique for each message.
+   *
+   * @private
+   */
+  private async _generateNonce(
+    privateKey: bigint,
+    messageHash: bigint,
+  ): Promise<bigint> {
+    // Convert inputs to byte arrays
+    const keyBytes = this._bigIntToBytes(privateKey);
+    const hashBytes = this._bigIntToBytes(messageHash);
+
+    // Concatenate for HMAC input
+    const combined = new Uint8Array(keyBytes.length + hashBytes.length);
+    combined.set(keyBytes, 0);
+    combined.set(hashBytes, keyBytes.length);
+
+    // Import key for HMAC
+    const hmacKey = await crypto.subtle.importKey(
+      "raw",
+      keyBytes,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+
+    // Compute HMAC
+    const signature = await crypto.subtle.sign("HMAC", hmacKey, combined);
+
+    // Convert to BigInt
+    const sigArray = new Uint8Array(signature);
+    let k = 0n;
+    for (let i = 0; i < sigArray.length; i++) {
+      k = (k << 8n) | BigInt(sigArray[i]);
+    }
+
+    // Ensure k ∈ [1, n-1]
+    k = k % this.curve.n;
+    if (k === 0n) k = 1n;
+
+    return k;
+  }
+
+  /**
+   * Convert BigInt to 32-byte array
+   *
+   * @private
+   */
+  private _bigIntToBytes(n: bigint): Uint8Array<ArrayBuffer> {
+    const hex = n.toString(16).padStart(64, "0");
+    const bytes: Uint8Array<ArrayBuffer> = new Uint8Array(32);
+    for (let i = 0; i < 32; i++) {
+      bytes[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+    }
+    return bytes;
+  }
 }
