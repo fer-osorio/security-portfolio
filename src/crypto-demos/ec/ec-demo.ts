@@ -1,62 +1,69 @@
 /**
  * ============================================================================
- * ELLIPTIC CURVE EXPLORER - UI CONTROLLER (REFACTORED)
+ * ELLIPTIC CURVE EXPLORER - UI CONTROLLER
  *
- * REFACTORING CHANGES:
- * 1. Separated real curve visualization (Tab 1) from finite field (Tab 2)
- * 2. Created two separate canvas visualizers (one per tab)
- * 3. Removed mode toggle - each tab has dedicated mode
- * 4. Simplified curve selectors - only appropriate curves per tab
- * 5. Co-located finite field visualization with point operations
- *
- * This module handles all user interactions and updates the DOM.
+ * Handles all user interactions and DOM updates.
  * Acts as the "controller" in MVC architecture.
+ *
+ * STATE:
+ * - realCurveVisualizer   — Tab 1 (real numbers)
+ * - finiteCurveVisualizer — Tab 2 (finite field)
+ * - finiteCurveVisualizer — Tab 2 (finite field)
+ * - ecdsaState            — persists signing context for verification step
  *
  * ============================================================================
  */
 
+import '../../dark-mode-toggle';
+import { ECVisualizer, FiniteFieldCurve, RealCurve } from './ec-visualization';
+import { EllipticCurve, ECDH, ECDSA, getCurve, ECKeyPair, ECDSASignature } from './ec-core';
+import { isDivisibleBySmallPrime } from '../rsa/math-utils';
+import { UIUtils } from '../../ui-utils';
+import { Config } from '../../config';
+import {
+    displayWelcomeMessage,
+    displayRealCurveInfo,
+    displayFiniteCurveInfo,
+    displayPointOperationResult,
+    displayScalarMultiplyResult,
+    displayECDHResults,
+    displayECDSASignResults,
+    displayECDSAVerifyResults,
+} from './ec-display';
+
 // ============================================================================
-// GLOBAL STATE
+// MODULE-LEVEL STATE
 // ============================================================================
 
-// Two separate visualizers instead of one with mode toggle
-let realCurveVisualizer = null;      // Tab 1: Real number curves
-let finiteCurveVisualizer = null;    // Tab 2: Finite field curves
-let currentFiniteCurve = null;       // Currently selected finite field curve
+let realCurveVisualizer:   ECVisualizer | null = null;
+let finiteCurveVisualizer: ECVisualizer | null = null;
+
+interface ECDSAState {
+    curve:     EllipticCurve;
+    keyPair:   ECKeyPair;
+    message:   string;
+    signature: ECDSASignature;
+}
+let ecdsaState: ECDSAState | null = null;
 
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
 
-/**
- * Initialize the ECC demo when page loads
- */
 document.addEventListener('DOMContentLoaded', function() {
     console.log('ECC Explorer initialized');
 
-    // Set up event listeners
     setupEventListeners();
-
-    // Initialize both visualizers
     initializeVisualizers();
-
-    // Load default curves
     loadDefaultCurves();
-
-    // Display welcome message
-    ECDisplay.displayWelcomeMessage();
+    displayWelcomeMessage();
 });
 
 // ============================================================================
 // EVENT HANDLER SETUP
 // ============================================================================
 
-/**
- * Set up all event listeners for user interactions
- */
-function setupEventListeners() {
-    // Separate curve selectors for each tab
-
+function setupEventListeners(): void {
     // Tab 1: Real curve selection
     const realCurveSelect = document.getElementById('real-curve-select');
     if (realCurveSelect) {
@@ -70,13 +77,12 @@ function setupEventListeners() {
     }
 
     // Custom curve parameters (Tab 1 - Real)
-    const realCustomInputs = ['real-a', 'real-b'];
-    realCustomInputs.forEach(id => {
+    for (const id of ['real-a', 'real-b']) {
         const input = document.getElementById(id);
         if (input) {
             input.addEventListener('input', handleRealCustomCurve);
         }
-    });
+    }
 
     // Custom curve parameters (Tab 2 - Finite)
     const applyFiniteBtn = document.getElementById('apply-finite-custom-btn');
@@ -123,15 +129,14 @@ function setupEventListeners() {
     }
 
     // Auto-fill verify message with signed message
-    const ecdsaMessage = document.getElementById('ecdsa-message');
-    const ecdsaVerifyMessage = document.getElementById('ecdsa-verify-message');
+    const ecdsaMessage       = document.getElementById('ecdsa-message')        as HTMLInputElement | null;
+    const ecdsaVerifyMessage = document.getElementById('ecdsa-verify-message') as HTMLInputElement | null;
     if (ecdsaMessage && ecdsaVerifyMessage) {
         ecdsaMessage.addEventListener('input', () => {
             ecdsaVerifyMessage.value = ecdsaMessage.value;
         });
     }
 
-    // Use shared utilities for common patterns
     UIUtils.setupCopyButtons();
     UIUtils.setupTabs();
 }
@@ -140,32 +145,29 @@ function setupEventListeners() {
 // INITIALIZATION FUNCTIONS
 // ============================================================================
 
-/**
- * Initialize both canvas visualizers
- */
-function initializeVisualizers() {
+function initializeVisualizers(): void {
     // Tab 1: Real curve visualizer
     try {
         realCurveVisualizer = new ECVisualizer('real-curve-canvas', {
-            mode: 'real',  // Fixed mode
+            mode: 'real',
             minX: -8,
             maxX: 8,
             minY: -8,
-            maxY: 8
+            maxY: 8,
         });
         console.log('Real curve visualizer initialized');
     } catch (error) {
         console.error('Failed to initialize real curve visualizer:', error);
     }
 
-    // Tab 2: Finite field visualizer (in hidden tab initially)
+    // Tab 2: Finite field visualizer
     try {
         finiteCurveVisualizer = new ECVisualizer('finite-curve-canvas', {
-            mode: 'finite',  // Fixed mode
+            mode: 'finite',
             minX: -1,
             maxX: 30,
             minY: -1,
-            maxY: 30
+            maxY: 30,
         });
         console.log('Finite curve visualizer initialized (will resize when tab becomes visible)');
     } catch (error) {
@@ -173,37 +175,30 @@ function initializeVisualizers() {
     }
 }
 
-/**
- * Load default curves on startup
- *
- * Load appropriate default for each tab
- */
-function loadDefaultCurves() {
+function loadDefaultCurves(): void {
     // Tab 1: Default real curve (y² = x³ + 7, like secp256k1)
-    const defaultRealCurve = {
+    const defaultRealCurve: RealCurve = {
         name: 'y² = x³ + 7',
         a: 0,
-        b: 7
+        b: 7,
     };
 
     if (realCurveVisualizer) {
         realCurveVisualizer.setCurve(defaultRealCurve);
-        ECDisplay.displayRealCurveInfo(defaultRealCurve);
+        displayRealCurveInfo(defaultRealCurve);
     }
 
     // Tab 2: Default finite field curve (small for visualization)
-    const defaultFiniteCurve = {
+    const defaultFiniteCurve: FiniteFieldCurve = {
         name: 'E(F₂₃): y² = x³ + 7',
         a: 0n,
         b: 7n,
-        p: 23n
+        p: 23n,
     };
-
-    currentFiniteCurve = defaultFiniteCurve;
 
     if (finiteCurveVisualizer) {
         finiteCurveVisualizer.setCurve(defaultFiniteCurve);
-        ECDisplay.displayFiniteCurveInfo(defaultFiniteCurve);
+        displayFiniteCurveInfo(defaultFiniteCurve);
     }
 }
 
@@ -211,18 +206,14 @@ function loadDefaultCurves() {
 // TAB 1: REAL CURVE HANDLERS
 // ============================================================================
 
-/**
- * Handle real curve selection change
- *
- * Handler for Tab 1 only
- */
-function handleRealCurveChange() {
-    const select = document.getElementById('real-curve-select');
+function handleRealCurveChange(): void {
+    const select = document.getElementById('real-curve-select') as HTMLSelectElement | null;
+    if (!select) return;
+
     const value = select.value;
+    let curve: RealCurve;
 
-    let curve;
-
-    switch(value) {
+    switch (value) {
         case 'koblitz':
             curve = { name: 'y² = x³ + 7', a: 0, b: 7 };
             hideCustomRealParams();
@@ -239,53 +230,49 @@ function handleRealCurveChange() {
             showCustomRealParams();
             handleRealCustomCurve();
             return;
+        default:
+            return;
     }
 
     if (realCurveVisualizer) {
         realCurveVisualizer.setCurve(curve);
-        ECDisplay.displayRealCurveInfo(curve);
+        displayRealCurveInfo(curve);
     }
 }
 
-/**
- * Handle custom real curve parameter changes
- *
- * Handler for Tab 1 custom curves
- */
-function handleRealCustomCurve() {
-    const a = parseFloat(document.getElementById('real-a').value) || 0;
-    const b = parseFloat(document.getElementById('real-b').value) || 0;
+function handleRealCustomCurve(): void {
+    const aEl = document.getElementById('real-a') as HTMLInputElement | null;
+    const bEl = document.getElementById('real-b') as HTMLInputElement | null;
+
+    const a = aEl ? (parseFloat(aEl.value) || 0) : 0;
+    const b = bEl ? (parseFloat(bEl.value) || 0) : 0;
 
     // Update display values
-    document.getElementById('real-a-value').textContent = a;
-    document.getElementById('real-b-value').textContent = b;
+    const aValueEl = document.getElementById('real-a-value');
+    const bValueEl = document.getElementById('real-b-value');
+    if (aValueEl) aValueEl.textContent = String(a);
+    if (bValueEl) bValueEl.textContent = String(b);
 
-    const curve = {
+    const curve: RealCurve = {
         name: `y² = x³ + ${a}x + ${b}`,
-        a: a,
-        b: b
+        a,
+        b,
     };
 
     if (realCurveVisualizer) {
         realCurveVisualizer.setCurve(curve);
-        ECDisplay.displayRealCurveInfo(curve);
+        displayRealCurveInfo(curve);
     }
 }
 
-/**
- * Show custom real curve parameter controls
- */
-function showCustomRealParams() {
+function showCustomRealParams(): void {
     const customDiv = document.getElementById('custom-real-params');
     if (customDiv) {
         customDiv.style.display = 'block';
     }
 }
 
-/**
- * Hide custom real curve parameter controls
- */
-function hideCustomRealParams() {
+function hideCustomRealParams(): void {
     const customDiv = document.getElementById('custom-real-params');
     if (customDiv) {
         customDiv.style.display = 'none';
@@ -296,58 +283,43 @@ function hideCustomRealParams() {
 // TAB 2: FINITE FIELD CURVE HANDLERS
 // ============================================================================
 
-/**
- * Handle finite field curve selection change
- *
- * Handler for Tab 2 only
- */
-function handleFiniteCurveChange() {
-    const select = document.getElementById('finite-curve-select');
+function handleFiniteCurveChange(): void {
+    const select = document.getElementById('finite-curve-select') as HTMLSelectElement | null;
+    if (!select) return;
+
     const value = select.value;
+    let curve: FiniteFieldCurve;
 
-    let curve;
-
-    switch(value) {
+    switch (value) {
         case 'test-23':
-            curve = {
-                name: 'E(F₂₃): y² = x³ + 7',
-                a: 0n,
-                b: 7n,
-                p: 23n
-            };
+            curve = { name: 'E(F₂₃): y² = x³ + 7', a: 0n, b: 7n, p: 23n };
             hideCustomFiniteParams();
             break;
         case 'test-97':
-            curve = {
-                name: 'E(F₉₇): y² = x³ + 2x + 3',
-                a: 2n,
-                b: 3n,
-                p: 97n
-            };
+            curve = { name: 'E(F₉₇): y² = x³ + 2x + 3', a: 2n, b: 3n, p: 97n };
             hideCustomFiniteParams();
             break;
         case 'custom':
             showCustomFiniteParams();
             return;
+        default:
+            return;
     }
-
-    currentFiniteCurve = curve;
 
     if (finiteCurveVisualizer) {
         finiteCurveVisualizer.setCurve(curve);
-        ECDisplay.displayFiniteCurveInfo(curve);
+        displayFiniteCurveInfo(curve);
     }
 }
 
-/**
- * Handle custom finite field curve application
- *
- * Handler for Tab 2 custom curves
- */
-function handleFiniteCustomCurve() {
-    const a = BigInt(document.getElementById('finite-a').value || 0);
-    const b = BigInt(document.getElementById('finite-b').value || 0);
-    const p = BigInt(document.getElementById('finite-p').value || 23);
+function handleFiniteCustomCurve(): void {
+    const aEl = document.getElementById('finite-a') as HTMLInputElement | null;
+    const bEl = document.getElementById('finite-b') as HTMLInputElement | null;
+    const pEl = document.getElementById('finite-p') as HTMLInputElement | null;
+
+    const a = BigInt(aEl?.value || '0');
+    const b = BigInt(bEl?.value || '0');
+    const p = BigInt(pEl?.value || '23');
 
     // Validate prime (basic check)
     if (p < 2n) {
@@ -359,51 +331,47 @@ function handleFiniteCustomCurve() {
         UIUtils.showWarning('Large primes may not visualize well');
     }
 
-    // If number p is not a prime, disable point operations; enable them otherwise
-    if(MathUtils.isDivisibleBySmallPrime(p)){
-        document.getElementById("point-add-btn").disabled = true;
-        document.getElementById("point-double-btn").disabled = true;
-        document.getElementById('scalar-input').disabled = true;
-        document.getElementById("scalar-multiply-btn").disabled = true;
-        document.getElementById("clear-selection-btn").disabled = true;
+    // If p is not prime, disable point operations; enable them otherwise
+    const notPrime = isDivisibleBySmallPrime(p);
+
+    const buttonIds: string[] = [
+        'point-add-btn',
+        'point-double-btn',
+        'scalar-multiply-btn',
+        'clear-selection-btn',
+    ];
+    for (const id of buttonIds) {
+        const btn = document.getElementById(id) as HTMLButtonElement | null;
+        if (btn) btn.disabled = notPrime;
+    }
+    const scalarInput = document.getElementById('scalar-input') as HTMLInputElement | null;
+    if (scalarInput) scalarInput.disabled = notPrime;
+
+    if (notPrime) {
         UIUtils.showError('Provided number p is not a prime, point operations are disabled');
-    } else {
-        document.getElementById("point-add-btn").disabled = false;
-        document.getElementById("point-double-btn").disabled = false;
-        document.getElementById('scalar-input').disabled = false;
-        document.getElementById("scalar-multiply-btn").disabled = false;
-        document.getElementById("clear-selection-btn").disabled = false;
     }
 
-    const curve = {
+    const curve: FiniteFieldCurve = {
         name: `E(F₍${p}₎): y² = x³ + ${a}x + ${b}`,
-        a: a,
-        b: b,
-        p: p
+        a,
+        b,
+        p,
     };
-
-    currentFiniteCurve = curve;
 
     if (finiteCurveVisualizer) {
         finiteCurveVisualizer.setCurve(curve);
-        ECDisplay.displayFiniteCurveInfo(curve);
+        displayFiniteCurveInfo(curve);
     }
 }
 
-/**
- * Show custom finite curve parameter controls
- */
-function showCustomFiniteParams() {
+function showCustomFiniteParams(): void {
     const customDiv = document.getElementById('custom-finite-params');
     if (customDiv) {
         customDiv.style.display = 'block';
     }
 }
 
-/**
- * Hide custom finite curve parameter controls
- */
-function hideCustomFiniteParams() {
+function hideCustomFiniteParams(): void {
     const customDiv = document.getElementById('custom-finite-params');
     if (customDiv) {
         customDiv.style.display = 'none';
@@ -414,10 +382,7 @@ function hideCustomFiniteParams() {
 // POINT OPERATION HANDLERS (TAB 2 ONLY)
 // ============================================================================
 
-/**
- * Handle point addition
- */
-async function handlePointAddition() {
+async function handlePointAddition(): Promise<void> {
     if (!finiteCurveVisualizer) {
         UIUtils.showError('Finite curve visualizer not initialized');
         return;
@@ -436,20 +401,23 @@ async function handlePointAddition() {
 
     try {
         await finiteCurveVisualizer.animatePointAddition(P, Q, (result) => {
-            ECDisplay.displayPointOperationResult('Point Addition', P, Q, result, 'P + Q');
+            displayPointOperationResult({
+                operation: 'Point Addition',
+                P,
+                Q,
+                result,
+                notation: 'P + Q',
+            });
         });
     } catch (error) {
         console.error('Point addition failed:', error);
-        UIUtils.showError('Point addition failed: ' + error.message);
+        UIUtils.showError('Point addition failed: ' + (error as Error).message);
     } finally {
         UIUtils.hideLoading('operation-results');
     }
 }
 
-/**
- * Handle point doubling
- */
-async function handlePointDoubling() {
+async function handlePointDoubling(): Promise<void> {
     if (!finiteCurveVisualizer) {
         UIUtils.showError('Finite curve visualizer not initialized');
         return;
@@ -468,20 +436,23 @@ async function handlePointDoubling() {
 
     try {
         await finiteCurveVisualizer.animatePointAddition(P, P, (result) => {
-            ECDisplay.displayPointOperationResult('Point Doubling', P, P, result, '2P');
+            displayPointOperationResult({
+                operation: 'Point Doubling',
+                P,
+                Q: P,
+                result,
+                notation: '2P',
+            });
         });
     } catch (error) {
         console.error('Point doubling failed:', error);
-        UIUtils.showError('Point doubling failed: ' + error.message);
+        UIUtils.showError('Point doubling failed: ' + (error as Error).message);
     } finally {
         UIUtils.hideLoading('operation-results');
     }
 }
 
-/**
- * Handle scalar multiplication
- */
-async function handleScalarMultiply() {
+async function handleScalarMultiply(): Promise<void> {
     if (!finiteCurveVisualizer) {
         UIUtils.showError('Finite curve visualizer not initialized');
         return;
@@ -496,8 +467,7 @@ async function handleScalarMultiply() {
 
     const P = selected[0];
 
-    // Get scalar from input
-    const scalarInput = document.getElementById('scalar-input');
+    const scalarInput = document.getElementById('scalar-input') as HTMLInputElement | null;
     if (!scalarInput || !scalarInput.value) {
         UIUtils.showError('Please enter a scalar value');
         return;
@@ -514,20 +484,17 @@ async function handleScalarMultiply() {
 
     try {
         await finiteCurveVisualizer.animateScalarMultiplication(k, P, (result) => {
-            ECDisplay.displayScalarMultiplyResult(k, P, result);
+            displayScalarMultiplyResult(k, P, result);
         });
     } catch (error) {
         console.error('Scalar multiplication failed:', error);
-        UIUtils.showError('Scalar multiplication failed: ' + error.message);
+        UIUtils.showError('Scalar multiplication failed: ' + (error as Error).message);
     } finally {
         UIUtils.hideLoading('operation-results');
     }
 }
 
-/**
- * Handle clear selection
- */
-function handleClearSelection() {
+function handleClearSelection(): void {
     if (finiteCurveVisualizer) {
         finiteCurveVisualizer.clearSelection();
     }
@@ -539,22 +506,12 @@ function handleClearSelection() {
 // ECDH PROTOCOL HANDLERS
 // ============================================================================
 
-/**
- * Handle ECDH demonstration
- */
-async function handleECDH() {
-    // Get curve selection
-    const ecdhCurveSelect = document.getElementById('ecdh-curve-select');
-    const curveName = ecdhCurveSelect.value;
+async function handleECDH(): Promise<void> {
+    const ecdhCurveSelect = document.getElementById('ecdh-curve-select') as HTMLSelectElement | null;
+    if (!ecdhCurveSelect) return;
 
-    let curve;
-    if (curveName === 'test-small') {
-        curve = { name: 'Test (p=23)', a: 0n, b: 7n, p: 23n, n: 28n, h: 1n };
-        // Need to set generator
-        curve.G = new ECMathUtils.Point(6n, 4n, curve);
-    } else {
-        curve = ECCore.getCurve(curveName);
-    }
+    const curveName = ecdhCurveSelect.value;
+    const curve     = getCurve(curveName);
 
     if (!curve) {
         UIUtils.showError('Invalid curve selected');
@@ -564,28 +521,30 @@ async function handleECDH() {
     UIUtils.showLoading('ecdh-results', 'Performing ECDH key exchange...');
 
     try {
-        const ecdh = new ECCore.ECDH(curve);
+        const ecdh = new ECDH(curve);
 
-        // Alice generates keys
         const alice = ecdh.generateKeyPair();
+        const bob   = ecdh.generateKeyPair();
 
-        // Bob generates keys
-        const bob = ecdh.generateKeyPair();
-
-        // Compute shared secrets
         const aliceSecret = ecdh.computeSharedSecret(alice.privateKey, bob.publicKey);
-        const bobSecret = ecdh.computeSharedSecret(bob.privateKey, alice.publicKey);
+        const bobSecret   = ecdh.computeSharedSecret(bob.privateKey, alice.publicKey);
 
-        // Derive session keys
-        const aliceSessionKey = await ecdh.deriveKey(aliceSecret, 'ECDH-Demo');
-        const bobSessionKey = await ecdh.deriveKey(bobSecret, 'ECDH-Demo');
+        const aliceKey = await ecdh.deriveKey(aliceSecret, 'ECDH-Demo');
+        const bobKey   = await ecdh.deriveKey(bobSecret, 'ECDH-Demo');
 
-        // Display results
-        ECDisplay.displayECDHResults(curve, alice, bob, aliceSecret, bobSecret, aliceSessionKey, bobSessionKey);
+        displayECDHResults({
+            curve,
+            alice,
+            bob,
+            aliceSecret,
+            bobSecret,
+            aliceKey,
+            bobKey,
+        });
 
     } catch (error) {
         console.error('ECDH failed:', error);
-        UIUtils.showError('ECDH key exchange failed: ' + error.message);
+        UIUtils.showError('ECDH key exchange failed: ' + (error as Error).message);
     } finally {
         UIUtils.hideLoading('ecdh-results');
     }
@@ -595,28 +554,22 @@ async function handleECDH() {
 // ECDSA PROTOCOL HANDLERS
 // ============================================================================
 
-/**
- * Handle ECDSA signing
- */
-async function handleECDSASign() {
-    const message = document.getElementById('ecdsa-message').value.trim();
+async function handleECDSASign(): Promise<void> {
+    const messageEl = document.getElementById('ecdsa-message') as HTMLInputElement | null;
+    if (!messageEl) return;
+
+    const message = messageEl.value.trim();
 
     if (!message) {
         UIUtils.showError('Please enter a message to sign');
         return;
     }
 
-    // Get curve selection
-    const ecdsaCurveSelect = document.getElementById('ecdsa-curve-select');
-    const curveName = ecdsaCurveSelect.value;
+    const ecdsaCurveSelect = document.getElementById('ecdsa-curve-select') as HTMLSelectElement | null;
+    if (!ecdsaCurveSelect) return;
 
-    let curve;
-    if (curveName === 'test-small') {
-        curve = { name: 'Test (p=23)', a: 0n, b: 7n, p: 23n, n: 28n, h: 1n };
-        curve.G = new ECMathUtils.Point(5n, 4n, curve);
-    } else {
-        curve = ECCore.getCurve(curveName);
-    }
+    const curveName = ecdsaCurveSelect.value;
+    const curve     = getCurve(curveName);
 
     if (!curve) {
         UIUtils.showError('Invalid curve selected');
@@ -626,50 +579,40 @@ async function handleECDSASign() {
     UIUtils.showLoading('ecdsa-results', 'Generating signature...');
 
     try {
-        const ecdsa = new ECCore.ECDSA(curve);
-
-        // Generate key pair
+        const ecdsa   = new ECDSA(curve);
         const keyPair = ecdsa.generateKeyPair();
 
-        // Sign message
         const signature = await ecdsa.sign(message, keyPair.privateKey);
 
-        // Store for verification
-        window.ecdsaState = {
-            curve,
-            keyPair,
-            message,
-            signature
-        };
+        // Store for verification step
+        ecdsaState = { curve, keyPair, message, signature };
 
-        // Display signing results
-        ECDisplay.displayECDSASignResults(curve, message, keyPair, signature);
+        displayECDSASignResults({ curve, message, keyPair, signature });
 
         // Enable verify button
-        const verifyBtn = document.getElementById('ecdsa-verify-btn');
+        const verifyBtn = document.getElementById('ecdsa-verify-btn') as HTMLButtonElement | null;
         if (verifyBtn) verifyBtn.disabled = false;
 
     } catch (error) {
         console.error('ECDSA signing failed:', error);
-        UIUtils.showError('Signature generation failed: ' + error.message);
+        UIUtils.showError('Signature generation failed: ' + (error as Error).message);
     } finally {
         UIUtils.hideLoading('ecdsa-results');
     }
 }
 
-/**
- * Handle ECDSA verification
- */
-async function handleECDSAVerify() {
-    if (!window.ecdsaState) {
+async function handleECDSAVerify(): Promise<void> {
+    if (!ecdsaState) {
         UIUtils.showError('Please sign a message first');
         return;
     }
 
-    const { curve, keyPair, message, signature } = window.ecdsaState;
+    const { curve, keyPair, message, signature } = ecdsaState;
 
-    // Get verification message (may be different)
-    const verifyMessage = document.getElementById('ecdsa-verify-message').value.trim();
+    const verifyMessageEl = document.getElementById('ecdsa-verify-message') as HTMLInputElement | null;
+    if (!verifyMessageEl) return;
+
+    const verifyMessage = verifyMessageEl.value.trim();
 
     if (!verifyMessage) {
         UIUtils.showError('Please enter a message to verify');
@@ -679,18 +622,22 @@ async function handleECDSAVerify() {
     UIUtils.showLoading('ecdsa-verify-results', 'Verifying signature...');
 
     try {
-        const ecdsa = new ECCore.ECDSA(curve);
-
-        // Verify signature
+        const ecdsa   = new ECDSA(curve);
         const isValid = await ecdsa.verify(verifyMessage, signature, keyPair.publicKey);
 
-        // Display verification results
-        ECDisplay.displayECDSAVerifyResults(verifyMessage, message, signature, isValid);
+        displayECDSAVerifyResults({
+            verifyMessage,
+            originalMessage: message,
+            signature,
+            isValid,
+        });
 
     } catch (error) {
         console.error('ECDSA verification failed:', error);
-        UIUtils.showError('Signature verification failed: ' + error.message);
+        UIUtils.showError('Signature verification failed: ' + (error as Error).message);
     } finally {
         UIUtils.hideLoading('ecdsa-verify-results');
     }
 }
+
+export {};

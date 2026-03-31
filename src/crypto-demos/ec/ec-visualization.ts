@@ -9,56 +9,109 @@
  * 1. Real curve: y² = x³ + ax + b over ℝ (smooth, continuous)
  * 2. Finite field: Points satisfying equation mod p (discrete scatter plot)
  *
- * INTERACTIVE FEATURES:
- * - Click points to select them
- * - Animate point addition (chord-and-tangent method)
- * - Animate scalar multiplication (repeated doubling)
- * - Pan and zoom for exploration
- *
- * MATHEMATICAL VISUALIZATION:
- * - Geometric interpretation of point addition
- * - Tangent lines for point doubling
- * - Reflection across x-axis
- * - Identity element (point at infinity)
- *
- * This bridges the gap between:
- * - Abstract algebra (group operations)
- * - Analytic geometry (curves, lines, intersections)
- * - Finite field arithmetic (discrete points)
+ * DISCRIMINATED UNION:
+ * VisualizerCurve = RealCurve | FiniteFieldCurve
+ * Narrowed throughout via `'p' in curve` (p only exists on FiniteFieldCurve).
  *
  * ============================================================================
  */
+
+import { Point, pointAdd, pointDouble } from './ec-math-utils';
+import { modSqrt, modAdd, modMul, isDivisibleBySmallPrime } from '../rsa/math-utils';
+import { Config } from '../../config';
+import { UIUtils } from '../../ui-utils';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+export interface ECVisualizerOptions {
+    mode?:  'real' | 'finite';
+    minX?:  number;
+    maxX?:  number;
+    minY?:  number;
+    maxY?:  number;
+}
+
+/** Private to module — not exported */
+interface Viewport {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+}
+
+export interface RealCurve {
+    name: string;
+    a:    number;
+    b:    number;
+}
+
+export interface FiniteFieldCurve {
+    name: string;
+    a:    bigint;
+    b:    bigint;
+    p:    bigint;
+}
+
+export type VisualizerCurve = RealCurve | FiniteFieldCurve;
+
+/** Finite-field point with BigInt coordinates */
+interface FiniteFieldPoint { x: bigint; y: bigint }
+
+/** Canvas-space coordinate pair */
+interface CanvasCoord { x: number; y: number }
+
+type PointAdditionCallback  = (result: Point) => void;
+type ScalarMultiplyCallback = (result: Point) => void;
+
+// ============================================================================
+// ELLIPTIC CURVE VISUALIZER
+// ============================================================================
 
 /**
  * Elliptic Curve Visualizer
  *
  * Manages canvas rendering and animation for elliptic curve operations
  */
-class ECVisualizer {
-    /**
-     * @param {String} canvasId - Canvas element ID
-     * @param {Object} options - Visualization options
-     */
-    constructor(canvasId, options = {}) {
-        this.canvas = document.getElementById(canvasId);
-        if (!this.canvas) {
+export class ECVisualizer {
+    private canvas:         HTMLCanvasElement;
+    private ctx:            CanvasRenderingContext2D;
+    private mode:           'real' | 'finite';
+    private curve:          VisualizerCurve | null;
+    private viewport:       Viewport;
+    private selectedPoints: FiniteFieldPoint[];
+    private isAnimating: boolean;
+    private colors:      typeof Config.ECC.COLORS;
+    private pointRadius:    number;
+    private width:          number;
+    private height:         number;
+
+    constructor(canvasId: string, options: ECVisualizerOptions = {}) {
+        const canvas = document.getElementById(canvasId) as HTMLCanvasElement | null;
+        if (!canvas) {
             throw new Error(`Canvas element '${canvasId}' not found`);
         }
+        this.canvas = canvas;
 
-        this.ctx = this.canvas.getContext('2d');
+        const ctx = this.canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error(`Failed to get 2D context for canvas '${canvasId}'`);
+        }
+        this.ctx = ctx;
 
         // Visualization mode: 'real' or 'finite'
-        this.mode = options.mode || 'real';
+        this.mode = options.mode ?? 'real';
 
         // Current curve (will be set via setCurve)
         this.curve = null;
 
-        // Viewport settings (for panning and zooming)
+        // Viewport settings
         this.viewport = {
-            minX: options.minX || -16,
-            maxX: options.maxX || 16,
-            minY: options.minY || -16,
-            maxY: options.maxY || 16
+            minX: options.minX ?? -16,
+            maxX: options.maxX ?? 16,
+            minY: options.minY ?? -16,
+            maxY: options.maxY ?? 16,
         };
 
         // Selected points (for interactive operations)
@@ -66,7 +119,6 @@ class ECVisualizer {
 
         // Animation state
         this.isAnimating = false;
-        this.animationFrame = null;
 
         // Colors from Config
         this.colors = Config.ECC.COLORS;
@@ -75,11 +127,10 @@ class ECVisualizer {
         this.pointRadius = Config.ECC.POINT_RADIUS.BIG;
 
         // Set default dimensions before first resize attempt
-        // This ensures canvas has non-zero dimensions even in hidden tabs
-        this.canvas.width = 800;
+        this.canvas.width  = 800;
         this.canvas.height = 600;
-        this.width = 800;
-        this.height = 600;
+        this.width         = 800;
+        this.height        = 600;
 
         // Resize canvas to fill container
         this.resizeCanvas();
@@ -91,94 +142,82 @@ class ECVisualizer {
     /**
      * Resize canvas to match display size (for high DPI displays)
      *
-     * FIX: Handle case where canvas is in hidden tab (getBoundingClientRect returns 0x0)
-     * If dimensions are zero, fall back to CSS-defined dimensions or sensible defaults
+     * Handles the case where the canvas is in a hidden tab (0×0 rect).
      */
-    resizeCanvas() {
-        // Get dimensions from parent container, not canvas itself
-        // Canvas has width: 100%, so its getBoundingClientRect() returns resolved min-width
-        // We want the container's width instead
+    resizeCanvas(): void {
         const container = this.canvas.parentElement;
-        const rect = container ? container.getBoundingClientRect() : this.canvas.getBoundingClientRect();
+        const rect = container
+            ? container.getBoundingClientRect()
+            : this.canvas.getBoundingClientRect();
 
-        // If canvas is hidden (0x0), use fallback dimensions
-        let width = rect.width;
+        let width  = rect.width;
         let height = rect.height;
 
         if (width === 0 || height === 0) {
             // Try to get dimensions from CSS
             const style = window.getComputedStyle(this.canvas);
-            width = parseInt(style.width) || 800;   // Fallback to 800px
-            height = parseInt(style.height) || 600; // Fallback to 600px
-
+            width  = parseInt(style.width)  || 800;
+            height = parseInt(style.height) || 600;
             console.log(`Canvas ${this.canvas.id} dimensions from computed style: ${width}x${height}`);
         }
 
         // Set actual size in memory (scaled for high DPI)
         const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = width * dpr;
+        this.canvas.width  = width  * dpr;
         this.canvas.height = height * dpr;
 
         // Scale context to match
         this.ctx.scale(dpr, dpr);
 
         // Set display size (CSS pixels)
-        this.canvas.style.width = width + 'px';
+        this.canvas.style.width  = width  + 'px';
         this.canvas.style.height = height + 'px';
 
         // Store dimensions for coordinate conversion
-        this.width = width;
+        this.width  = width;
         this.height = height;
 
-        console.log(`Canvas ${this.canvas.id} resized to ${width}x${height} (display) / ${this.canvas.width}x${this.canvas.height} (internal)`);
+        console.log(
+            `Canvas ${this.canvas.id} resized to ${width}x${height} (display) / ` +
+            `${this.canvas.width}x${this.canvas.height} (internal)`,
+        );
     }
 
     /**
      * Set up mouse/touch event listeners for interactivity
      */
-    setupEventListeners() {
-        // Click to select points
+    setupEventListeners(): void {
         this.canvas.addEventListener('click', (e) => this.handleClick(e));
 
-        // Resize on window resize
         window.addEventListener('resize', () => {
             this.resizeCanvas();
             this.render();
         });
 
-        // Re-resize when tab becomes visible
         this.canvas.addEventListener('tab-visible', () => {
             console.log(`Canvas ${this.canvas.id} tab became visible - resizing`);
             this.resizeCanvas();
             this.render();
         });
 
-        // Set up toggle button if it exists
         const toggleBtn = document.getElementById('theme-toggle');
         if (toggleBtn) {
-            // If theme changes, render again with proper colors
             toggleBtn.addEventListener('click', () => {
                 this.render();
-            }
-
-            );
+            });
         }
-
-
     }
 
     /**
      * Set curve to visualize
-     *
-     * @param {Object} curve - Curve parameters {a, b, p} or EllipticCurve
      */
-    setCurve(curve) {
+    setCurve(curve: VisualizerCurve): void {
         this.curve = curve;
 
         // Auto-adjust viewport based on mode
-        if (this.mode === 'finite' && curve.p) {
+        if (this.mode === 'finite' && 'p' in curve) {
             // Primality test for p
-            if (MathUtils.isDivisibleBySmallPrime(curve.p)) {
+            if (isDivisibleBySmallPrime(curve.p)) {
                 throw new Error(`Number p (='${curve.p}') is not a prime`);
             }
             const p = Number(curve.p);
@@ -188,7 +227,7 @@ class ECVisualizer {
                     minX: -1,
                     maxX: p + 1,
                     minY: -1,
-                    maxY: p + 1
+                    maxY: p + 1,
                 };
             }
         }
@@ -203,19 +242,10 @@ class ECVisualizer {
     /**
      * Convert curve coordinates to canvas pixels
      *
-     * COORDINATE SYSTEMS:
-     * - Curve: Mathematical coordinates (can be large or negative)
-     * - Canvas: Pixel coordinates (0,0 at top-left, y increases downward)
-     *
-     * TRANSFORMATION:
      * x_pixel = (x_curve - minX) / (maxX - minX) * width
      * y_pixel = height - (y_curve - minY) / (maxY - minY) * height
-     *
-     * @param {Number} x - Curve x-coordinate
-     * @param {Number} y - Curve y-coordinate
-     * @returns {Object} - {x, y} in canvas pixels
      */
-    curveToCanvas(x, y) {
+    curveToCanvas(x: number, y: number): CanvasCoord {
         const xRange = this.viewport.maxX - this.viewport.minX;
         const yRange = this.viewport.maxY - this.viewport.minY;
 
@@ -227,16 +257,12 @@ class ECVisualizer {
 
     /**
      * Convert canvas pixels to curve coordinates
-     *
-     * @param {Number} canvasX - Canvas x-coordinate
-     * @param {Number} canvasY - Canvas y-coordinate
-     * @returns {Object} - {x, y} in curve coordinates
      */
-    canvasToCurve(canvasX, canvasY) {
+    canvasToCurve(canvasX: number, canvasY: number): { x: number; y: number } {
         const xRange = this.viewport.maxX - this.viewport.minX;
         const yRange = this.viewport.maxY - this.viewport.minY;
 
-        const x = (canvasX / this.width) * xRange + this.viewport.minX;
+        const x = (canvasX / this.width)             * xRange + this.viewport.minX;
         const y = ((this.height - canvasY) / this.height) * yRange + this.viewport.minY;
 
         return { x, y };
@@ -248,29 +274,17 @@ class ECVisualizer {
 
     /**
      * Main render function
-     *
-     * RENDERING ORDER:
-     * 1. Clear canvas
-     * 2. Draw axes
-     * 3. Draw curve
-     * 4. Draw selected points
-     * 5. Draw operation lines (if any)
      */
-    render() {
+    render(): void {
         if (!this.curve) return;
 
         // Clear canvas
         this.ctx.clearRect(0, 0, this.width, this.height);
 
-        // Get user's theme preference before drawing
-        const userPreference = localStorage.getItem("theme");
+        // Invert colors for dark theme
+        const userPreference = localStorage.getItem('theme');
         if (userPreference) {
-            // Elliptic curve colors are designed for light theme; inverting for dark theme
-            if (userPreference === 'dark') {
-                this.ctx.filter = 'invert(1)'
-            } else {
-                this.ctx.filter = 'none'
-            }
+            this.ctx.filter = userPreference === 'dark' ? 'invert(1)' : 'none';
         }
 
         // Draw coordinate axes
@@ -281,7 +295,6 @@ class ECVisualizer {
             this.drawRealCurve();
         } else if (this.mode === 'finite') {
             this.drawFiniteFieldCurve();
-            // Draw selected points
             this.drawSelectedPoints();
         }
     }
@@ -289,16 +302,21 @@ class ECVisualizer {
     /**
      * Draw coordinate axes with grid
      */
-    drawAxes() {
+    drawAxes(): void {
         const ctx = this.ctx;
 
         // Grid lines (light gray)
         ctx.strokeStyle = '#b0b0b0';
-        ctx.lineWidth = 0.5;
+        ctx.lineWidth   = 0.5;
+
+        const isSmallFinite =
+            this.mode === 'finite' &&
+            this.curve !== null &&
+            'p' in this.curve &&
+            this.curve.p < 50n;
 
         // Vertical grid lines
-        const xStep = this.mode === 'finite' && this.curve.p < 50 ? 1 :
-        (this.viewport.maxX - this.viewport.minX) / 16;
+        const xStep = isSmallFinite ? 1 : (this.viewport.maxX - this.viewport.minX) / 16;
         for (let x = Math.ceil(this.viewport.minX); x <= this.viewport.maxX; x += xStep) {
             const pos = this.curveToCanvas(x, 0);
             ctx.beginPath();
@@ -308,8 +326,7 @@ class ECVisualizer {
         }
 
         // Horizontal grid lines
-        const yStep = this.mode === 'finite' && this.curve.p < 50 ? 1 :
-        (this.viewport.maxY - this.viewport.minY) / 16;
+        const yStep = isSmallFinite ? 1 : (this.viewport.maxY - this.viewport.minY) / 16;
         for (let y = Math.ceil(this.viewport.minY); y <= this.viewport.maxY; y += yStep) {
             const pos = this.curveToCanvas(0, y);
             ctx.beginPath();
@@ -320,7 +337,7 @@ class ECVisualizer {
 
         // Main axes (darker)
         ctx.strokeStyle = '#333';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth   = 1.5;
 
         // X-axis
         const xAxisY = this.curveToCanvas(0, 0).y;
@@ -344,80 +361,61 @@ class ECVisualizer {
     /**
      * Draw curve over real numbers
      *
-     * APPROACH:
-     * 1. Sample x values densely
-     * 2. For each x, solve y² = x³ + ax + b
-     * 3. Plot both +y and -y solutions
-     * 4. Handle discontinuities (curve may have 1 or 2 components)
-     * 5. IMPROVED: Find exact roots when ySquared changes sign
-     *
-     * MATHEMATICAL NOTE:
-     * Curve may be disconnected if discriminant changes sign
-     * When ySquared transitions through zero, we find the exact root
-     * where the curve touches the x-axis
+     * Samples x values, solves y² = x³ + ax + b, plots ±y solutions.
+     * Uses bisection to find exact roots when ySquared changes sign.
      */
-    drawRealCurve() {
-        const ctx = this.ctx;
-        const { a, b } = this.curve;
+    drawRealCurve(): void {
+        if (!this.curve || 'p' in this.curve) return;
+        const curve = this.curve; // RealCurve
+
+        const ctx   = this.ctx;
+        const { a, b } = curve;
 
         ctx.strokeStyle = this.colors.CURVE;
-        ctx.lineWidth = 2;
+        ctx.lineWidth   = 2;
 
-        // Sample points
         const numSamples = 500;
-        const xStep = (this.viewport.maxX - this.viewport.minX) / numSamples;
+        const xStep      = (this.viewport.maxX - this.viewport.minX) / numSamples;
 
-        let upperPath = [];
-        let lowerPath = [];
-        let prevYSquared = null;
-        let prevX = null;
+        let upperPath: { x: number; y: number }[] = [];
+        let lowerPath: { x: number; y: number }[] = [];
+        let prevYSquared: number | null = null;
+        let prevX:        number | null = null;
 
         for (let i = 0; i <= numSamples; i++) {
-            const x = this.viewport.minX + i * xStep;
+            const x        = this.viewport.minX + i * xStep;
+            const ySquared = x * x * x + a * x + b;
 
-            // Compute y² = x³ + ax + b
-            const ySquared = x * x * x + Number(a) * x + Number(b);
-
-            // Handle exact zero (rare with floating-point, but possible with integer inputs)
-            if(ySquared === 0) {
-                if(prevYSquared > 0){
-                    // Ending, close current curve section
+            if (ySquared === 0) {
+                if (prevYSquared !== null && prevYSquared > 0) {
                     upperPath.push({ x, y: 0 });
                     lowerPath.push({ x, y: 0 });
-                    // Draw completed paths
                     if (upperPath.length > 1) {
                         this.drawPath(upperPath);
                         this.drawPath(lowerPath);
                     }
-                    // Start fresh paths
                     upperPath = [];
                     lowerPath = [];
                 } else {
-                    // Startgin, begin new curve section
                     upperPath = [{ x, y: 0 }];
                     lowerPath = [{ x, y: 0 }];
                 }
-            } else if (prevYSquared !== null && prevYSquared * ySquared < 0) {
-                // Sign change, find exact root between prevX and x
+            } else if (prevYSquared !== null && prevX !== null && prevYSquared * ySquared < 0) {
+                // Sign change — find exact root
                 const root = this.findCubicRoot(prevX, x, a, b);
                 if (root !== null) {
-                    // Add root point to close the gap
                     if (prevYSquared > 0 && ySquared < 0) {
-                        // Curve is ending (going from positive to negative)
+                        // Curve ending
                         upperPath.push({ x: root, y: 0 });
                         lowerPath.push({ x: root, y: 0 });
-
-                        // Draw completed paths
                         if (upperPath.length > 1) {
                             this.drawPath(upperPath);
                             this.drawPath(lowerPath);
                         }
-                        // Start fresh paths
                         upperPath = [];
                         lowerPath = [];
                     } else {
-                        // Curve is starting (going from negative to positive)
-                        // Start new paths from the root
+                        // Curve starting
                         upperPath = [{ x: root, y: 0 }];
                         lowerPath = [{ x: root, y: 0 }];
                     }
@@ -428,13 +426,10 @@ class ECVisualizer {
                 const y = Math.sqrt(ySquared);
                 upperPath.push({ x, y });
                 lowerPath.push({ x, y: -y });
-            } /*else if (upperPath.length > 0 && prevYSquared > 0) {
-                // Just transitioned to negative (already handled root above)
-                // Paths have been drawn, continue with empty paths
-            }*/
+            }
 
             prevYSquared = ySquared;
-            prevX = x;
+            prevX        = x;
         }
 
         // Draw remaining paths
@@ -447,98 +442,56 @@ class ECVisualizer {
     /**
      * Find root of x³ + ax + b = 0 in interval [x1, x2] using bisection
      *
-     * ALGORITHM: Bisection method
-     * Given f(x1) and f(x2) have opposite signs,
-     * repeatedly halve the interval until we find the root
-     *
-     * COMPLEXITY: O(log(1/ε)) where ε is desired precision
-     *
-     * WHY BISECTION:
-     * - Guaranteed to converge for continuous functions
-     * - Simple and robust
-     * - Fast enough for visualization (typical: 20-30 iterations)
-     *
-     * ALTERNATIVE: Newton's method (faster but can diverge)
-     *
-     * @param {Number} x1 - Left endpoint
-     * @param {Number} x2 - Right endpoint
-     * @param {Number} a - Curve parameter
-     * @param {Number} b - Curve parameter
-     * @returns {Number|null} - Root x where x³ + ax + b = 0
-     *
-     * EDUCATIONAL NOTE: Cardano's Formula
-     *
-     * We could use Cardano's analytical formula for x³ + ax + b = 0:
-     *
-     * For one real root (Δ < 0):
-     *   Δ = -4a³ - 27b²
-     *   x = ∛(-b/2 + √(-Δ/108)) + ∛(-b/2 - √(-Δ/108))
-     *
-     * However, for visualization purposes, bisection is preferred:
-     * 1. We only need the root in a specific interval [x₁, x₂]
-     * 2. Bisection handles all cases uniformly (no Δ > 0 special case)
-     * 3. Numerical stability is guaranteed
-     * 4. Simpler implementation = fewer bugs
-     *
-     * Cardano's formula is beautiful mathematically but overkill here.
-     * For finding ALL roots or symbolic analysis, Cardano would be ideal.
+     * ALGORITHM: Bisection method — guaranteed convergence for continuous functions.
+     * O(log(1/ε)) iterations for precision ε.
      */
-    findCubicRoot(x1, x2, a, b) {
-        const f = (x) => x * x * x + Number(a) * x + Number(b);
+    findCubicRoot(x1: number, x2: number, a: number, b: number): number | null {
+        const f = (x: number) => x * x * x + a * x + b;
 
-        const tolerance = 1e-3;  // Precision: 0.001
+        const tolerance    = 1e-3;
         const maxIterations = 25;
 
-        let left = x1;
-        let right = x2;
-        let fLeft = f(left);
+        let left   = x1;
+        let right  = x2;
+        let fLeft  = f(left);
         let fRight = f(right);
 
         // Sanity check: ensure opposite signs
         if (fLeft * fRight > 0) {
-            return null;  // No root in interval (shouldn't happen)
+            return null;
         }
 
-        // Bisection loop
         for (let iter = 0; iter < maxIterations; iter++) {
-            const mid = (left + right) / 2;
+            const mid  = (left + right) / 2;
             const fMid = f(mid);
 
-            // Check if we found the root (within tolerance)
             if (Math.abs(fMid) < tolerance) {
                 return mid;
             }
 
-            // Narrow the interval
             if (fLeft * fMid < 0) {
-                // Root is in left half
-                right = mid;
+                right  = mid;
                 fRight = fMid;
             } else {
-                // Root is in right half
-                left = mid;
+                left  = mid;
                 fLeft = fMid;
             }
 
-            // Check if interval is small enough
             if (Math.abs(right - left) < tolerance) {
                 return (left + right) / 2;
             }
         }
 
-        // Return midpoint if max iterations reached
         return (left + right) / 2;
     }
 
     /**
-     * Draw a path through points
-     *
-     * @param {Array} points - Array of {x, y} in curve coordinates
+     * Draw a path through points (in curve coordinates)
      */
-    drawPath(points) {
+    drawPath(points: { x: number; y: number }[]): void {
         if (points.length < 2) return;
 
-        const ctx = this.ctx;
+        const ctx   = this.ctx;
         ctx.beginPath();
 
         const start = this.curveToCanvas(points[0].x, points[0].y);
@@ -555,24 +508,21 @@ class ECVisualizer {
     /**
      * Draw curve over finite field F_p
      *
-     * APPROACH:
-     * 1. For each x ∈ [0, p), compute y² = x³ + ax + b (mod p)
-     * 2. Check if y² is a quadratic residue (has square root)
-     * 3. If yes, find y and plot both (x, y) and (x, -y)
-     *
-     * QUADRATIC RESIDUES:
-     * For prime p, exactly (p-1)/2 non-zero elements are QRs
-     * Use Euler's criterion: a^((p-1)/2) ≡ 1 (mod p) iff a is QR
+     * For each x ∈ [0, p), computes y² = x³ + ax + b (mod p) and
+     * plots both (x, y) and (x, -y) when a square root exists.
      */
-    drawFiniteFieldCurve() {
+    drawFiniteFieldCurve(): void {
+        if (!this.curve || !('p' in this.curve)) return;
+        const curve = this.curve; // FiniteFieldCurve
+
         const ctx = this.ctx;
-        const { a, b, p } = this.curve;
+        const { p } = curve;
 
         // Only plot if p is reasonably small
-        if (!p || p > BigInt(Config.ECC.MAX_POINT_AMOUNT)) {
-            ctx.fillStyle = '#666';
-            ctx.font = '14px sans-serif';
-            ctx.textAlign = 'center';
+        if (p > BigInt(Config.ECC.MAX_POINT_AMOUNT)) {
+            ctx.fillStyle   = '#666';
+            ctx.font        = '14px sans-serif';
+            ctx.textAlign   = 'center';
             ctx.fillText('Finite field too large to visualize', this.width / 2, this.height / 2);
             ctx.fillText(`(p = ${p})`, this.width / 2, this.height / 2 + 20);
             return;
@@ -580,18 +530,20 @@ class ECVisualizer {
 
         const points = this.computeFiniteFieldPoints();
 
-        // Draw points
-        if(p < BigInt(Config.ECC.MAX_POINT_AMOUNT) / 64n) {
+        // Choose point radius based on field size
+        const maxAmt = BigInt(Config.ECC.MAX_POINT_AMOUNT);
+        if (p < maxAmt / 64n) {
             this.pointRadius = Config.ECC.POINT_RADIUS.BIG;
-        } else if(p < BigInt(Config.ECC.MAX_POINT_AMOUNT) / 16n) {
+        } else if (p < maxAmt / 16n) {
             this.pointRadius = Config.ECC.POINT_RADIUS.MEDIUM;
-        } else if(p < BigInt(Config.ECC.MAX_POINT_AMOUNT) / 4n) {
+        } else if (p < maxAmt / 4n) {
             this.pointRadius = Config.ECC.POINT_RADIUS.SMALL;
-        } else if(p < BigInt(Config.ECC.MAX_POINT_AMOUNT) / 2n) {
+        } else if (p < maxAmt / 2n) {
             this.pointRadius = Config.ECC.POINT_RADIUS.TINY;
         } else {
             this.pointRadius = Config.ECC.POINT_RADIUS.EXTRA_TINY;
         }
+
         ctx.fillStyle = this.colors.POINT;
         for (const point of points) {
             this.drawPoint(Number(point.x), Number(point.y), this.pointRadius);
@@ -599,7 +551,7 @@ class ECVisualizer {
 
         // Display point count
         ctx.fillStyle = '#666';
-        ctx.font = '12px sans-serif';
+        ctx.font      = '12px sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(`${points.length} points on E(F_${p})`, 10, 20);
     }
@@ -607,32 +559,32 @@ class ECVisualizer {
     /**
      * Compute all points on curve over F_p
      *
-     * @returns {Array} - Array of {x, y} points (BigInt coordinates)
+     * @returns Array of {x, y} points with BigInt coordinates
      */
-    computeFiniteFieldPoints() {
+    computeFiniteFieldPoints(): FiniteFieldPoint[] {
+        if (!this.curve || !('p' in this.curve)) return [];
         const { a, b, p } = this.curve;
-        const points = [];
 
-        // Try each x value
+        const points: FiniteFieldPoint[] = [];
+
         for (let xNum = 0; xNum < Number(p); xNum++) {
             const x = BigInt(xNum);
 
             // Compute y² = x³ + ax + b (mod p)
-            const x2 = MathUtils.modMul(x, x, p);
-            const x3 = MathUtils.modMul(x2, x, p);
-            const ax = MathUtils.modMul(a, x, p);
-            const ySquared = MathUtils.modAdd(MathUtils.modAdd(x3, ax, p), b, p);
+            const x2       = modMul(x, x, p);
+            const x3       = modMul(x2, x, p);
+            const ax       = modMul(a, x, p);
+            const ySquared = modAdd(modAdd(x3, ax, p), b, p);
 
             // Check if ySquared is a quadratic residue
-            const y = MathUtils.modSqrt(ySquared, p);
+            const y = modSqrt(ySquared, p);
 
             if (y !== null) {
                 points.push({ x, y });
 
                 // Add -y if y ≠ 0
                 if (y !== 0n) {
-                    const negY = p - y;
-                    points.push({ x, y: negY });
+                    points.push({ x, y: p - y });
                 }
             }
         }
@@ -641,17 +593,12 @@ class ECVisualizer {
     }
 
     /**
-     * Draw a single point
-     *
-     * @param {Number} x - Curve x-coordinate
-     * @param {Number} y - Curve y-coordinate
-     * @param {Number} radius - Point radius in pixels
-     * @param {String} color - Fill color (optional)
+     * Draw a single point (in curve coordinates)
      */
-    drawPoint(x, y, radius, color = null) {
+    drawPoint(x: number, y: number, radius: number, color: string | null = null): void {
         const pos = this.curveToCanvas(x, y);
 
-        this.ctx.fillStyle = color || this.colors.POINT;
+        this.ctx.fillStyle = color ?? this.colors.POINT;
         this.ctx.beginPath();
         this.ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
         this.ctx.fill();
@@ -660,21 +607,19 @@ class ECVisualizer {
     /**
      * Draw selected points with labels
      */
-    drawSelectedPoints() {
+    drawSelectedPoints(): void {
         const ctx = this.ctx;
 
         for (let i = 0; i < this.selectedPoints.length; i++) {
             const point = this.selectedPoints[i];
             const label = String.fromCharCode(65 + i); // A, B, C, ...
 
-            // Draw point
             this.drawPoint(Number(point.x), Number(point.y), this.pointRadius * 1.5, '#e74c3c');
 
-            // Draw label
             const pos = this.curveToCanvas(Number(point.x), Number(point.y));
-            ctx.fillStyle = '#000';
-            ctx.font = 'bold 14px sans-serif';
-            ctx.textAlign = 'center';
+            ctx.fillStyle  = '#000';
+            ctx.font       = 'bold 14px sans-serif';
+            ctx.textAlign  = 'center';
             ctx.fillText(label, pos.x, pos.y - 15);
         }
     }
@@ -692,17 +637,19 @@ class ECVisualizer {
      * 3. Show third intersection R with curve
      * 4. Reflect R across x-axis to get P + Q
      *
-     * @param {Object} P - Point {x, y} (BigInt or Number)
-     * @param {Object} Q - Point {x, y} (BigInt or Number)
-     * @param {Function} callback - Called when animation completes
+     * The callback is only invoked in finite-field mode.
      */
-    async animatePointAddition(P, Q, callback = null) {
+    async animatePointAddition(
+        P:         FiniteFieldPoint,
+        Q:         FiniteFieldPoint,
+        callback?: PointAdditionCallback,
+    ): Promise<void> {
         if (this.isAnimating) return;
 
         this.isAnimating = true;
         const ctx = this.ctx;
 
-        // Convert to Numbers for visualization
+        // Convert to numbers for visualization
         const px = Number(P.x), py = Number(P.y);
         const qx = Number(Q.x), qy = Number(Q.y);
 
@@ -714,7 +661,7 @@ class ECVisualizer {
 
         // Step 2: Draw line/tangent
         ctx.strokeStyle = this.colors.OPERATION_LINE;
-        ctx.lineWidth = 2;
+        ctx.lineWidth   = 2;
         ctx.setLineDash([5, 5]);
 
         const pCanvas = this.curveToCanvas(px, py);
@@ -725,8 +672,8 @@ class ECVisualizer {
         ctx.lineTo(qCanvas.x, qCanvas.y);
 
         // Extend line across canvas
-        const dx = qCanvas.x - pCanvas.x;
-        const dy = qCanvas.y - pCanvas.y;
+        const dx     = qCanvas.x - pCanvas.x;
+        const dy     = qCanvas.y - pCanvas.y;
         const length = Math.sqrt(dx * dx + dy * dy);
         const extend = Math.max(this.width, this.height) * 2;
 
@@ -738,52 +685,63 @@ class ECVisualizer {
 
         await this.delay(1000);
 
-        // Step 3: Compute result
-        let result;
-        if (this.mode === 'finite') {
-            // Use actual ECC operations
-            const Ppoint = new ECMathUtils.Point(P.x, P.y, this.curve);
-            const Qpoint = new ECMathUtils.Point(Q.x, Q.y, this.curve);
+        // Step 3: Compute result (finite mode only)
+        if (this.mode === 'finite' && this.curve !== null && 'p' in this.curve) {
+            const finiteCurve = this.curve; // FiniteFieldCurve satisfies CurveParams
 
+            const Ppoint = new Point(P.x, P.y, finiteCurve);
+            const Qpoint = new Point(Q.x, Q.y, finiteCurve);
+
+            let result: Point;
             if (px === qx && py === qy) {
-                result = ECMathUtils.pointDouble(Ppoint);
+                result = pointDouble(Ppoint);
             } else {
-                result = ECMathUtils.pointAdd(Ppoint, Qpoint);
+                result = pointAdd(Ppoint, Qpoint);
             }
 
             if (!result.isInfinity) {
-                this.drawPoint(Number(result.x), Number(result.y), this.pointRadius * 2, this.colors.RESULT);
+                this.drawPoint(
+                    Number(result.x), Number(result.y),
+                    this.pointRadius * 2,
+                    this.colors.RESULT,
+                );
             }
-        } else {
-            // For real curves, show approximate third intersection
-            // (actual computation would require solving cubic)
-            ctx.fillStyle = '#666';
-            ctx.font = '12px sans-serif';
-            ctx.fillText('Result point shown in discrete mode', 10, this.height - 10);
+
+            await this.delay(1000);
+            this.isAnimating = false;
+
+            if (callback) callback(result);
+            return;
         }
 
+        // Real mode — show informational message
+        ctx.fillStyle = '#666';
+        ctx.font      = '12px sans-serif';
+        ctx.fillText('Result point shown in discrete mode', 10, this.height - 10);
+
         await this.delay(1000);
-
         this.isAnimating = false;
-
-        if (callback) callback(result);
     }
 
     /**
      * Animate scalar multiplication: kP
      *
-     * SHOWS: Binary decomposition and double-and-add algorithm
-     *
-     * @param {BigInt} k - Scalar
-     * @param {Object} P - Point
-     * @param {Function} callback - Called when complete
+     * Shows binary decomposition and double-and-add algorithm.
+     * Only available in finite-field mode.
      */
-    async animateScalarMultiplication(k, P, callback = null) {
+    async animateScalarMultiplication(
+        k:         bigint,
+        P:         FiniteFieldPoint,
+        callback?: ScalarMultiplyCallback,
+    ): Promise<void> {
         if (this.isAnimating) return;
         if (this.mode !== 'finite') {
             UIUtils.showWarning('Scalar multiplication animation only available in finite field mode');
             return;
         }
+
+        if (!this.curve || !('p' in this.curve)) return;
+        const finiteCurve = this.curve; // FiniteFieldCurve
 
         this.isAnimating = true;
 
@@ -791,8 +749,8 @@ class ECVisualizer {
         const binary = k.toString(2);
         console.log(`Computing ${k}P using binary: ${binary}`);
 
-        let result = ECMathUtils.Point.infinity(this.curve);
-        let temp = new ECMathUtils.Point(P.x, P.y, this.curve);
+        let result: Point = Point.infinity(finiteCurve);
+        let temp:   Point = new Point(P.x, P.y, finiteCurve);
 
         for (let i = 0; i < binary.length; i++) {
             const bit = binary[binary.length - 1 - i];
@@ -802,15 +760,19 @@ class ECVisualizer {
                 this.drawPoint(Number(temp.x), Number(temp.y), this.pointRadius * 2, '#e74c3c');
                 await this.delay(300);
 
-                result = ECMathUtils.pointAdd(result, temp);
+                result = pointAdd(result, temp);
 
                 if (!result.isInfinity) {
-                    this.drawPoint(Number(result.x), Number(result.y), this.pointRadius * 2, this.colors.RESULT);
+                    this.drawPoint(
+                        Number(result.x), Number(result.y),
+                        this.pointRadius * 2,
+                        this.colors.RESULT,
+                    );
                 }
                 await this.delay(300);
             }
 
-            temp = ECMathUtils.pointDouble(temp);
+            temp = pointDouble(temp);
         }
 
         this.isAnimating = false;
@@ -820,11 +782,8 @@ class ECVisualizer {
 
     /**
      * Delay helper for animations
-     *
-     * @param {Number} ms - Milliseconds to wait
-     * @returns {Promise}
      */
-    delay(ms) {
+    private delay(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
@@ -835,21 +794,17 @@ class ECVisualizer {
     /**
      * Handle canvas click
      *
-     * BEHAVIOR:
-     * - In finite field mode: Select nearest point on curve
-     * - In real mode: Show coordinates
-     *
-     * @param {MouseEvent} event
+     * In finite-field mode: selects nearest point on curve.
+     * In real mode: logs coordinates.
      */
-    handleClick(event) {
-        const rect = this.canvas.getBoundingClientRect();
+    handleClick(event: MouseEvent): void {
+        const rect    = this.canvas.getBoundingClientRect();
         const canvasX = event.clientX - rect.left;
         const canvasY = event.clientY - rect.top;
 
         const curveCoords = this.canvasToCurve(canvasX, canvasY);
 
         if (this.mode === 'finite') {
-            // Find nearest point on curve
             const nearestPoint = this.findNearestPoint(curveCoords.x, curveCoords.y);
 
             if (nearestPoint) {
@@ -861,23 +816,19 @@ class ECVisualizer {
     }
 
     /**
-     * Find nearest point on curve to given coordinates
-     *
-     * @param {Number} x - Target x
-     * @param {Number} y - Target y
-     * @returns {Object|null} - Nearest point {x, y} or null
+     * Find nearest point on curve to given canvas coordinates
      */
-    findNearestPoint(x, y) {
-        if (!this.curve.p) return null;
+    findNearestPoint(x: number, y: number): FiniteFieldPoint | null {
+        if (!this.curve || !('p' in this.curve)) return null;
 
         const points = this.computeFiniteFieldPoints();
 
         let minDist = Infinity;
-        let nearest = null;
+        let nearest: FiniteFieldPoint | null = null;
 
         for (const point of points) {
-            const dx = Number(point.x) - x;
-            const dy = Number(point.y) - y;
+            const dx   = Number(point.x) - x;
+            const dy   = Number(point.y) - y;
             const dist = dx * dx + dy * dy;
 
             if (dist < minDist) {
@@ -896,12 +847,9 @@ class ECVisualizer {
     }
 
     /**
-     * Select a point for operations
-     *
-     * @param {Object} point - Point {x, y}
+     * Select a point for operations (max 2 points)
      */
-    selectPoint(point) {
-        // Limit to 2 points
+    selectPoint(point: FiniteFieldPoint): void {
         if (this.selectedPoints.length >= 2) {
             this.selectedPoints = [];
         }
@@ -915,26 +863,15 @@ class ECVisualizer {
     /**
      * Clear selected points
      */
-    clearSelection() {
+    clearSelection(): void {
         this.selectedPoints = [];
         this.render();
     }
 
     /**
      * Get selected points
-     *
-     * @returns {Array} - Array of selected points
      */
-    getSelectedPoints() {
+    getSelectedPoints(): FiniteFieldPoint[] {
         return this.selectedPoints;
     }
-}
-
-// ============================================================================
-// EXPORT
-// ============================================================================
-
-if (typeof window !== 'undefined') {
-    window.ECVisualizer = ECVisualizer;
-    console.log('✓ EC Visualizer module loaded');
 }

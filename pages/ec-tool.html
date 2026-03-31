@@ -1,685 +1,1118 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
-    <title>Elliptic Curve Explorer - Cryptography Portfolio</title>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+        />
+        <title>Elliptic Curve Explorer - Cryptography Portfolio</title>
 
-    <!-- Link to main stylesheets -->
-    <link rel="stylesheet" href="../css/main.css">
-    <link rel="stylesheet" href="../css/pages/ec-tool.css">
+        <!-- Link to main stylesheets -->
+        <link rel="stylesheet" href="../css/main.css" />
+        <link rel="stylesheet" href="../css/pages/ec-tool.css" />
 
-    <!-- Favicon settup -->
-    <link rel="icon" type="image/png" href="../assets/favicon/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="../assets/favicon/favicon.svg" />
-    <link rel="shortcut icon" href="../assets/favicon/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="../assets/favicon/apple-touch-icon.png" />
-    <link rel="manifest" href="../assets/favicon/site.webmanifest" />
-</head>
-<body>
-    <!-- Header with navigation -->
-    <header>
-        <nav class="navbar">
-            <div class="nav-container">
-                <h1 class="logo">Elliptic Curve Explorer</h1>
-                <ul class="nav-links">
-                    <li><a href="../index.html">← Back to Home</a></li>
-                    <li>
-                        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
-                            🌑
-                        </button>
-                    </li>
-                </ul>
+        <!-- Favicon settup -->
+        <link
+            rel="icon"
+            type="image/png"
+            href="../assets/favicon/favicon-96x96.png"
+            sizes="96x96"
+        />
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="../assets/favicon/favicon.svg"
+        />
+        <link rel="shortcut icon" href="../assets/favicon/favicon.ico" />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="../assets/favicon/apple-touch-icon.png"
+        />
+        <link rel="manifest" href="../assets/favicon/site.webmanifest" />
+    </head>
+    <body>
+        <!-- Header with navigation -->
+        <header>
+            <nav class="navbar">
+                <div class="nav-container">
+                    <h1 class="logo">Elliptic Curve Explorer</h1>
+                    <ul class="nav-links">
+                        <li><a href="../index.html">← Back to Home</a></li>
+                        <li>
+                            <button
+                                id="theme-toggle"
+                                class="theme-toggle"
+                                aria-label="Toggle dark mode"
+                            >
+                                🌑
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </header>
+
+        <main class="ec-tool-container">
+            <!-- Welcome message -->
+            <div id="welcome-message"></div>
+
+            <!-- Error display -->
+            <div id="error-message" class="alert alert--error" hidden></div>
+            <!-- Warning display -->
+            <div id="warning-message" class="alert alert--error" hidden></div>
+
+            <!-- Updated tab labels -->
+            <div class="tabs">
+                <button class="tab-button active" data-tab="visualization">
+                    1. Curve Visualization (ℝ)
+                </button>
+                <button class="tab-button" data-tab="operations">
+                    2. Point Operations (F_p)
+                </button>
+                <button class="tab-button" data-tab="protocols">
+                    3. Protocols
+                </button>
+                <button class="tab-button" data-tab="security">
+                    4. Security Analysis
+                </button>
             </div>
-        </nav>
-    </header>
 
-    <main class="ec-tool-container">
-        <!-- Welcome message -->
-        <div id="welcome-message"></div>
-
-        <!-- Error display -->
-        <div id="error-message" class="alert alert--error" hidden></div>
-        <!-- Warning display -->
-        <div id="warning-message" class="alert alert--error" hidden></div>
-
-        <!-- Updated tab labels -->
-        <div class="tabs">
-            <button class="tab-button active" data-tab="visualization">1. Curve Visualization (ℝ)</button>
-            <button class="tab-button" data-tab="operations">2. Point Operations (F_p)</button>
-            <button class="tab-button" data-tab="protocols">3. Protocols</button>
-            <button class="tab-button" data-tab="security">4. Security Analysis</button>
-        </div>
-
-        <!-- ====================================================================
+            <!-- ====================================================================
              TAB 1: CURVE VISUALIZATION (REAL NUMBERS ONLY)
              Dedicated to geometric visualization
              ==================================================================== -->
-        <div id="visualization" class="tab-panel active">
-            <h2>Elliptic Curve Geometry (Real Numbers)</h2>
+            <div id="visualization" class="tab-panel active">
+                <h2>Elliptic Curve Geometry (Real Numbers)</h2>
 
-            <div class="alert alert--info">
-                <p><strong>📐 Purpose:</strong> Understand the geometric foundation of elliptic curves over the real numbers (ℝ).</p>
-                <p>This visualization shows the smooth, continuous curve where the chord-and-tangent method is most intuitive.</p>
-            </div>
-
-            <!-- New curve selector for real curves only -->
-            <div class="card card--control">
-                <h3>Select Curve Equation</h3>
-
-                <div class="form-group">
-                    <label for="real-curve-select">Curve:</label>
-                    <select id="real-curve-select">
-                        <option value="koblitz" selected>y² = x³ + 7 (Koblitz-like, similar to secp256k1)</option>
-                        <option value="nist-like">y² = x³ - 3x + 3 (NIST-like, similar to P-256)</option>
-                        <option value="generic">y² = x³ + x + 1 (Generic curve)</option>
-                        <option value="custom">Custom parameters...</option>
-                    </select>
+                <div class="alert alert--info">
+                    <p>
+                        <strong>📐 Purpose:</strong> Understand the geometric
+                        foundation of elliptic curves over the real numbers (ℝ).
+                    </p>
+                    <p>
+                        This visualization shows the smooth, continuous curve
+                        where the chord-and-tangent method is most intuitive.
+                    </p>
                 </div>
 
-                <!-- New custom parameter controls with sliders -->
-                <div id="custom-real-params" style="display: none;">
-                    <h4>Custom Curve: y² = x³ + ax + b</h4>
+                <!-- New curve selector for real curves only -->
+                <div class="card card--control">
+                    <h3>Select Curve Equation</h3>
 
-                    <div class="slider-control">
-                        <label for="real-a">a:</label>
-                        <input type="range" id="real-a" min="-30" max="30" value="0" step="0.2">
-                        <span class="value-display" id="real-a-value">0</span>
+                    <div class="form-group">
+                        <label for="real-curve-select">Curve:</label>
+                        <select id="real-curve-select">
+                            <option value="koblitz" selected>
+                                y² = x³ + 7 (Koblitz-like, similar to secp256k1)
+                            </option>
+                            <option value="nist-like">
+                                y² = x³ - 3x + 3 (NIST-like, similar to P-256)
+                            </option>
+                            <option value="generic">
+                                y² = x³ + x + 1 (Generic curve)
+                            </option>
+                            <option value="custom">Custom parameters...</option>
+                        </select>
                     </div>
 
-                    <div class="slider-control">
-                        <label for="real-b">b:</label>
-                        <input type="range" id="real-b" min="-30" max="30" value="7" step="0.2">
-                        <span class="value-display" id="real-b-value">7</span>
-                    </div>
+                    <!-- New custom parameter controls with sliders -->
+                    <div id="custom-real-params" style="display: none">
+                        <h4>Custom Curve: y² = x³ + ax + b</h4>
 
-                    <p class="info" style="margin-top: 1rem;">
-                        <em>Adjust sliders to see how curve shape changes.
-                        Non-singular condition: 4a³ + 27b² ≠ 0</em>
+                        <div class="slider-control">
+                            <label for="real-a">a:</label>
+                            <input
+                                type="range"
+                                id="real-a"
+                                min="-30"
+                                max="30"
+                                value="0"
+                                step="0.2"
+                            />
+                            <span class="value-display" id="real-a-value"
+                                >0</span
+                            >
+                        </div>
+
+                        <div class="slider-control">
+                            <label for="real-b">b:</label>
+                            <input
+                                type="range"
+                                id="real-b"
+                                min="-30"
+                                max="30"
+                                value="7"
+                                step="0.2"
+                            />
+                            <span class="value-display" id="real-b-value"
+                                >7</span
+                            >
+                        </div>
+
+                        <p class="info" style="margin-top: 1rem">
+                            <em
+                                >Adjust sliders to see how curve shape changes.
+                                Non-singular condition: 4a³ + 27b² ≠ 0</em
+                            >
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Dedicated canvas for real curves -->
+                <div class="canvas-container">
+                    <canvas id="real-curve-canvas"></canvas>
+                </div>
+
+                <!-- New display div for real curve info -->
+                <div id="real-curve-info"></div>
+
+                <div class="card card--control">
+                    <h3>📚 Understanding the Visualization</h3>
+
+                    <h4>Curve Equation: y² = x³ + ax + b</h4>
+                    <p>
+                        This is the <strong>Weierstrass normal form</strong> of
+                        an elliptic curve.
+                    </p>
+
+                    <h4>Key Properties:</h4>
+                    <ul>
+                        <li>
+                            <strong>Symmetry:</strong> The curve is symmetric
+                            about the x-axis (if (x, y) is on the curve, so is
+                            (x, -y))
+                        </li>
+                        <li>
+                            <strong>Components:</strong> Depending on the
+                            discriminant Δ = -16(4a³ + 27b²), the curve may
+                            have:
+                            <ul>
+                                <li>
+                                    One connected component (Δ &lt; 0) - typical
+                                    for cryptographic curves
+                                </li>
+                                <li>
+                                    Two separate components (Δ > 0) - one oval
+                                    and one unbounded
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Non-singularity:</strong> The curve must
+                            satisfy Δ ≠ 0 to be valid for cryptography
+                        </li>
+                    </ul>
+
+                    <h4>Geometric Interpretation:</h4>
+                    <p>
+                        The smooth curve you see here is the foundation for the
+                        group law. When we move to finite fields (next tab),
+                        we'll use the same algebraic formulas, but work with
+                        discrete points instead of continuous curves.
                     </p>
                 </div>
             </div>
 
-            <!-- Dedicated canvas for real curves -->
-            <div class="canvas-container">
-                <canvas id="real-curve-canvas"></canvas>
-            </div>
-
-            <!-- New display div for real curve info -->
-            <div id="real-curve-info"></div>
-
-            <div class="card card--control">
-                <h3>📚 Understanding the Visualization</h3>
-
-                <h4>Curve Equation: y² = x³ + ax + b</h4>
-                <p>This is the <strong>Weierstrass normal form</strong> of an elliptic curve.</p>
-
-                <h4>Key Properties:</h4>
-                <ul>
-                    <li><strong>Symmetry:</strong> The curve is symmetric about the x-axis (if (x, y) is on the curve, so is (x, -y))</li>
-                    <li><strong>Components:</strong> Depending on the discriminant Δ = -16(4a³ + 27b²), the curve may have:
-                        <ul>
-                            <li>One connected component (Δ < 0) - typical for cryptographic curves</li>
-                            <li>Two separate components (Δ > 0) - one oval and one unbounded</li>
-                        </ul>
-                    </li>
-                    <li><strong>Non-singularity:</strong> The curve must satisfy Δ ≠ 0 to be valid for cryptography</li>
-                </ul>
-
-                <h4>Geometric Interpretation:</h4>
-                <p>The smooth curve you see here is the foundation for the group law. When we move to finite fields
-                (next tab), we'll use the same algebraic formulas, but work with discrete points instead of
-                continuous curves.</p>
-            </div>
-        </div>
-
-        <!-- ====================================================================
+            <!-- ====================================================================
              TAB 2: POINT OPERATIONS (FINITE FIELD ONLY)
              Co-locates visualization with operations
              ==================================================================== -->
-        <div id="operations" class="tab-panel">
-            <h2>Point Operations (Finite Field F_p)</h2>
+            <div id="operations" class="tab-panel">
+                <h2>Point Operations (Finite Field F_p)</h2>
 
-            <div class="alert alert--info">
-                <p><strong>🔢 Purpose:</strong> Perform cryptographic operations on elliptic curves over finite fields.</p>
-                <p><strong>Instructions:</strong> Click on points in the visualization to select them (up to 2), then use the operation buttons below.</p>
-            </div>
-
-            <!-- New curve selector for finite field curves -->
-            <div class="card card--control">
-                <h3>Select Curve (Finite Field)</h3>
-
-                <div class="form-group">
-                    <label for="finite-curve-select">Curve:</label>
-                    <select id="finite-curve-select">
-                        <option value="test-23" selected>E(F₂₃): y² = x³ + 7 (Small, easy to visualize)</option>
-                        <option value="test-97">E(F₉₇): y² = x³ + 2x + 3</option>
-                        <option value="custom">Custom parameters...</option>
-                    </select>
-                </div>
-
-                <!-- Custom finite field parameters -->
-                <div id="custom-finite-params" style="display: none;">
-                    <h4>Custom Curve: y² ≡ x³ + ax + b (mod p)</h4>
-
-                    <div class="form-group">
-                        <label for="finite-a">Coefficient a:</label>
-                        <input type="number" id="finite-a" value="0">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="finite-b">Coefficient b:</label>
-                        <input type="number" id="finite-b" value="7">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="finite-p">Prime p (keep small for visualization, p < 131072):</label>
-                        <input type="number" id="finite-p" value="23" min="2" max="131072">
-                    </div>
-
-                    <button class="btn btn-secondary" id="apply-finite-custom-btn">Apply Custom Curve</button>
-                </div>
-            </div>
-
-            <!-- Dedicated canvas for finite field curves -->
-            <div class="canvas-container">
-                <canvas id="finite-curve-canvas"></canvas>
-            </div>
-
-            <!-- New display div for finite curve info -->
-            <div id="finite-curve-info"></div>
-
-            <!-- Point operation controls (UNCHANGED structure, updated IDs) -->
-            <div class="controls-grid">
-                <!-- Point Addition -->
-                <div class="card card--control">
-                    <h3>Point Addition</h3>
-                    <p>Compute P + Q (requires 2 selected points)</p>
-                    <button id="point-add-btn" class="btn btn-primary">Compute P + Q</button>
-                </div>
-
-                <!-- Point Doubling -->
-                <div class="card card--control">
-                    <h3>Point Doubling</h3>
-                    <p>Compute 2P (requires 1 selected point)</p>
-                    <button id="point-double-btn" class="btn btn-primary">Compute 2P</button>
-                </div>
-
-                <!-- Scalar Multiplication -->
-                <div class="card card--control">
-                    <h3>Scalar Multiplication</h3>
-                    <p>Compute kP (requires 1 selected point)</p>
-                    <div class="form-group">
-                        <label for="scalar-input">Scalar k:</label>
-                        <input type="number" id="scalar-input" min="1" max="100" value="3" placeholder="Enter scalar k">
-                    </div>
-                    <button id="scalar-multiply-btn" class="btn btn-primary">Compute kP</button>
-                </div>
-
-                <!-- Clear Selection -->
-                <div class="card card--control">
-                    <h3>Clear Selection</h3>
-                    <p>Reset selected points and results</p>
-                    <button id="clear-selection-btn" class="btn btn-secondary">Clear Selection</button>
-                </div>
-            </div>
-
-            <!-- Operation Results -->
-            <div id="operation-results"></div>
-
-            <!-- Educational content (UNCHANGED) -->
-            <div class="card card--control">
-                <h3>📚 Understanding Point Operations</h3>
-
-                <h4>Point Addition (P + Q)</h4>
-                <p><strong>Geometric Method (Chord):</strong></p>
-                <ol>
-                    <li>Draw a line through points P and Q</li>
-                    <li>Find where this line intersects the curve (third point R)</li>
-                    <li>Reflect R across the x-axis to get P + Q</li>
-                </ol>
-
-                <p><strong>Algebraic Formula:</strong></p>
-                <p>For P = (x₁, y₁) and Q = (x₂, y₂) with P ≠ Q:</p>
-                <ul>
-                    <li>λ = (y₂ - y₁) / (x₂ - x₁) mod p</li>
-                    <li>x₃ = λ² - x₁ - x₂ mod p</li>
-                    <li>y₃ = λ(x₁ - x₃) - y₁ mod p</li>
-                </ul>
-
-                <h4>Point Doubling (2P)</h4>
-                <p><strong>Geometric Method (Tangent):</strong></p>
-                <ol>
-                    <li>Draw the tangent line to the curve at point P</li>
-                    <li>Find where this tangent intersects the curve (second point R)</li>
-                    <li>Reflect R across the x-axis to get 2P</li>
-                </ol>
-
-                <p><strong>Algebraic Formula:</strong></p>
-                <p>For P = (x₁, y₁):</p>
-                <ul>
-                    <li>λ = (3x₁² + a) / (2y₁) mod p</li>
-                    <li>x₃ = λ² - 2x₁ mod p</li>
-                    <li>y₃ = λ(x₁ - x₃) - y₁ mod p</li>
-                </ul>
-
-                <h4>Scalar Multiplication (kP)</h4>
-                <p><strong>Double-and-Add Algorithm:</strong></p>
-                <ol>
-                    <li>Express k in binary: k = k₀ + k₁·2 + k₂·4 + ...</li>
-                    <li>Start with result = ∞ (point at infinity)</li>
-                    <li>For each bit of k (from right to left):
-                        <ul>
-                            <li>If bit is 1: result = result + current</li>
-                            <li>current = 2·current (double)</li>
-                        </ul>
-                    </li>
-                </ol>
-
-                <p><strong>Example:</strong> 13P where 13 = 1101₂ = 8 + 4 + 1</p>
-                <p>13P = 8P + 4P + P (requires 3 doublings + 2 additions)</p>
-
-                <p><strong>Complexity:</strong> O(log k) operations (very efficient!)</p>
-            </div>
-        </div>
-
-        <!-- ====================================================================
-             TAB 3: PROTOCOLS
-             ==================================================================== -->
-        <div id="protocols" class="tab-panel">
-            <h2>Cryptographic Protocols</h2>
-
-            <div class="alert alert--info">
-                <p><strong>💡 Overview:</strong> These protocols demonstrate how elliptic curves enable secure key exchange and digital signatures.</p>
-            </div>
-
-            <!-- ECDH Section -->
-            <div class="card card--control">
-                <h3>🔐 ECDH: Elliptic Curve Diffie-Hellman Key Exchange</h3>
-
-                <p><strong>Purpose:</strong> Allow two parties to establish a shared secret over an insecure channel.</p>
-
-                <div class="form-group">
-                    <label for="ecdh-curve-select">Select Curve:</label>
-                    <select id="ecdh-curve-select">
-                        <!-- Option with bugs, commented for addition in the future.
-                            <option value="test-small">Test Curve (p = 23) - See all steps</option> -->
-                        <option value="secp256k1" selected>secp256k1 (Bitcoin)</option>
-                        <option value="P-256">P-256 (NIST)</option>
-                    </select>
-                </div>
-
-                <button id="ecdh-demo-btn" class="btn btn-primary">Run ECDH Demonstration</button>
-
-                <div id="ecdh-results" style="margin-top: 1rem;"></div>
-            </div>
-
-            <!-- ECDSA Section -->
-            <div class="card card--control">
-                <h3>✍️ ECDSA: Elliptic Curve Digital Signature Algorithm</h3>
-
-                <p><strong>Purpose:</strong> Create and verify digital signatures for message authentication and non-repudiation.</p>
-
-                <div class="form-group">
-                    <label for="ecdsa-curve-select">Select Curve:</label>
-                    <select id="ecdsa-curve-select">
-                        <option value="test-small">Test Curve (p = 23) - See all steps</option>
-                        <option value="secp256k1" selected>secp256k1 (Bitcoin)</option>
-                        <option value="P-256">P-256 (NIST)</option>
-                    </select>
-                </div>
-
-                <h4>Step 1: Sign Message</h4>
-                <div class="form-group">
-                    <label for="ecdsa-message">Message to sign:</label>
-                    <textarea id="ecdsa-message" placeholder="Enter your message here..." rows="3">Hello, ECDSA! This message is authentic.</textarea>
-                </div>
-
-                <button id="ecdsa-sign-btn" class="btn btn-primary">Generate Signature</button>
-
-                <div id="ecdsa-results" style="margin-top: 1rem;"></div>
-
-                <h4 style="margin-top: 2rem;">Step 2: Verify Signature</h4>
-                <div class="form-group">
-                    <label for="ecdsa-verify-message">Message to verify:</label>
-                    <textarea id="ecdsa-verify-message" placeholder="Enter message to verify..." rows="3">Hello, ECDSA! This message is authentic.</textarea>
-                    <p style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">
-                        💡 Try modifying this message to see verification fail
+                <div class="alert alert--info">
+                    <p>
+                        <strong>🔢 Purpose:</strong> Perform cryptographic
+                        operations on elliptic curves over finite fields.
+                    </p>
+                    <p>
+                        <strong>Instructions:</strong> Click on points in the
+                        visualization to select them (up to 2), then use the
+                        operation buttons below.
                     </p>
                 </div>
 
-                <button id="ecdsa-verify-btn" class="btn btn-primary" disabled>Verify Signature</button>
+                <!-- New curve selector for finite field curves -->
+                <div class="card card--control">
+                    <h3>Select Curve (Finite Field)</h3>
 
-                <div id="ecdsa-verify-results" style="margin-top: 1rem;"></div>
+                    <div class="form-group">
+                        <label for="finite-curve-select">Curve:</label>
+                        <select id="finite-curve-select">
+                            <option value="test-23" selected>
+                                E(F₂₃): y² = x³ + 7 (Small, easy to visualize)
+                            </option>
+                            <option value="test-97">
+                                E(F₉₇): y² = x³ + 2x + 3
+                            </option>
+                            <option value="custom">Custom parameters...</option>
+                        </select>
+                    </div>
+
+                    <!-- Custom finite field parameters -->
+                    <div id="custom-finite-params" style="display: none">
+                        <h4>Custom Curve: y² ≡ x³ + ax + b (mod p)</h4>
+
+                        <div class="form-group">
+                            <label for="finite-a">Coefficient a:</label>
+                            <input type="number" id="finite-a" value="0" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="finite-b">Coefficient b:</label>
+                            <input type="number" id="finite-b" value="7" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="finite-p"
+                                >Prime p (keep small for visualization, p &lt;
+                                131072):</label
+                            >
+                            <input
+                                type="number"
+                                id="finite-p"
+                                value="23"
+                                min="2"
+                                max="131072"
+                            />
+                        </div>
+
+                        <button
+                            class="btn btn-secondary"
+                            id="apply-finite-custom-btn"
+                        >
+                            Apply Custom Curve
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dedicated canvas for finite field curves -->
+                <div class="canvas-container">
+                    <canvas id="finite-curve-canvas"></canvas>
+                </div>
+
+                <!-- New display div for finite curve info -->
+                <div id="finite-curve-info"></div>
+
+                <!-- Point operation controls (UNCHANGED structure, updated IDs) -->
+                <div class="controls-grid">
+                    <!-- Point Addition -->
+                    <div class="card card--control">
+                        <h3>Point Addition</h3>
+                        <p>Compute P + Q (requires 2 selected points)</p>
+                        <button id="point-add-btn" class="btn btn-primary">
+                            Compute P + Q
+                        </button>
+                    </div>
+
+                    <!-- Point Doubling -->
+                    <div class="card card--control">
+                        <h3>Point Doubling</h3>
+                        <p>Compute 2P (requires 1 selected point)</p>
+                        <button id="point-double-btn" class="btn btn-primary">
+                            Compute 2P
+                        </button>
+                    </div>
+
+                    <!-- Scalar Multiplication -->
+                    <div class="card card--control">
+                        <h3>Scalar Multiplication</h3>
+                        <p>Compute kP (requires 1 selected point)</p>
+                        <div class="form-group">
+                            <label for="scalar-input">Scalar k:</label>
+                            <input
+                                type="number"
+                                id="scalar-input"
+                                min="1"
+                                max="100"
+                                value="3"
+                                placeholder="Enter scalar k"
+                            />
+                        </div>
+                        <button
+                            id="scalar-multiply-btn"
+                            class="btn btn-primary"
+                        >
+                            Compute kP
+                        </button>
+                    </div>
+
+                    <!-- Clear Selection -->
+                    <div class="card card--control">
+                        <h3>Clear Selection</h3>
+                        <p>Reset selected points and results</p>
+                        <button
+                            id="clear-selection-btn"
+                            class="btn btn-secondary"
+                        >
+                            Clear Selection
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Operation Results -->
+                <div id="operation-results"></div>
+
+                <!-- Educational content (UNCHANGED) -->
+                <div class="card card--control">
+                    <h3>📚 Understanding Point Operations</h3>
+
+                    <h4>Point Addition (P + Q)</h4>
+                    <p><strong>Geometric Method (Chord):</strong></p>
+                    <ol>
+                        <li>Draw a line through points P and Q</li>
+                        <li>
+                            Find where this line intersects the curve (third
+                            point R)
+                        </li>
+                        <li>Reflect R across the x-axis to get P + Q</li>
+                    </ol>
+
+                    <p><strong>Algebraic Formula:</strong></p>
+                    <p>For P = (x₁, y₁) and Q = (x₂, y₂) with P ≠ Q:</p>
+                    <ul>
+                        <li>λ = (y₂ - y₁) / (x₂ - x₁) mod p</li>
+                        <li>x₃ = λ² - x₁ - x₂ mod p</li>
+                        <li>y₃ = λ(x₁ - x₃) - y₁ mod p</li>
+                    </ul>
+
+                    <h4>Point Doubling (2P)</h4>
+                    <p><strong>Geometric Method (Tangent):</strong></p>
+                    <ol>
+                        <li>Draw the tangent line to the curve at point P</li>
+                        <li>
+                            Find where this tangent intersects the curve (second
+                            point R)
+                        </li>
+                        <li>Reflect R across the x-axis to get 2P</li>
+                    </ol>
+
+                    <p><strong>Algebraic Formula:</strong></p>
+                    <p>For P = (x₁, y₁):</p>
+                    <ul>
+                        <li>λ = (3x₁² + a) / (2y₁) mod p</li>
+                        <li>x₃ = λ² - 2x₁ mod p</li>
+                        <li>y₃ = λ(x₁ - x₃) - y₁ mod p</li>
+                    </ul>
+
+                    <h4>Scalar Multiplication (kP)</h4>
+                    <p><strong>Double-and-Add Algorithm:</strong></p>
+                    <ol>
+                        <li>Express k in binary: k = k₀ + k₁·2 + k₂·4 + ...</li>
+                        <li>Start with result = ∞ (point at infinity)</li>
+                        <li>
+                            For each bit of k (from right to left):
+                            <ul>
+                                <li>If bit is 1: result = result + current</li>
+                                <li>current = 2·current (double)</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <p>
+                        <strong>Example:</strong> 13P where 13 = 1101₂ = 8 + 4 +
+                        1
+                    </p>
+                    <p>
+                        13P = 8P + 4P + P (requires 3 doublings + 2 additions)
+                    </p>
+
+                    <p>
+                        <strong>Complexity:</strong> O(log k) operations (very
+                        efficient!)
+                    </p>
+                </div>
             </div>
 
-            <!-- Educational Content -->
-            <div class="card card--control">
-                <h3>📚 Understanding the Protocols</h3>
+            <!-- ====================================================================
+             TAB 3: PROTOCOLS
+             ==================================================================== -->
+            <div id="protocols" class="tab-panel">
+                <h2>Cryptographic Protocols</h2>
 
-                <h4>ECDH (Key Exchange)</h4>
-                <p><strong>The Problem:</strong> Alice and Bob want to share a secret key, but Eve is listening to their communication.</p>
+                <div class="alert alert--info">
+                    <p>
+                        <strong>💡 Overview:</strong> These protocols
+                        demonstrate how elliptic curves enable secure key
+                        exchange and digital signatures.
+                    </p>
+                </div>
 
-                <p><strong>The Solution:</strong></p>
-                <ol>
-                    <li>Alice picks random private key d_A, computes public key Q_A = d_A × G</li>
-                    <li>Bob picks random private key d_B, computes public key Q_B = d_B × G</li>
-                    <li>They exchange public keys Q_A and Q_B (Eve can see these)</li>
-                    <li>Alice computes shared secret: S = d_A × Q_B = d_A × (d_B × G)</li>
-                    <li>Bob computes shared secret: S = d_B × Q_A = d_B × (d_A × G)</li>
-                    <li>Both get same point: S = d_A × d_B × G</li>
-                </ol>
+                <!-- ECDH Section -->
+                <div class="card card--control">
+                    <h3>🔐 ECDH: Elliptic Curve Diffie-Hellman Key Exchange</h3>
 
-                <p><strong>Why Eve Can't Compute S:</strong></p>
-                <p>Eve sees G, Q_A, and Q_B, but to compute S she needs either d_A or d_B.</p>
-                <p>Finding d_A from G and Q_A requires solving ECDLP - computationally infeasible for large curves.</p>
+                    <p>
+                        <strong>Purpose:</strong> Allow two parties to establish
+                        a shared secret over an insecure channel.
+                    </p>
 
-                <h4>ECDSA (Digital Signatures)</h4>
-                <p><strong>The Problem:</strong> Bob receives a message claiming to be from Alice. How can he verify it's really from her?</p>
+                    <div class="form-group">
+                        <label for="ecdh-curve-select">Select Curve:</label>
+                        <select id="ecdh-curve-select">
+                            <!-- Option with bugs, commented for addition in the future.
+                            <option value="test-small">Test Curve (p = 23) - See all steps</option> -->
+                            <option value="secp256k1" selected>
+                                secp256k1 (Bitcoin)
+                            </option>
+                            <option value="P-256">P-256 (NIST)</option>
+                        </select>
+                    </div>
 
-                <p><strong>Signing (Alice):</strong></p>
-                <ol>
-                    <li>Alice has private key d and public key Q = d × G</li>
-                    <li>Hash message: h = H(m)</li>
-                    <li>Generate random nonce k, compute R = k × G</li>
-                    <li>Compute signature: r = R.x mod n, s = k⁻¹(h + r·d) mod n</li>
-                    <li>Send message m and signature (r, s) to Bob</li>
-                </ol>
+                    <button id="ecdh-demo-btn" class="btn btn-primary">
+                        Run ECDH Demonstration
+                    </button>
 
-                <p><strong>Verification (Bob):</strong></p>
-                <ol>
-                    <li>Bob has Alice's public key Q</li>
-                    <li>Hash message: h = H(m)</li>
-                    <li>Compute w = s⁻¹ mod n</li>
-                    <li>Compute u₁ = h·w mod n, u₂ = r·w mod n</li>
-                    <li>Compute R' = u₁·G + u₂·Q</li>
-                    <li>Accept if R'.x ≡ r (mod n)</li>
-                </ol>
+                    <div id="ecdh-results" style="margin-top: 1rem"></div>
+                </div>
 
-                <p><strong>Why It Works:</strong></p>
-                <p>R' = u₁·G + u₂·Q = (h·w)·G + (r·w)·(d·G) = w·(h + r·d)·G = s⁻¹·(h + r·d)·G = k·G = R</p>
+                <!-- ECDSA Section -->
+                <div class="card card--control">
+                    <h3>
+                        ✍️ ECDSA: Elliptic Curve Digital Signature Algorithm
+                    </h3>
 
-                <p><strong>Security Properties:</strong></p>
-                <ul>
-                    <li><strong>Authentication:</strong> Only Alice (with private key d) could create valid signature</li>
-                    <li><strong>Integrity:</strong> Any change to message changes h, invalidating signature</li>
-                    <li><strong>Non-repudiation:</strong> Alice can't deny signing (only she has d)</li>
-                </ul>
+                    <p>
+                        <strong>Purpose:</strong> Create and verify digital
+                        signatures for message authentication and
+                        non-repudiation.
+                    </p>
+
+                    <div class="form-group">
+                        <label for="ecdsa-curve-select">Select Curve:</label>
+                        <select id="ecdsa-curve-select">
+                            <option value="test-small">
+                                Test Curve (p = 23) - See all steps
+                            </option>
+                            <option value="secp256k1" selected>
+                                secp256k1 (Bitcoin)
+                            </option>
+                            <option value="P-256">P-256 (NIST)</option>
+                        </select>
+                    </div>
+
+                    <h4>Step 1: Sign Message</h4>
+                    <div class="form-group">
+                        <label for="ecdsa-message">Message to sign:</label>
+                        <textarea
+                            id="ecdsa-message"
+                            placeholder="Enter your message here..."
+                            rows="3"
+                        >
+Hello, ECDSA! This message is authentic.</textarea
+                        >
+                    </div>
+
+                    <button id="ecdsa-sign-btn" class="btn btn-primary">
+                        Generate Signature
+                    </button>
+
+                    <div id="ecdsa-results" style="margin-top: 1rem"></div>
+
+                    <h4 style="margin-top: 2rem">Step 2: Verify Signature</h4>
+                    <div class="form-group">
+                        <label for="ecdsa-verify-message"
+                            >Message to verify:</label
+                        >
+                        <textarea
+                            id="ecdsa-verify-message"
+                            placeholder="Enter message to verify..."
+                            rows="3"
+                        >
+Hello, ECDSA! This message is authentic.</textarea
+                        >
+                        <p
+                            style="
+                                font-size: 0.9rem;
+                                color: #666;
+                                margin-top: 0.5rem;
+                            "
+                        >
+                            💡 Try modifying this message to see verification
+                            fail
+                        </p>
+                    </div>
+
+                    <button
+                        id="ecdsa-verify-btn"
+                        class="btn btn-primary"
+                        disabled
+                    >
+                        Verify Signature
+                    </button>
+
+                    <div
+                        id="ecdsa-verify-results"
+                        style="margin-top: 1rem"
+                    ></div>
+                </div>
+
+                <!-- Educational Content -->
+                <div class="card card--control">
+                    <h3>📚 Understanding the Protocols</h3>
+
+                    <h4>ECDH (Key Exchange)</h4>
+                    <p>
+                        <strong>The Problem:</strong> Alice and Bob want to
+                        share a secret key, but Eve is listening to their
+                        communication.
+                    </p>
+
+                    <p><strong>The Solution:</strong></p>
+                    <ol>
+                        <li>
+                            Alice picks random private key d_A, computes public
+                            key Q_A = d_A × G
+                        </li>
+                        <li>
+                            Bob picks random private key d_B, computes public
+                            key Q_B = d_B × G
+                        </li>
+                        <li>
+                            They exchange public keys Q_A and Q_B (Eve can see
+                            these)
+                        </li>
+                        <li>
+                            Alice computes shared secret: S = d_A × Q_B = d_A ×
+                            (d_B × G)
+                        </li>
+                        <li>
+                            Bob computes shared secret: S = d_B × Q_A = d_B ×
+                            (d_A × G)
+                        </li>
+                        <li>Both get same point: S = d_A × d_B × G</li>
+                    </ol>
+
+                    <p><strong>Why Eve Can't Compute S:</strong></p>
+                    <p>
+                        Eve sees G, Q_A, and Q_B, but to compute S she needs
+                        either d_A or d_B.
+                    </p>
+                    <p>
+                        Finding d_A from G and Q_A requires solving ECDLP -
+                        computationally infeasible for large curves.
+                    </p>
+
+                    <h4>ECDSA (Digital Signatures)</h4>
+                    <p>
+                        <strong>The Problem:</strong> Bob receives a message
+                        claiming to be from Alice. How can he verify it's really
+                        from her?
+                    </p>
+
+                    <p><strong>Signing (Alice):</strong></p>
+                    <ol>
+                        <li>
+                            Alice has private key d and public key Q = d × G
+                        </li>
+                        <li>Hash message: h = H(m)</li>
+                        <li>Generate random nonce k, compute R = k × G</li>
+                        <li>
+                            Compute signature: r = R.x mod n, s = k⁻¹(h + r·d)
+                            mod n
+                        </li>
+                        <li>Send message m and signature (r, s) to Bob</li>
+                    </ol>
+
+                    <p><strong>Verification (Bob):</strong></p>
+                    <ol>
+                        <li>Bob has Alice's public key Q</li>
+                        <li>Hash message: h = H(m)</li>
+                        <li>Compute w = s⁻¹ mod n</li>
+                        <li>Compute u₁ = h·w mod n, u₂ = r·w mod n</li>
+                        <li>Compute R' = u₁·G + u₂·Q</li>
+                        <li>Accept if R'.x ≡ r (mod n)</li>
+                    </ol>
+
+                    <p><strong>Why It Works:</strong></p>
+                    <p>
+                        R' = u₁·G + u₂·Q = (h·w)·G + (r·w)·(d·G) = w·(h + r·d)·G
+                        = s⁻¹·(h + r·d)·G = k·G = R
+                    </p>
+
+                    <p><strong>Security Properties:</strong></p>
+                    <ul>
+                        <li>
+                            <strong>Authentication:</strong> Only Alice (with
+                            private key d) could create valid signature
+                        </li>
+                        <li>
+                            <strong>Integrity:</strong> Any change to message
+                            changes h, invalidating signature
+                        </li>
+                        <li>
+                            <strong>Non-repudiation:</strong> Alice can't deny
+                            signing (only she has d)
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Comparison Table -->
+                <div class="card card--control">
+                    <h3>⚖️ ECDH vs ECDSA Comparison</h3>
+
+                    <table class="probability-table">
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>ECDH</th>
+                                <th>ECDSA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Purpose</strong></td>
+                                <td>Key exchange</td>
+                                <td>Digital signatures</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Parties</strong></td>
+                                <td>2 (symmetric)</td>
+                                <td>2 (asymmetric: signer + verifier)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Output</strong></td>
+                                <td>Shared secret point</td>
+                                <td>Signature (r, s)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Key Usage</strong></td>
+                                <td>Ephemeral (one-time)</td>
+                                <td>Long-term public key</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Security Basis</strong></td>
+                                <td>CDH assumption</td>
+                                <td>ECDLP + hash security</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Real-world Use</strong></td>
+                                <td>TLS, Signal, WhatsApp</td>
+                                <td>Bitcoin, TLS certificates, JWT</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Critical Requirement</strong></td>
+                                <td>Authentication (prevent MitM)</td>
+                                <td>Unique random k per signature</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- Comparison Table -->
-            <div class="card card--control">
-                <h3>⚖️ ECDH vs ECDSA Comparison</h3>
-
-                <table class="probability-table">
-                    <thead>
-                        <tr>
-                            <th>Aspect</th>
-                            <th>ECDH</th>
-                            <th>ECDSA</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Purpose</strong></td>
-                            <td>Key exchange</td>
-                            <td>Digital signatures</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Parties</strong></td>
-                            <td>2 (symmetric)</td>
-                            <td>2 (asymmetric: signer + verifier)</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Output</strong></td>
-                            <td>Shared secret point</td>
-                            <td>Signature (r, s)</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Key Usage</strong></td>
-                            <td>Ephemeral (one-time)</td>
-                            <td>Long-term public key</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Security Basis</strong></td>
-                            <td>CDH assumption</td>
-                            <td>ECDLP + hash security</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Real-world Use</strong></td>
-                            <td>TLS, Signal, WhatsApp</td>
-                            <td>Bitcoin, TLS certificates, JWT</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Critical Requirement</strong></td>
-                            <td>Authentication (prevent MitM)</td>
-                            <td>Unique random k per signature</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- ====================================================================
+            <!-- ====================================================================
              TAB 4: SECURITY ANALYSIS
              ==================================================================== -->
-        <div id="security" class="tab-panel">
-            <h2>Security Analysis & Best Practices</h2>
+            <div id="security" class="tab-panel">
+                <h2>Security Analysis & Best Practices</h2>
 
-            <div class="card card--control">
-                <h3>🔐 What Makes ECC Secure?</h3>
-                <p>ECC security relies on the <strong>Elliptic Curve Discrete Logarithm Problem (ECDLP)</strong>:</p>
-                <ul>
-                    <li><strong>Easy:</strong> Compute Q = k × P (scalar multiplication, O(log k) operations)</li>
-                    <li><strong>Hard:</strong> Given P and Q, find k such that Q = k × P (exponential time)</li>
-                </ul>
-                <p>Best known classical attack: <strong>Pollard's rho algorithm</strong> with O(√n) complexity</p>
-                <p>For a 256-bit curve: ~2^128 operations required (impossible with current technology)</p>
-            </div>
-
-            <div class="card card--control">
-                <h3>⚠️ Vulnerabilities in This Implementation</h3>
-                <p>This tool demonstrates <strong>educational ECC</strong> for learning purposes. It has several limitations:</p>
-
-                <div class="alert alert--warning">
-                    <h4>1. Small Test Curves (Critical)</h4>
-                    <p>Test curves with p = 23 or p = 97 are <strong>COMPLETELY INSECURE</strong>:</p>
+                <div class="card card--control">
+                    <h3>🔐 What Makes ECC Secure?</h3>
+                    <p>
+                        ECC security relies on the
+                        <strong
+                            >Elliptic Curve Discrete Logarithm Problem
+                            (ECDLP)</strong
+                        >:
+                    </p>
                     <ul>
-                        <li><strong>ECDLP is trivial:</strong> Can brute-force private keys in milliseconds</li>
-                        <li><strong>Group order too small:</strong> Only ~30-100 points on curve</li>
-                        <li><strong>No security margin:</strong> Attacks are practical on any computer</li>
+                        <li>
+                            <strong>Easy:</strong> Compute Q = k × P (scalar
+                            multiplication, O(log k) operations)
+                        </li>
+                        <li>
+                            <strong>Hard:</strong> Given P and Q, find k such
+                            that Q = k × P (exponential time)
+                        </li>
                     </ul>
-                    <p><strong>Production requirement:</strong> Minimum 256-bit curves (secp256k1, P-256, Curve25519)</p>
+                    <p>
+                        Best known classical attack:
+                        <strong>Pollard's rho algorithm</strong> with O(√n)
+                        complexity
+                    </p>
+                    <p>
+                        For a 256-bit curve: ~2^128 operations required
+                        (impossible with current technology)
+                    </p>
                 </div>
 
-                <div class="alert alert--warning">
-                    <h4>2. Client-Side Key Storage</h4>
-                    <p>Keys are stored in browser memory:</p>
-                    <ul>
-                        <li>Vulnerable to XSS attacks</li>
-                        <li>Visible in browser DevTools</li>
-                        <li>No hardware protection</li>
-                        <li>Lost on page refresh</li>
-                    </ul>
-                    <p><strong>Production solution:</strong> Use Hardware Security Modules (HSMs), secure enclaves, or key management services</p>
+                <div class="card card--control">
+                    <h3>⚠️ Vulnerabilities in This Implementation</h3>
+                    <p>
+                        This tool demonstrates
+                        <strong>educational ECC</strong> for learning purposes.
+                        It has several limitations:
+                    </p>
+
+                    <div class="alert alert--warning">
+                        <h4>1. Small Test Curves (Critical)</h4>
+                        <p>
+                            Test curves with p = 23 or p = 97 are
+                            <strong>COMPLETELY INSECURE</strong>:
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>ECDLP is trivial:</strong> Can
+                                brute-force private keys in milliseconds
+                            </li>
+                            <li>
+                                <strong>Group order too small:</strong> Only
+                                ~30-100 points on curve
+                            </li>
+                            <li>
+                                <strong>No security margin:</strong> Attacks are
+                                practical on any computer
+                            </li>
+                        </ul>
+                        <p>
+                            <strong>Production requirement:</strong> Minimum
+                            256-bit curves (secp256k1, P-256, Curve25519)
+                        </p>
+                    </div>
+
+                    <div class="alert alert--warning">
+                        <h4>2. Client-Side Key Storage</h4>
+                        <p>Keys are stored in browser memory:</p>
+                        <ul>
+                            <li>Vulnerable to XSS attacks</li>
+                            <li>Visible in browser DevTools</li>
+                            <li>No hardware protection</li>
+                            <li>Lost on page refresh</li>
+                        </ul>
+                        <p>
+                            <strong>Production solution:</strong> Use Hardware
+                            Security Modules (HSMs), secure enclaves, or key
+                            management services
+                        </p>
+                    </div>
+
+                    <div class="alert alert--warning">
+                        <h4>3. Timing Attacks</h4>
+                        <p>
+                            Scalar multiplication timing depends on private key
+                            bits:
+                        </p>
+                        <ul>
+                            <li>
+                                Simple double-and-add leaks Hamming weight of
+                                scalar
+                            </li>
+                            <li>
+                                JavaScript timing observable via Performance API
+                            </li>
+                            <li>
+                                Can recover private key bits over many
+                                observations
+                            </li>
+                        </ul>
+                        <p>
+                            <strong>Mitigation:</strong> Use constant-time
+                            algorithms (Montgomery ladder) - implemented in
+                            scalarMultiplySecure()
+                        </p>
+                    </div>
+
+                    <div class="alert alert--warning">
+                        <h4>4. Invalid Curve Attacks</h4>
+                        <p>
+                            Without point validation, attackers can provide
+                            points not on the curve:
+                        </p>
+                        <ul>
+                            <li>
+                                Points on quadratic twist (different curve, same
+                                field)
+                            </li>
+                            <li>Small subgroup points (order 2, 4, 8)</li>
+                            <li>
+                                Can leak private key bits through scalar
+                                multiplication
+                            </li>
+                        </ul>
+                        <p>
+                            <strong>Defense:</strong> Always validate received
+                            points (implemented in validatePublicKey())
+                        </p>
+                    </div>
+
+                    <div class="alert alert--warning">
+                        <h4>5. ECDSA k-Nonce Security</h4>
+                        <p>
+                            The ephemeral key k in ECDSA is
+                            <strong>CRITICAL</strong>:
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>Reused k:</strong> Instant private key
+                                recovery (Sony PS3 hack)
+                            </li>
+                            <li>
+                                <strong>Biased k:</strong> Lattice attacks can
+                                recover key
+                            </li>
+                            <li>
+                                <strong>Predictable k:</strong> Direct key
+                                compromise
+                            </li>
+                        </ul>
+                        <p>
+                            <strong>Solution:</strong> RFC 6979 deterministic
+                            ECDSA (implemented in this tool)
+                        </p>
+                    </div>
                 </div>
 
-                <div class="alert alert--warning">
-                    <h4>3. Timing Attacks</h4>
-                    <p>Scalar multiplication timing depends on private key bits:</p>
+                <div class="card card--control">
+                    <h3>✅ Real-World ECC Best Practices</h3>
                     <ul>
-                        <li>Simple double-and-add leaks Hamming weight of scalar</li>
-                        <li>JavaScript timing observable via Performance API</li>
-                        <li>Can recover private key bits over many observations</li>
+                        <li>
+                            <strong>Use standard curves:</strong> secp256k1
+                            (Bitcoin), P-256 (NIST), Curve25519 (modern)
+                        </li>
+                        <li>
+                            <strong>Minimum 256-bit security:</strong>
+                            Equivalent to 3072-bit RSA
+                        </li>
+                        <li>
+                            <strong>Store keys in HSMs:</strong> Hardware-backed
+                            key storage
+                        </li>
+                        <li>
+                            <strong>Validate all points:</strong> Check curve
+                            equation and subgroup membership
+                        </li>
+                        <li>
+                            <strong>Use deterministic ECDSA:</strong> RFC 6979
+                            for signature generation
+                        </li>
+                        <li>
+                            <strong>Implement constant-time operations:</strong>
+                            Montgomery ladder for scalar multiplication
+                        </li>
+                        <li>
+                            <strong>Use authenticated key exchange:</strong>
+                            Combine ECDH with digital signatures (X3DH, Noise
+                            protocol)
+                        </li>
+                        <li>
+                            <strong>Regular key rotation:</strong> Limit
+                            exposure window for compromised keys
+                        </li>
+                        <li>
+                            <strong>Use established libraries:</strong>
+                            libsodium, OpenSSL, BoringSSL - not hand-rolled
+                            crypto
+                        </li>
                     </ul>
-                    <p><strong>Mitigation:</strong> Use constant-time algorithms (Montgomery ladder) - implemented in scalarMultiplySecure()</p>
                 </div>
 
-                <div class="alert alert--warning">
-                    <h4>4. Invalid Curve Attacks</h4>
-                    <p>Without point validation, attackers can provide points not on the curve:</p>
+                <div class="card card--control">
+                    <h3>🆚 ECC vs RSA: Security Comparison</h3>
+
+                    <table class="probability-table">
+                        <thead>
+                            <tr>
+                                <th>Security Level (bits)</th>
+                                <th>ECC Key Size</th>
+                                <th>RSA Key Size</th>
+                                <th>Ratio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>80 (legacy, broken)</td>
+                                <td>160</td>
+                                <td>1024</td>
+                                <td>1:6</td>
+                            </tr>
+                            <tr>
+                                <td>112 (acceptable until 2030)</td>
+                                <td>224</td>
+                                <td>2048</td>
+                                <td>1:9</td>
+                            </tr>
+                            <tr>
+                                <td>128 (strong)</td>
+                                <td>256</td>
+                                <td>3072</td>
+                                <td>1:12</td>
+                            </tr>
+                            <tr>
+                                <td>192 (very strong)</td>
+                                <td>384</td>
+                                <td>7680</td>
+                                <td>1:20</td>
+                            </tr>
+                            <tr>
+                                <td>256 (extreme)</td>
+                                <td>521</td>
+                                <td>15360</td>
+                                <td>1:29</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <p><strong>Note: Key sizes given in bits</strong></p>
+                    <p>
+                        <strong>ECC Mayor Advantage:</strong> Provides
+                        equivalent security with much smaller keys:
+                    </p>
                     <ul>
-                        <li>Points on quadratic twist (different curve, same field)</li>
-                        <li>Small subgroup points (order 2, 4, 8)</li>
-                        <li>Can leak private key bits through scalar multiplication</li>
+                        <li>
+                            <strong>Faster:</strong> Smaller keys = faster
+                            computations
+                        </li>
+                        <li>
+                            <strong>Smaller:</strong> Less bandwidth, storage,
+                            and power consumption
+                        </li>
+                        <li>
+                            <strong>Mobile-friendly:</strong> Ideal for IoT and
+                            embedded devices
+                        </li>
                     </ul>
-                    <p><strong>Defense:</strong> Always validate received points (implemented in validatePublicKey())</p>
+
+                    <p>
+                        <strong>Example:</strong> Bitcoin uses 256-bit ECC
+                        (secp256k1) for security equivalent to 3072-bit RSA
+                    </p>
                 </div>
 
-                <div class="alert alert--warning">
-                    <h4>5. ECDSA k-Nonce Security</h4>
-                    <p>The ephemeral key k in ECDSA is <strong>CRITICAL</strong>:</p>
+                <div class="card card--control">
+                    <h3>🔮 Post-Quantum Cryptography</h3>
+                    <p>
+                        <strong>Quantum Threat:</strong> Shor's algorithm can
+                        break both ECC and RSA
+                    </p>
                     <ul>
-                        <li><strong>Reused k:</strong> Instant private key recovery (Sony PS3 hack)</li>
-                        <li><strong>Biased k:</strong> Lattice attacks can recover key</li>
-                        <li><strong>Predictable k:</strong> Direct key compromise</li>
+                        <li>
+                            <strong>Classical computer:</strong> ECDLP requires
+                            O(√n) operations (infeasible)
+                        </li>
+                        <li>
+                            <strong>Quantum computer:</strong> Shor's algorithm
+                            requires O((log n)³) operations (polynomial time!)
+                        </li>
+                        <li>
+                            <strong>Timeline:</strong> Large-scale quantum
+                            computers may exist in 10-20 years
+                        </li>
                     </ul>
-                    <p><strong>Solution:</strong> RFC 6979 deterministic ECDSA (implemented in this tool)</p>
+
+                    <p><strong>Post-Quantum Alternatives:</strong></p>
+                    <ul>
+                        <li>
+                            <strong>Lattice-based:</strong> CRYSTALS-Kyber (key
+                            exchange), CRYSTALS-Dilithium (signatures)
+                        </li>
+                        <li><strong>Code-based:</strong> Classic McEliece</li>
+                        <li>
+                            <strong>Hash-based:</strong> SPHINCS+ (stateless
+                            signatures)
+                        </li>
+                        <li>
+                            <strong>Isogeny-based:</strong> SIKE (broken in
+                            2022, research ongoing)
+                        </li>
+                    </ul>
+
+                    <p>
+                        <strong>NIST Post-Quantum Standards:</strong> Finalized
+                        in 2024, migration ongoing
+                    </p>
+
+                    <p>
+                        <strong>Hybrid Approach:</strong> Use both ECC and
+                        post-quantum algorithms for defense-in-depth
+                    </p>
+                </div>
+
+                <div class="card card--control">
+                    <h3>📚 Further Learning</h3>
+                    <p>To understand ECC security deeply, study:</p>
+                    <ul>
+                        <li>
+                            <strong>Abstract Algebra:</strong> Group theory,
+                            finite fields, Galois theory
+                        </li>
+                        <li>
+                            <strong>Number Theory:</strong> Discrete logarithm
+                            problem, complexity theory
+                        </li>
+                        <li>
+                            <strong>Cryptanalysis:</strong> Pollard's rho,
+                            baby-step giant-step, MOV attack
+                        </li>
+                        <li>
+                            <strong>Side-Channel Attacks:</strong> Timing, power
+                            analysis, fault injection, cache attacks
+                        </li>
+                        <li>
+                            <strong>Protocol Design:</strong> Key exchange
+                            protocols (X3DH, Noise), authenticated encryption
+                        </li>
+                        <li>
+                            <strong>Standards:</strong> SECG, NIST FIPS 186-5,
+                            IETF RFCs (6979, 7748, 8032)
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card card--control">
+                    <h3>🌐 Real-World ECC Usage</h3>
+                    <ul>
+                        <li>
+                            <strong>Bitcoin & Cryptocurrencies:</strong>
+                            secp256k1 for transaction signatures
+                        </li>
+                        <li>
+                            <strong>TLS/SSL:</strong> ECDHE-ECDSA cipher suites
+                            for web encryption
+                        </li>
+                        <li>
+                            <strong>Signal Protocol:</strong> Curve25519 for
+                            end-to-end encrypted messaging
+                        </li>
+                        <li>
+                            <strong>SSH:</strong> Ed25519 for authentication
+                        </li>
+                        <li>
+                            <strong>Apple iMessage:</strong> ECDSA for message
+                            signing
+                        </li>
+                        <li>
+                            <strong>WhatsApp:</strong> Signal protocol with
+                            Curve25519
+                        </li>
+                        <li>
+                            <strong>U.S. Government:</strong> NIST P-256/P-384
+                            (NSA Suite B)
+                        </li>
+                        <li>
+                            <strong>Smart Cards:</strong> P-256 for contactless
+                            payments
+                        </li>
+                    </ul>
                 </div>
             </div>
+        </main>
 
-            <div class="card card--control">
-                <h3>✅ Real-World ECC Best Practices</h3>
-                <ul>
-                    <li><strong>Use standard curves:</strong> secp256k1 (Bitcoin), P-256 (NIST), Curve25519 (modern)</li>
-                    <li><strong>Minimum 256-bit security:</strong> Equivalent to 3072-bit RSA</li>
-                    <li><strong>Store keys in HSMs:</strong> Hardware-backed key storage</li>
-                    <li><strong>Validate all points:</strong> Check curve equation and subgroup membership</li>
-                    <li><strong>Use deterministic ECDSA:</strong> RFC 6979 for signature generation</li>
-                    <li><strong>Implement constant-time operations:</strong> Montgomery ladder for scalar multiplication</li>
-                    <li><strong>Use authenticated key exchange:</strong> Combine ECDH with digital signatures (X3DH, Noise protocol)</li>
-                    <li><strong>Regular key rotation:</strong> Limit exposure window for compromised keys</li>
-                    <li><strong>Use established libraries:</strong> libsodium, OpenSSL, BoringSSL - not hand-rolled crypto</li>
-                </ul>
-            </div>
+        <footer>
+            <p>
+                &copy; 2025 Cryptography Portfolio. Educational demonstration
+                only.
+            </p>
+            <p class="alert alert--security-note">
+                <strong>⚠️ Educational Tool:</strong> Small curves shown here
+                are for learning only. Real cryptographic applications require
+                256+ bit curves.
+            </p>
+        </footer>
 
-            <div class="card card--control">
-                <h3>🆚 ECC vs RSA: Security Comparison</h3>
-
-                <table class="probability-table">
-                    <thead>
-                        <tr>
-                            <th>Security Level (bits)</th>
-                            <th>ECC Key Size</th>
-                            <th>RSA Key Size</th>
-                            <th>Ratio</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>80 (legacy, broken)</td>
-                            <td>160</td>
-                            <td>1024</td>
-                            <td>1:6</td>
-                        </tr>
-                        <tr>
-                            <td>112 (acceptable until 2030)</td>
-                            <td>224</td>
-                            <td>2048</td>
-                            <td>1:9</td>
-                        </tr>
-                        <tr>
-                            <td>128 (strong)</td>
-                            <td>256</td>
-                            <td>3072</td>
-                            <td>1:12</td>
-                        </tr>
-                        <tr>
-                            <td>192 (very strong)</td>
-                            <td>384</td>
-                            <td>7680</td>
-                            <td>1:20</td>
-                        </tr>
-                        <tr>
-                            <td>256 (extreme)</td>
-                            <td>521</td>
-                            <td>15360</td>
-                            <td>1:29</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <p><strong>Note: Key sizes given in bits</strong></p>
-                <p><strong>ECC Mayor Advantage:</strong> Provides equivalent security with much smaller keys:</p>
-                <ul>
-                    <li><strong>Faster:</strong> Smaller keys = faster computations</li>
-                    <li><strong>Smaller:</strong> Less bandwidth, storage, and power consumption</li>
-                    <li><strong>Mobile-friendly:</strong> Ideal for IoT and embedded devices</li>
-                </ul>
-
-                <p><strong>Example:</strong> Bitcoin uses 256-bit ECC (secp256k1) for security equivalent to 3072-bit RSA</p>
-            </div>
-
-            <div class="card card--control">
-                <h3>🔮 Post-Quantum Cryptography</h3>
-                <p><strong>Quantum Threat:</strong> Shor's algorithm can break both ECC and RSA</p>
-                <ul>
-                    <li><strong>Classical computer:</strong> ECDLP requires O(√n) operations (infeasible)</li>
-                    <li><strong>Quantum computer:</strong> Shor's algorithm requires O((log n)³) operations (polynomial time!)</li>
-                    <li><strong>Timeline:</strong> Large-scale quantum computers may exist in 10-20 years</li>
-                </ul>
-
-                <p><strong>Post-Quantum Alternatives:</strong></p>
-                <ul>
-                    <li><strong>Lattice-based:</strong> CRYSTALS-Kyber (key exchange), CRYSTALS-Dilithium (signatures)</li>
-                    <li><strong>Code-based:</strong> Classic McEliece</li>
-                    <li><strong>Hash-based:</strong> SPHINCS+ (stateless signatures)</li>
-                    <li><strong>Isogeny-based:</strong> SIKE (broken in 2022, research ongoing)</li>
-                </ul>
-
-                <p><strong>NIST Post-Quantum Standards:</strong> Finalized in 2024, migration ongoing</p>
-
-                <p><strong>Hybrid Approach:</strong> Use both ECC and post-quantum algorithms for defense-in-depth</p>
-            </div>
-
-            <div class="card card--control">
-                <h3>📚 Further Learning</h3>
-                <p>To understand ECC security deeply, study:</p>
-                <ul>
-                    <li><strong>Abstract Algebra:</strong> Group theory, finite fields, Galois theory</li>
-                    <li><strong>Number Theory:</strong> Discrete logarithm problem, complexity theory</li>
-                    <li><strong>Cryptanalysis:</strong> Pollard's rho, baby-step giant-step, MOV attack</li>
-                    <li><strong>Side-Channel Attacks:</strong> Timing, power analysis, fault injection, cache attacks</li>
-                    <li><strong>Protocol Design:</strong> Key exchange protocols (X3DH, Noise), authenticated encryption</li>
-                    <li><strong>Standards:</strong> SECG, NIST FIPS 186-5, IETF RFCs (6979, 7748, 8032)</li>
-                </ul>
-            </div>
-
-            <div class="card card--control">
-                <h3>🌐 Real-World ECC Usage</h3>
-                <ul>
-                    <li><strong>Bitcoin & Cryptocurrencies:</strong> secp256k1 for transaction signatures</li>
-                    <li><strong>TLS/SSL:</strong> ECDHE-ECDSA cipher suites for web encryption</li>
-                    <li><strong>Signal Protocol:</strong> Curve25519 for end-to-end encrypted messaging</li>
-                    <li><strong>SSH:</strong> Ed25519 for authentication</li>
-                    <li><strong>Apple iMessage:</strong> ECDSA for message signing</li>
-                    <li><strong>WhatsApp:</strong> Signal protocol with Curve25519</li>
-                    <li><strong>U.S. Government:</strong> NIST P-256/P-384 (NSA Suite B)</li>
-                    <li><strong>Smart Cards:</strong> P-256 for contactless payments</li>
-                </ul>
-            </div>
-        </div>
-    </main>
-
-    <footer>
-        <p>&copy; 2025 Cryptography Portfolio. Educational demonstration only.</p>
-        <p class="alert alert--security-note">
-            <strong>⚠️ Educational Tool:</strong> Small curves shown here are for learning only.
-            Real cryptographic applications require 256+ bit curves.
-        </p>
-    </footer>
-
-    <!-- Load scripts in order (UNCHANGED) -->
-    <script src="../js/config.js"></script>
-    <script src="../js/ui-utils.js"></script>
-    <script src="../js/dark-mode-toggle.js"></script>
-    <script src="../js/display-components.js"></script>
-    <script src="../js/crypto-demos/rsa/math-utils.js"></script>
-    <script src="../js/crypto-demos/ec/ec-math-utils.js"></script>
-    <script src="../js/crypto-demos/ec/ec-core.js"></script>
-    <script src="../js/crypto-demos/ec/ec-visualization.js"></script>
-    <script src="../js/crypto-demos/ec/ec-display.js"></script>
-    <script src="../js/crypto-demos/ec/ec-demo.js"></script>
-</body>
+        <!-- Load scripts in order (UNCHANGED) -->
+        <script type="module" src="/src/crypto-demos/ec/ec-demo.ts"></script>
+    </body>
 </html>
