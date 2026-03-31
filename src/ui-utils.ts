@@ -22,7 +22,7 @@ export const UIUtils = {
     escapeHtml(text: string): string {
         const div = document.createElement('div');
         div.textContent = text;
-        return div.innerHTML;
+        return div.innerHTML.replace(/"/g, '&quot;');
     },
 
     createSecureElement(tag: string, text = '', attributes: Record<string, string> = {}): HTMLElement {
