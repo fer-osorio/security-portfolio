@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+    <title>AES Image Encryption - Cryptography Portfolio</title>
+
+    <!-- Link to main stylesheets -->
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/pages/aes-tool.css">
+
+    <!-- Favicon setup -->
+    <link rel="icon" type="image/png" href="../assets/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="../assets/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="../assets/favicon/site.webmanifest" />
+</head>
+<body>
+    <!-- Header with navigation -->
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <h1 class="logo">AES Image Encryption</h1>
+                <ul class="nav-links">
+                    <li><a href="../index.html">← Back to Home</a></li>
+                    <li>
+                        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                            🌑
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="aes-tool-container">
+        <!-- Error display -->
+        <div id="error-message" class="alert alert--error" hidden></div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Cryptography Portfolio. Educational demonstration only.</p>
+        <p class="alert alert--security-note">
+            <strong>⚠️ Security Notice:</strong> This is a teaching tool. Never use for real cryptographic applications.
+            Always use audited, standard cryptographic libraries in production.
+        </p>
+    </footer>
+
+    <script type="module" src="/src/crypto-demos/aes/aes-demo.ts"></script>
+</body>
+</html>
