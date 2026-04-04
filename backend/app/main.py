@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.routes.aes import router as aes_router
 
 app = FastAPI(title="Mathematical Foundations — Backend")
 
@@ -12,6 +13,8 @@ app.add_middleware(
     allow_methods=["POST"],
     allow_headers=["*"],
 )
+
+app.include_router(aes_router)
 
 @app.get("/health")
 def health():
