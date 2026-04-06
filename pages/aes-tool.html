@@ -3,7 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+    <!--
+        img-src allows data: and blob: URIs so the tool can render locally-generated
+        images (preview, encrypted output, decrypted output) without relaxing any
+        script-related directive.
+
+        Why data: is safe here for images:
+          - data: in img-src cannot execute JavaScript; only data: in script-src
+            or object-src would open a code-execution vector.
+          - connect-src inherits 'self' from default-src, so an XSS cannot
+            exfiltrate an encoded image to a foreign origin anyway.
+
+        blob: is included alongside data: to allow a future migration to
+        URL.createObjectURL() (same-origin, revocable, no CSP change needed then).
+
+        All other directives (script-src, connect-src, object-src) are unchanged.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:">
     <title>AES Image Encryption - Cryptography Portfolio</title>
 
     <!-- Link to main stylesheets -->
@@ -36,8 +52,72 @@
     </header>
 
     <main class="aes-tool-container">
-        <!-- Error display -->
+        <div id="welcome-message"></div>
         <div id="error-message" class="alert alert--error" hidden></div>
+
+        <section id="stage-1" class="stage">
+            <h2>Step 1: Configure &amp; Upload</h2>
+
+            <!-- Upload zone -->
+            <div class="card card--control">
+                <div id="image-upload-zone" class="upload-drop-zone">
+                    <input id="image-file-input" type="file" accept=".png,.jpg,.jpeg,.bmp" hidden>
+                    <p>Drag and drop an image here, or click to select</p>
+                    <p class="upload-drop-zone__hint">PNG, JPEG, or BMP · max 8 MB</p>
+                </div>
+                <img id="image-preview" alt="Selected image preview" hidden>
+                <p id="image-preview-info" hidden></p>
+            </div>
+
+            <!-- Mode selector -->
+            <div class="card card--control form-group">
+                <label for="mode-select">AES Mode</label>
+                <select id="mode-select">
+                    <option value="ECB">ECB — Electronic Codebook (insecure, for demo)</option>
+                    <option value="CBC" selected>CBC — Cipher Block Chaining (default)</option>
+                    <option value="OFB">OFB — Output Feedback</option>
+                    <option value="CTR">CTR — Counter</option>
+                </select>
+            </div>
+
+            <!-- Key length selector -->
+            <div class="card card--control form-group">
+                <label for="key-length-select">Key Length</label>
+                <select id="key-length-select">
+                    <option value="128" selected>128 bits</option>
+                    <option value="192">192 bits</option>
+                    <option value="256">256 bits</option>
+                </select>
+            </div>
+
+            <!-- Advanced IV (collapsed) -->
+            <div class="card card--control iv-advanced">
+                <button type="button" id="iv-advanced-toggle" class="btn btn-sm">
+                    Set custom IV (advanced)
+                </button>
+                <div class="iv-advanced__body" style="display:none">
+                    <label for="iv-input">IV (32 hex characters)</label>
+                    <input id="iv-input" type="text" maxlength="32" spellcheck="false"
+                           placeholder="Leave blank to generate randomly" autocomplete="off">
+                    <p class="form-hint">Leave blank to generate a random IV. Must be unique per
+                    encryption in real use.</p>
+                </div>
+            </div>
+
+            <button id="encrypt-btn" class="btn btn-primary">Generate Key &amp; Encrypt</button>
+        </section>
+
+        <!-- Stage 2: injected by displayEncryptionResult -->
+        <section id="stage-2" class="stage" style="display:none">
+            <h2>Step 2: Review Encryption &amp; Prepare Decryption</h2>
+            <div id="stage-2-results"></div>
+        </section>
+
+        <!-- Stage 3: injected by displayDecryptionResult -->
+        <section id="stage-3" class="stage" style="display:none">
+            <h2>Step 3: Decryption Result</h2>
+            <div id="stage-3-results"></div>
+        </section>
     </main>
 
     <footer>
