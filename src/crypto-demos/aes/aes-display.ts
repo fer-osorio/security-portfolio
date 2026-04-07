@@ -206,6 +206,13 @@ function jpgCalloutHtml(): string {
     );
 }
 
+function sizeInflationCalloutHtml(): string {
+    return `<div class="callout callout--info">
+        <strong>Note on file size:</strong> Encrypted images are typically larger than their originals.
+        AES produces near-random data that compresses poorly — this is a sign of good encryption.
+    </div>`;
+}
+
 // ============================================================================
 // PUBLIC DISPLAY FUNCTIONS
 // ============================================================================
@@ -233,6 +240,7 @@ export function displayEncryptionResult(
 
         ${showEcbCallout ? ecbCalloutHtml() : ''}
         ${showJpgCallout ? jpgCalloutHtml() : ''}
+        ${sizeInflationCalloutHtml()}
 
         ${keyMaterialHtml(response)}
         ${decryptFormHtml(response)}
