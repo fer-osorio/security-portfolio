@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 from fastapi.responses import JSONResponse
 
 from app.validation import (
-    validate_file_size, validate_iv, validate_key_hex, validate_key_length,
-    validate_mime_type, validate_mode,
+    validate_decrypt_file_size, validate_file_size, validate_iv, validate_key_hex,
+    validate_key_length, validate_mime_type, validate_mode,
 )
 
 router = APIRouter(prefix="/api")
@@ -115,7 +115,7 @@ async def decrypt(
 ):
     mime       = validate_mime_type(image.content_type or "")
     data       = await image.read()
-    validate_file_size(len(data))
+    validate_decrypt_file_size(len(data))
     key_length = validate_key_length(key_length)
     key        = validate_key_hex(key, key_length)
 

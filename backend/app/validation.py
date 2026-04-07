@@ -4,7 +4,8 @@ from fastapi import HTTPException
 ALLOWED_MODES       = {"ECB", "CBC", "OFB", "CTR"}
 ALLOWED_KEY_LENGTHS = {128, 192, 256}
 ALLOWED_MIME_TYPES  = {"image/bmp", "image/png", "image/jpeg"}
-MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024   # 8 MB
+MAX_FILE_SIZE_BYTES         = 8 * 1024 * 1024   # 8 MB
+MAX_DECRYPT_FILE_SIZE_BYTES = 64 * 1024 * 1024  # 64 MB
 HEX_IV_PATTERN      = re.compile(r'^[0-9A-Fa-f]{32}$')
 
 def validate_mode(mode: str) -> str:
@@ -39,6 +40,10 @@ def validate_key_hex(key: str, key_length: int) -> str:
 def validate_file_size(size: int) -> None:
     if size > MAX_FILE_SIZE_BYTES:
         raise HTTPException(413, "File exceeds maximum allowed size of 8 MB")
+
+def validate_decrypt_file_size(size: int) -> None:
+    if size > MAX_DECRYPT_FILE_SIZE_BYTES:
+        raise HTTPException(413, "File exceeds maximum allowed size of 64 MB")
 
 def validate_mime_type(content_type: str) -> str:
     base_type = content_type.split(";")[0].strip().lower()
