@@ -12,7 +12,7 @@
     "sourceMap": true,
     "declaration": true,
     "skipLibCheck": true,
-    "types": ["vitest/globals", "crypto-js"],
+    "types": ["vitest/globals", "crypto-js", "vite/client"],
   },
   "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"],

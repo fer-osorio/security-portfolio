@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: aes-tool-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: https://fer-osorio.github.io
+      - key: ENCRYPTOR_BIN
+        value: /usr/local/bin/image-encryptor

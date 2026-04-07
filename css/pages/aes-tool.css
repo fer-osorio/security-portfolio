@@ -1,0 +1,163 @@
+/* ============================================================
+   AES Tool — page-specific styles
+   Generic rules (.card, .alert, .btn, .form-group, .copy-btn,
+   .metadata-table) live in css/components/
+   ============================================================ */
+
+/* Container */
+.aes-tool-container {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: var(--spacing-xl);
+}
+
+@media (max-width: 768px) {
+    .aes-tool-container { padding: var(--spacing-lg) var(--spacing-md); }
+}
+
+/* Stage sections */
+.stage { margin-bottom: var(--spacing-xxl); }
+.stage h2 { margin-bottom: var(--spacing-xl); color: var(--color-primary); }
+
+/* Upload drop zone */
+.upload-drop-zone {
+    border: 2px dashed var(--color-border);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-xxl) var(--spacing-xl);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color var(--transition-base), background var(--transition-base);
+}
+
+.upload-drop-zone:hover,
+.upload-drop-zone.drag-over {
+    border-color: var(--color-secondary);
+    background: rgba(52, 152, 219, 0.05);
+}
+
+.upload-drop-zone__hint { font-size: var(--font-size-sm); color: var(--color-text-light); }
+
+/* Image preview */
+#image-preview {
+    display: block;
+    max-width: 100%;
+    max-height: 300px;
+    margin: var(--spacing-md) auto 0;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+}
+
+#image-preview-info {
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
+    margin-top: var(--spacing-xs);
+}
+
+/* IV advanced section */
+.iv-advanced__body {
+    margin-top: var(--spacing-md);
+}
+
+.iv-advanced__body label {
+    display: block;
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--spacing-xs);
+}
+
+.iv-advanced__body input {
+    width: 100%;
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+}
+
+.form-hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
+    margin-top: var(--spacing-xs);
+}
+
+/* Image comparison panels (classes emitted by aes-display.ts) */
+.image-comparison {
+    display: grid;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.image-comparison--two   { grid-template-columns: repeat(2, 1fr); }
+.image-comparison--three { grid-template-columns: repeat(3, 1fr); }
+
+@media (max-width: 768px) {
+    .image-comparison--two,
+    .image-comparison--three { grid-template-columns: 1fr; }
+}
+
+.image-panel {
+    text-align: center;
+}
+
+.image-panel__label {
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-primary);
+}
+
+.image-panel__img {
+    width: 100%;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+    display: block;
+}
+
+/* Result action rows (classes emitted by aes-display.ts) */
+.result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Key material table overrides (.key-material-table emitted by aes-display.ts) */
+.key-material-table code {
+    font-size: var(--font-size-xs);
+    word-break: break-all;
+}
+
+.key-truncated,
+.key-full {
+    display: inline;
+}
+
+/* Decrypt form (.card--decrypt-form, .form-row, .form-actions emitted by aes-display.ts) */
+.card--decrypt-form .form-description {
+    color: var(--color-text-light);
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.form-row label {
+    min-width: 4rem;
+    font-weight: var(--font-weight-semibold);
+    flex-shrink: 0;
+}
+
+.form-row input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-lg);
+}
