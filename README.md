@@ -1,6 +1,6 @@
-# Mathematical Foundations
+# Security Portfolio
 
-Web pages showcasing my projects on mathematics, cryptography, and computer science, and hosting interactive tools.
+Security portfolio showcasing cryptography concepts and projects, with interactive tools for AES, RSA, hashing, and elliptic curves.
 
 ## Table of Contents
 - [About the Project](#about-the-project)
@@ -31,12 +31,12 @@ To run the projects locally, follow these steps:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/fer-osorio/mathematical-foundations.git
+   git clone https://github.com/fer-osorio/security-portfolio.git
    ```
 
 2. **Navigate to the project directory**
    ```bash
-   cd mathematical-foundations
+   cd security-portfolio
    ```
 
 3. **Open the HTML files in your browser**
