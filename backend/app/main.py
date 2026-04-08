@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.aes import router as aes_router
 
-app = FastAPI(title="Mathematical Foundations — Backend")
+app = FastAPI(title="Security Portfolio — Backend")
 
 origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 
