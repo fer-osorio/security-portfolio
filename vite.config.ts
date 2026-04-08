@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/mathematical-foundations/',
+  base: '/security-portfolio/',
   root: '.',
   build: {
     outDir: 'dist',
