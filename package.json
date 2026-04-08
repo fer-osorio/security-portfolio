@@ -1,7 +1,7 @@
 {
-  "name": "mathematical-foundations",
+  "name": "security-portfolio",
   "version": "1.0.0",
-  "description": "Web pages showcasing my projects on mathematics, cryptography, and computer science, and hosting interactive tools.",
+  "description": "Security portfolio showcasing cryptography concepts and interactive tools.",
   "main": "index.js",
   "directories": {
     "doc": "docs",
@@ -20,14 +20,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fer-osorio/mathematical-foundations.git"
+    "url": "git+https://github.com/fer-osorio/security-portfolio.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/fer-osorio/mathematical-foundations/issues"
+    "url": "https://github.com/fer-osorio/security-portfolio/issues"
   },
-  "homepage": "https://github.com/fer-osorio/mathematical-foundations#readme",
+  "homepage": "https://github.com/fer-osorio/security-portfolio#readme",
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
     "@vitest/coverage-v8": "^4.1.2",
