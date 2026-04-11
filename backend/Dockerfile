@@ -1,14 +1,21 @@
 FROM python:3.12-slim
 
-WORKDIR /app
+ARG ENCRYPTOR_VERSION=v0.1.0
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fL \
+    "https://github.com/fer-osorio/cipher-fortis/releases/download/${ENCRYPTOR_VERSION}/image-encryptor" \
+    -o /usr/local/bin/image-encryptor \
+    && chmod +x /usr/local/bin/image-encryptor
+
+ENV ENCRYPTOR_BIN=/usr/local/bin/image-encryptor
+
+WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY bin/image-encryptor /usr/local/bin/image-encryptor
-RUN chmod +x /usr/local/bin/image-encryptor
-
 COPY app/ ./app/
-
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
