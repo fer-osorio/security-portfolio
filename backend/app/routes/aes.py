@@ -18,8 +18,9 @@ from app.validation import (
 
 router = APIRouter(prefix="/api")
 
-_DEFAULT_BINARY = str(Path(__file__).resolve().parent.parent.parent / "bin" / "image-encryptor")
-BINARY = os.environ.get("ENCRYPTOR_BIN", _DEFAULT_BINARY)
+BINARY = os.environ.get("ENCRYPTOR_BIN")
+if BINARY is None:
+    raise RuntimeError("ENCRYPTOR_BIN environment variable is not set")
 
 def _output_format(original_mime: str) -> str:
     return "bmp" if original_mime == "image/bmp" else "png"
