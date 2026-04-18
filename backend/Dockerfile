@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-ARG ENCRYPTOR_VERSION=v0.1.0
+ARG ENCRYPTOR_VERSION=v0.2.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates \
