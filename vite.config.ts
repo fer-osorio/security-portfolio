@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import ogImagePlugin     from './vite-plugin-og-image'
 
 export default defineConfig({
   base: '/security-portfolio/',
@@ -23,4 +24,9 @@ export default defineConfig({
       },
     },
   },
+  plugins: [
+    ogImagePlugin({
+      baseUrl: 'https://fer-osorio.github.io/security-portfolio',
+    }),
+  ],
 });
