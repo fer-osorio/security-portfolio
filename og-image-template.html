@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  og-image-template.html
+  ──────────────────────
+  Self-contained 1200 × 630 template for the Security Portfolio OG image.
+
+  Rules
+  - No external resources.  All fonts, colors, and shapes must be inline so
+    Puppeteer can render with waitUntil:'networkidle0' reliably.
+  - The root <div id="card"> is exactly 1200 × 630 px.  The Puppeteer clip
+    region matches those dimensions.
+  - Fonts: system-ui stack for the heading, 'Times New Roman' for the ΠΦ
+    symbol (widely available on all Puppeteer Chromium builds).
+  - Color palette mirrors css/base/variables.css exactly.
+-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0d1520; }
+
+    /* ── Card ── */
+    #card {
+      position: relative;
+      width: 1200px;
+      height: 630px;
+      background: #1e2c3a;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                   Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    /* ── Grid texture ── */
+    #grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(52, 152, 219, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(52, 152, 219, 0.07) 1px, transparent 1px);
+      background-size: 80px 80px;
+    }
+
+    /* ── Left accent bar ── */
+    #accent-bar {
+      position: absolute;
+      top: 0; left: 0;
+      width: 7px; height: 630px;
+      background: #3498db;
+    }
+
+    /* ── Bottom accent bar ── */
+    #accent-bar-bottom {
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 1200px; height: 8px;
+      background: linear-gradient(90deg, #3498db, rgba(52,152,219,0.3));
+    }
+
+    /* ── Decorative background circle ── */
+    #bg-circle {
+      position: absolute;
+      top: 50%;
+      left: 170px;
+      transform: translate(-50%, -50%);
+      width: 580px;
+      height: 580px;
+      border-radius: 50%;
+      border: 1px solid rgba(52, 152, 219, 0.12);
+    }
+    #bg-circle-2 {
+      position: absolute;
+      top: 50%;
+      left: 170px;
+      transform: translate(-50%, -50%);
+      width: 440px;
+      height: 440px;
+      border-radius: 50%;
+      border: 1px solid rgba(52, 152, 219, 0.08);
+    }
+
+    /* ── Divider ── */
+    #divider {
+      position: absolute;
+      top: 110px;
+      left: 340px;
+      width: 1px;
+      height: 410px;
+      background: rgba(52, 152, 219, 0.35);
+    }
+
+    /* ── Symbol ── */
+    #symbol-bg {
+      position: absolute;
+      top: 50%;
+      left: 168px;
+      transform: translate(-50%, -50%);
+      font-family: 'Times New Roman', serif;
+      font-size: 300px;
+      font-weight: bold;
+      color: rgba(52, 152, 219, 0.08);
+      line-height: 1;
+      user-select: none;
+    }
+    #symbol {
+      position: absolute;
+      top: 50%;
+      left: 168px;
+      transform: translate(-50%, -50%);
+      font-family: 'Times New Roman', serif;
+      font-size: 160px;
+      font-weight: bold;
+      color: #3498db;
+      opacity: 0.9;
+      line-height: 1;
+      user-select: none;
+    }
+
+    /* ── Content block ── */
+    #content {
+      position: absolute;
+      top: 0; left: 360px;
+      width: 800px;
+      height: 630px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 60px 0 32px;
+    }
+
+    /* ── Eye-brow label ── */
+    #eyebrow {
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      color: #3498db;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    /* ── Title ── */
+    #title {
+      font-size: 68px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.08;
+      letter-spacing: -0.01em;
+      margin-bottom: 22px;
+    }
+
+    /* ── Tagline ── */
+    #tagline {
+      font-size: 22px;
+      font-weight: 400;
+      color: #5fa8d3;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* ── Description ── */
+    #description {
+      font-size: 20px;
+      font-weight: 400;
+      color: #486c84;
+      line-height: 1.5;
+      margin-bottom: 52px;
+    }
+
+    /* ── Tool pills ── */
+    #pills {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 10px 28px;
+      border-radius: 8px;
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: #7ec8e3;
+      background: rgba(52, 152, 219, 0.12);
+      border: 1.5px solid rgba(52, 152, 219, 0.45);
+    }
+
+    /* ── URL footer ── */
+    #url {
+      position: absolute;
+      bottom: 28px;
+      left: 392px;
+      font-family: 'Courier New', Consolas, monospace;
+      font-size: 16px;
+      color: #2e4e65;
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body>
+  <div id="card">
+    <div id="grid"></div>
+    <div id="accent-bar"></div>
+    <div id="accent-bar-bottom"></div>
+    <div id="bg-circle"></div>
+    <div id="bg-circle-2"></div>
+    <div id="divider"></div>
+    <div id="symbol-bg">ΠΦ</div>
+    <div id="symbol">ΠΦ</div>
+
+    <div id="content">
+      <div id="eyebrow">Security Portfolio</div>
+      <div id="title">Cryptography<br>&amp; Security</div>
+      <div id="tagline">Theory · Implementation · Security</div>
+      <div id="description">Interactive browser-based cryptography<br>demonstrations &amp; educational tools</div>
+      <div id="pills">
+        <div class="pill">RSA</div>
+        <div class="pill">Hash Functions</div>
+        <div class="pill">Elliptic Curves</div>
+        <div class="pill">AES</div>
+      </div>
+    </div>
+
+    <div id="url">fer-osorio.github.io/security-portfolio</div>
+  </div>
+</body>
+</html>

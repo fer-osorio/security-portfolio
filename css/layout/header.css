@@ -58,13 +58,13 @@ header {
 }
 
 /* ============================================================================
- *  LOGO - Symbol (ΠΦ) + Text (Mathematical Foundations)
+ *  LOGO - Symbol (ΠΦ) + Text (Security Portfolio)
  *
  *  STRUCTURE:
  *  <h1 class="logo">
  *    <span class="symbol">ΠΦ</span>
  *    <span class="text">
- *      <span class="main">Mathematical Foundations</span>
+ *      <span class="main">Security Portfolio</span>
  *      <span class="sub">THEORY · IMPLEMENTATION · SECURITY</span>
  *    </span>
  *  </h1>
@@ -96,14 +96,14 @@ header {
     transform: scale(1.05);
 }
 
-/* Text container - stacks Mathematical Foundations / THEORY · IMPLEMENTATION · SECURITY vertically */
+/* Text container - stacks Security Portfolio / THEORY · IMPLEMENTATION · SECURITY vertically */
 .logo .text {
     display: flex;
     flex-direction: column;
     color: white;
 }
 
-/* Main logo text (Mathematical Foundations) */
+/* Main logo text (Security Portfolio) */
 .logo .text .main {
     font-size: 1.8rem;
     font-weight: var(--font-weight-bold);
