@@ -258,19 +258,19 @@ const P256 = new EllipticCurve(
 );
 
 /**
- * Small test curve E(F₂₃): y² = x³ + 7 (mod 23) — for educational demos only
- * Generator G = (6, 4), group order n = 28, cofactor h = 1
+ * Small test curve E(F₂₉): y² = x³ + x + 12 (mod 29) — for educational demos only
+ * Generator G = (4, 15), group order n = 23 (prime, cyclic), cofactor h = 1
  */
-let testF23: EllipticCurve | null = null;
+let ecP29a1b12: EllipticCurve | null = null;
 try {
-  testF23 = new EllipticCurve(
-    "Test-F23",
-    97n,
-    2n,
-    3n,
-    { x: 3n, y: 6n },
-    5n,
-    20n,
+  ecP29a1b12 = new EllipticCurve(
+    "ec-p29a1b12",
+    29n,
+    1n,
+    12n,
+    { x: 4n, y: 15n },
+    23n,
+    1n,
   );
 } catch (e) {
   console.warn("Test curve initialization failed:", e);
@@ -286,9 +286,9 @@ const CURVES: Record<string, EllipticCurve> = {
   secp256r1: P256, // Alias
 };
 
-if (testF23) {
-  CURVES["test-small"] = testF23;
-  CURVES["Test-F23"] = testF23;
+if (ecP29a1b12) {
+  CURVES["test-small"] = ecP29a1b12;
+  CURVES["ec-p29a1b12"] = ecP29a1b12;
 }
 
 /**
