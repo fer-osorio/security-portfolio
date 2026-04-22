@@ -258,19 +258,19 @@ const P256 = new EllipticCurve(
 );
 
 /**
- * Small test curve E(F₂₃): y² = x³ + 7 (mod 23) — for educational demos only
- * Generator G = (6, 4), group order n = 28, cofactor h = 1
+ * Small test curve E(F₂₉): y² = x³ + x + 12 (mod 29) — for educational demos only
+ * Generator G = (4, 15), group order n = 23 (prime, cyclic), cofactor h = 1
  */
-let testF23: EllipticCurve | null = null;
+let ecP29a1b12: EllipticCurve | null = null;
 try {
-  testF23 = new EllipticCurve(
-    "Test-F23",
-    97n,
-    2n,
-    3n,
-    { x: 3n, y: 6n },
-    5n,
-    20n,
+  ecP29a1b12 = new EllipticCurve(
+    "ec-p29a1b12",
+    29n,
+    1n,
+    12n,
+    { x: 4n, y: 15n },
+    23n,
+    1n,
   );
 } catch (e) {
   console.warn("Test curve initialization failed:", e);
@@ -286,9 +286,9 @@ const CURVES: Record<string, EllipticCurve> = {
   secp256r1: P256, // Alias
 };
 
-if (testF23) {
-  CURVES["test-small"] = testF23;
-  CURVES["Test-F23"] = testF23;
+if (ecP29a1b12) {
+  CURVES["test-small"] = ecP29a1b12;
+  CURVES["ec-p29a1b12"] = ecP29a1b12;
 }
 
 /**
@@ -458,16 +458,19 @@ export class ECDSA {
     // Step 1: Hash message
     const h = await this._hashMessage(message);
 
-    // Step 2: Generate deterministic k (simplified RFC 6979)
-    const k = await this._generateNonce(privateKey, h);
+    let k = 0n; // Deterministic nonce
+    let R;
+    let r = 0n;
+    let attempt = 0;
 
-    // Step 3: Compute R = kG
-    const R = scalarMultiplySecure(k, this.curve.G);
-    const r = R.x % this.curve.n;
-
-    // Check r ≠ 0 (negligible probability)
-    if (r === 0n) {
-      throw new Error("Signature generation failed: r = 0 (regenerate k)");
+    // Check r ≠ 0 (negligible probability for standard curves, non-negligible for small curves).
+    // Pass an attempt counter so each retry feeds different input to HMAC, producing a new k.
+    while (r === 0n) {
+      // Step 2: Generate deterministic k (simplified RFC 6979)
+      k = await this._generateNonce(privateKey, h, attempt++);
+      // Step 3: Compute R = kG
+      R = scalarMultiplySecure(k, this.curve.G);
+      r = R.x % this.curve.n;
     }
 
     // Step 4: Compute s = k⁻¹(h + r·d) mod n
@@ -580,15 +583,17 @@ export class ECDSA {
   private async _generateNonce(
     privateKey: bigint,
     messageHash: bigint,
+    attempt = 0,
   ): Promise<bigint> {
     // Convert inputs to byte arrays
     const keyBytes = this._bigIntToBytes(privateKey);
     const hashBytes = this._bigIntToBytes(messageHash);
 
-    // Concatenate for HMAC input
-    const combined = new Uint8Array(keyBytes.length + hashBytes.length);
+    // Concatenate for HMAC input; include attempt counter so retries produce a different k
+    const combined = new Uint8Array(keyBytes.length + hashBytes.length + 1);
     combined.set(keyBytes, 0);
     combined.set(hashBytes, keyBytes.length);
+    combined[keyBytes.length + hashBytes.length] = attempt & 0xff;
 
     // Import key for HMAC
     const hmacKey = await crypto.subtle.importKey(
