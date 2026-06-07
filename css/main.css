@@ -21,6 +21,7 @@
 @import 'components/forms.css';
 @import 'components/code-display.css';
 @import 'components/alerts.css';
+@import 'components/progress.css';
 @import 'components/welcome.css';
 
 /* 4. Utilities - Optional style*/
