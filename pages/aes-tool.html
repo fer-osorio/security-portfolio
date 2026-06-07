@@ -105,6 +105,12 @@
             </div>
 
             <button id="encrypt-btn" class="btn btn-primary">Generate Key &amp; Encrypt</button>
+            <div id="encrypt-progress" class="progress-container" hidden>
+                <div class="progress-track">
+                    <div class="progress-fill" id="encrypt-progress-fill"></div>
+                </div>
+                <p class="progress-label">Encrypting image&hellip;</p>
+            </div>
         </section>
 
         <!-- Stage 2: injected by displayEncryptionResult -->

@@ -182,6 +182,12 @@ function decryptFormHtml(response: EncryptResponse): string {
                 <button type="button" id="restore-all-btn" class="btn">Use correct parameters</button>
                 <button type="button" id="decrypt-btn" class="btn btn-primary">Decrypt</button>
             </div>
+            <div id="decrypt-progress" class="progress-container" hidden>
+                <div class="progress-track">
+                    <div class="progress-fill" id="decrypt-progress-fill"></div>
+                </div>
+                <p class="progress-label">Decrypting image&hellip;</p>
+            </div>
         </form>
     </div>`;
 }

@@ -189,6 +189,28 @@ function processSelectedFile(file: File): void {
 // ENCRYPTION
 // ============================================================================
 
+function startProgress(containerId: string, fillId: string): () => Promise<void> {
+    const container = document.getElementById(containerId);
+    const fill      = document.getElementById(fillId) as HTMLElement | null;
+
+    if (container) container.hidden = false;
+    if (fill)      fill.style.width = '0%';
+
+    let percent = 0;
+    const interval = setInterval(() => {
+        percent += (90 - percent) * 0.08;
+        if (fill) fill.style.width = `${percent}%`;
+    }, 100);
+
+    return async () => {
+        clearInterval(interval);
+        if (fill) fill.style.width = '100%';
+        await new Promise(resolve => setTimeout(resolve, 400));
+        if (container) container.hidden = true;
+        if (fill)      fill.style.width = '0%';
+    };
+}
+
 async function handleEncrypt(): Promise<void> {
     const fileInput = document.getElementById('image-file-input') as HTMLInputElement | null;
     const file      = fileInput?.files?.[0];
@@ -208,6 +230,7 @@ async function handleEncrypt(): Promise<void> {
 
     const encryptBtn = document.getElementById('encrypt-btn');
     UIUtils.setButtonLoading(encryptBtn, 'Encrypting...');
+    const stopEncryptProgress = startProgress('encrypt-progress', 'encrypt-progress-fill');
 
     try {
         const response = await encryptImage({ image: file, mode, keyLength, iv });
@@ -244,6 +267,7 @@ async function handleEncrypt(): Promise<void> {
     } catch (err) {
         UIUtils.showError((err as Error).message);
     } finally {
+        await stopEncryptProgress();
         UIUtils.resetButton(encryptBtn, 'Encrypt');
     }
 }
@@ -281,6 +305,7 @@ async function handleDecrypt(): Promise<void> {
 
     const decryptBtn = document.getElementById('decrypt-btn');
     UIUtils.setButtonLoading(decryptBtn, 'Decrypting...');
+    const stopDecryptProgress = startProgress('decrypt-progress', 'decrypt-progress-fill');
 
     try {
         const response = await decryptImage({
@@ -311,6 +336,7 @@ async function handleDecrypt(): Promise<void> {
     } catch (err) {
         UIUtils.showError((err as Error).message);
     } finally {
+        await stopDecryptProgress();
         UIUtils.resetButton(decryptBtn, 'Decrypt');
     }
 }
