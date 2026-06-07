@@ -62,8 +62,6 @@ interface FiniteFieldPoint { x: bigint; y: bigint }
 /** Canvas-space coordinate pair */
 interface CanvasCoord { x: number; y: number }
 
-type PointAdditionCallback  = (result: Point) => void;
-type ScalarMultiplyCallback = (result: Point) => void;
 
 // ============================================================================
 // ELLIPTIC CURVE VISUALIZER
@@ -81,7 +79,6 @@ export class ECVisualizer {
     private curve:          VisualizerCurve | null;
     private viewport:       Viewport;
     private selectedPoints: FiniteFieldPoint[];
-    private isAnimating: boolean;
     private colors:      typeof Config.ECC.COLORS;
     private pointRadius:    number;
     private width:          number;
@@ -116,9 +113,6 @@ export class ECVisualizer {
 
         // Selected points (for interactive operations)
         this.selectedPoints = [];
-
-        // Animation state
-        this.isAnimating = false;
 
         // Colors from Config
         this.colors = Config.ECC.COLORS;
@@ -625,166 +619,72 @@ export class ECVisualizer {
     }
 
     // ========================================================================
-    // ANIMATIONS
+    // POINT OPERATIONS
     // ========================================================================
 
     /**
-     * Animate point addition: P + Q
-     *
-     * ANIMATION SEQUENCE:
-     * 1. Highlight P and Q
-     * 2. Draw line through P and Q (or tangent if P = Q)
-     * 3. Show third intersection R with curve
-     * 4. Reflect R across x-axis to get P + Q
-     *
-     * The callback is only invoked in finite-field mode.
+     * Compute P + Q and render the result point immediately.
+     * Only operative in finite-field mode.
      */
-    async animatePointAddition(
+    computePointAddition(
         P:         FiniteFieldPoint,
         Q:         FiniteFieldPoint,
-        callback?: PointAdditionCallback,
-    ): Promise<void> {
-        if (this.isAnimating) return;
-
-        this.isAnimating = true;
-        const ctx = this.ctx;
-
-        // Convert to numbers for visualization
-        const px = Number(P.x), py = Number(P.y);
-        const qx = Number(Q.x), qy = Number(Q.y);
-
-        // Step 1: Highlight points
-        this.render();
-        this.drawPoint(px, py, this.pointRadius * 2, '#e74c3c');
-        this.drawPoint(qx, qy, this.pointRadius * 2, '#e74c3c');
-        await this.delay(500);
-
-        // Step 2: Draw line/tangent
-        ctx.strokeStyle = this.colors.OPERATION_LINE;
-        ctx.lineWidth   = 2;
-        ctx.setLineDash([5, 5]);
-
-        const pCanvas = this.curveToCanvas(px, py);
-        const qCanvas = this.curveToCanvas(qx, qy);
-
-        ctx.beginPath();
-        ctx.moveTo(pCanvas.x, pCanvas.y);
-        ctx.lineTo(qCanvas.x, qCanvas.y);
-
-        // Extend line across canvas
-        const dx     = qCanvas.x - pCanvas.x;
-        const dy     = qCanvas.y - pCanvas.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const extend = Math.max(this.width, this.height) * 2;
-
-        ctx.lineTo(pCanvas.x + (dx / length) * extend, pCanvas.y + (dy / length) * extend);
-        ctx.moveTo(pCanvas.x, pCanvas.y);
-        ctx.lineTo(pCanvas.x - (dx / length) * extend, pCanvas.y - (dy / length) * extend);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        await this.delay(1000);
-
-        // Step 3: Compute result (finite mode only)
-        if (this.mode === 'finite' && this.curve !== null && 'p' in this.curve) {
-            const finiteCurve = this.curve; // FiniteFieldCurve satisfies CurveParams
-
-            const Ppoint = new Point(P.x, P.y, finiteCurve);
-            const Qpoint = new Point(Q.x, Q.y, finiteCurve);
-
-            let result: Point;
-            if (px === qx && py === qy) {
-                result = pointDouble(Ppoint);
-            } else {
-                result = pointAdd(Ppoint, Qpoint);
-            }
-
-            if (!result.isInfinity) {
-                this.drawPoint(
-                    Number(result.x), Number(result.y),
-                    this.pointRadius * 2,
-                    this.colors.RESULT,
-                );
-            }
-
-            await this.delay(1000);
-            this.isAnimating = false;
-
-            if (callback) callback(result);
-            return;
-        }
-
-        // Real mode — show informational message
-        ctx.fillStyle = '#666';
-        ctx.font      = '12px sans-serif';
-        ctx.fillText('Result point shown in discrete mode', 10, this.height - 10);
-
-        await this.delay(1000);
-        this.isAnimating = false;
-    }
-
-    /**
-     * Animate scalar multiplication: kP
-     *
-     * Shows binary decomposition and double-and-add algorithm.
-     * Only available in finite-field mode.
-     */
-    async animateScalarMultiplication(
-        k:         bigint,
-        P:         FiniteFieldPoint,
-        callback?: ScalarMultiplyCallback,
-    ): Promise<void> {
-        if (this.isAnimating) return;
-        if (this.mode !== 'finite') {
-            UIUtils.showWarning('Scalar multiplication animation only available in finite field mode');
-            return;
-        }
-
+        callback?: (result: Point) => void,
+    ): void {
         if (!this.curve || !('p' in this.curve)) return;
-        const finiteCurve = this.curve; // FiniteFieldCurve
+        const finiteCurve = this.curve;
 
-        this.isAnimating = true;
+        const Ppoint = new Point(P.x, P.y, finiteCurve);
+        const Qpoint = new Point(Q.x, Q.y, finiteCurve);
 
-        // Show binary representation
-        const binary = k.toString(2);
-        console.log(`Computing ${k}P using binary: ${binary}`);
+        const result =
+            P.x === Q.x && P.y === Q.y
+                ? pointDouble(Ppoint)
+                : pointAdd(Ppoint, Qpoint);
 
-        let result: Point = Point.infinity(finiteCurve);
-        let temp:   Point = new Point(P.x, P.y, finiteCurve);
+        this.render();
 
-        for (let i = 0; i < binary.length; i++) {
-            const bit = binary[binary.length - 1 - i];
-
-            if (bit === '1') {
-                this.render();
-                this.drawPoint(Number(temp.x), Number(temp.y), this.pointRadius * 2, '#e74c3c');
-                await this.delay(300);
-
-                result = pointAdd(result, temp);
-
-                if (!result.isInfinity) {
-                    this.drawPoint(
-                        Number(result.x), Number(result.y),
-                        this.pointRadius * 2,
-                        this.colors.RESULT,
-                    );
-                }
-                await this.delay(300);
-            }
-
-            temp = pointDouble(temp);
+        if (!result.isInfinity) {
+            this.drawPoint(Number(result.x), Number(result.y), this.pointRadius * 2, this.colors.RESULT);
         }
-
-        this.isAnimating = false;
 
         if (callback) callback(result);
     }
 
     /**
-     * Delay helper for animations
+     * Compute kP via double-and-add and render the result point immediately.
+     * Only operative in finite-field mode.
      */
-    private delay(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
+    computeScalarMultiplication(
+        k:         bigint,
+        P:         FiniteFieldPoint,
+        callback?: (result: Point) => void,
+    ): void {
+        if (this.mode !== 'finite') {
+            UIUtils.showWarning('Scalar multiplication only available in finite field mode');
+            return;
+        }
+        if (!this.curve || !('p' in this.curve)) return;
+        const finiteCurve = this.curve;
+
+        const binary = k.toString(2);
+        let result: Point = Point.infinity(finiteCurve);
+        let temp:   Point = new Point(P.x, P.y, finiteCurve);
+
+        for (let i = 0; i < binary.length; i++) {
+            if (binary[binary.length - 1 - i] === '1') {
+                result = pointAdd(result, temp);
+            }
+            temp = pointDouble(temp);
+        }
+
+        this.render();
+
+        if (!result.isInfinity) {
+            this.drawPoint(Number(result.x), Number(result.y), this.pointRadius * 2, this.colors.RESULT);
+        }
+
+        if (callback) callback(result);
     }
 
     // ========================================================================

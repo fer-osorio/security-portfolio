@@ -382,7 +382,7 @@ function hideCustomFiniteParams(): void {
 // POINT OPERATION HANDLERS (TAB 2 ONLY)
 // ============================================================================
 
-async function handlePointAddition(): Promise<void> {
+function handlePointAddition(): void {
     if (!finiteCurveVisualizer) {
         UIUtils.showError('Finite curve visualizer not initialized');
         return;
@@ -400,7 +400,7 @@ async function handlePointAddition(): Promise<void> {
     UIUtils.showLoading('operation-results', 'Computing P + Q...');
 
     try {
-        await finiteCurveVisualizer.animatePointAddition(P, Q, (result) => {
+        finiteCurveVisualizer.computePointAddition(P, Q, (result) => {
             displayPointOperationResult({
                 operation: 'Point Addition',
                 P,
@@ -417,7 +417,7 @@ async function handlePointAddition(): Promise<void> {
     }
 }
 
-async function handlePointDoubling(): Promise<void> {
+function handlePointDoubling(): void {
     if (!finiteCurveVisualizer) {
         UIUtils.showError('Finite curve visualizer not initialized');
         return;
@@ -435,7 +435,7 @@ async function handlePointDoubling(): Promise<void> {
     UIUtils.showLoading('operation-results', 'Computing 2P...');
 
     try {
-        await finiteCurveVisualizer.animatePointAddition(P, P, (result) => {
+        finiteCurveVisualizer.computePointAddition(P, P, (result) => {
             displayPointOperationResult({
                 operation: 'Point Doubling',
                 P,
@@ -452,7 +452,7 @@ async function handlePointDoubling(): Promise<void> {
     }
 }
 
-async function handleScalarMultiply(): Promise<void> {
+function handleScalarMultiply(): void {
     if (!finiteCurveVisualizer) {
         UIUtils.showError('Finite curve visualizer not initialized');
         return;
@@ -483,7 +483,7 @@ async function handleScalarMultiply(): Promise<void> {
     UIUtils.showLoading('operation-results', `Computing ${k}P...`);
 
     try {
-        await finiteCurveVisualizer.animateScalarMultiplication(k, P, (result) => {
+        finiteCurveVisualizer.computeScalarMultiplication(k, P, (result) => {
             displayScalarMultiplyResult(k, P, result);
         });
     } catch (error) {
